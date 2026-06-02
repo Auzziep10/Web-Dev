@@ -286,9 +286,9 @@
   <div class="spacer"></div>
 
   <div class="filter-group">
-    <label for="appFilter">App</label>
+    <label for="appFilter">Project</label>
     <select id="appFilter">
-      <option value="__all__">All apps</option>
+      <option value="__all__">All projects</option>
     </select>
   </div>
 
@@ -342,8 +342,8 @@
       <input type="text" id="taskTitle" placeholder="What needs to happen?" autocomplete="off">
     </div>
     <div class="field">
-      <label for="taskApp">App / project</label>
-      <input type="text" id="taskApp" placeholder="e.g. Accounting app, CRM, Internal portal" autocomplete="off" list="appList">
+      <label for="taskApp">Project</label>
+      <input type="text" id="taskApp" placeholder="e.g. Custom Apparel, Ink Theory, Clockwork" autocomplete="off" list="appList">
       <datalist id="appList"></datalist>
     </div>
     <div class="field">
@@ -664,7 +664,7 @@ function render() {
   const filter = document.getElementById('appFilter');
   const currentVal = filter.value || '__all__';
   const apps = getApps();
-  filter.innerHTML = '<option value="__all__">All apps</option>' +
+  filter.innerHTML = '<option value="__all__">All projects</option>' +
     apps.map(a => `<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`).join('');
   filter.value = apps.includes(currentVal) || currentVal === '__all__' ? currentVal : '__all__';
   document.getElementById('appList').innerHTML =
