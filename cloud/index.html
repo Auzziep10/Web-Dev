@@ -145,12 +145,64 @@
   }
   .assignee-pill.empty:hover { border-color: transparent; }
 
-  .task-actions { display: flex; gap: 4px; opacity: 0; transition: opacity .15s; }
-  .task:hover .task-actions { opacity: 1; }
+  .task-actions { display: flex; gap: 4px; align-items: center; }
+  .task-actions .hover-only { display: inline-flex; gap: 4px; opacity: 0; transition: opacity .15s; }
+  .task:hover .task-actions .hover-only { opacity: 1; }
   .icon-btn { background: transparent; border: none; color: var(--muted);
     padding: 2px 6px; border-radius: 4px; font-size: 12px; cursor: pointer; }
   .icon-btn:hover { background: var(--panel); color: var(--text); }
   .icon-btn.danger:hover { color: var(--danger); }
+  .expand-btn { font-size: 13px; line-height: 1; transition: transform .15s; }
+  .task.expanded .expand-btn { transform: rotate(180deg); }
+  .update-count {
+    background: rgba(124,156,255,0.10); color: var(--accent);
+    padding: 1px 7px; border-radius: 10px; font-size: 11px; font-weight: 600;
+  }
+
+  /* Expanded thread panel */
+  .task-expanded {
+    margin-top: 12px; padding-top: 10px;
+    border-top: 1px solid var(--border);
+    cursor: default;
+  }
+  .update-list {
+    display: flex; flex-direction: column; gap: 10px;
+    margin-bottom: 10px;
+    max-height: 280px; overflow-y: auto;
+    padding-right: 4px;
+  }
+  .update-item { display: flex; gap: 8px; align-items: flex-start; }
+  .update-item .avatar { flex-shrink: 0; margin: 0; }
+  .update-body { flex: 1; min-width: 0; }
+  .update-meta {
+    font-size: 11px; color: var(--muted);
+    margin-bottom: 2px;
+    display: flex; align-items: baseline; gap: 6px;
+  }
+  .update-author { font-weight: 600; color: var(--text); }
+  .update-text {
+    font-size: 12.5px; line-height: 1.45;
+    word-wrap: break-word; white-space: pre-wrap;
+  }
+  .update-empty {
+    color: var(--muted); font-style: italic;
+    font-size: 12px; padding: 4px 0;
+  }
+  .update-input-row { display: flex; gap: 6px; }
+  .update-input {
+    flex: 1;
+    background: var(--panel); border: 1px solid var(--border);
+    color: var(--text); border-radius: 6px;
+    padding: 6px 10px; font-size: 12.5px; font-family: inherit;
+  }
+  .update-input:focus { outline: none; border-color: var(--accent); }
+  .update-send {
+    background: var(--accent-2); color: white; border: none;
+    border-radius: 6px; padding: 6px 12px;
+    font-size: 12px; cursor: pointer;
+  }
+  .update-send:hover { background: var(--accent); }
+  .update-send:disabled { background: var(--muted); cursor: not-allowed; }
   .empty { color: var(--muted); font-size: 12px; text-align: center; padding: 20px; font-style: italic; }
 
   .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.5);
@@ -358,6 +410,30 @@ function colorFor(email) {
 function avatarHtml(email) {
   return `<span class="avatar" style="background:${colorFor(email)}" title="${escapeHtml(email)}">${escapeHtml(initialsFor(email))}</span>`;
 }
+function tsToMillis(ts) {
+  if (!ts) return 0;
+  if (typeof ts === 'number') return ts;
+  if (ts.toMillis) return ts.toMillis();
+  if (ts.seconds) return ts.seconds * 1000;
+  return 0;
+}
+function timeAgo(ts) {
+  const t = tsToMillis(ts);
+  if (!t) return '';
+  const diff = Date.now() - t;
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return 'just now';
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  if (d < 7) return `${d}d ago`;
+  return new Date(t).toLocaleDateString();
+}
+function fullTime(ts) {
+  const t = tsToMillis(ts);
+  return t ? new Date(t).toLocaleString() : '';
+}
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -372,6 +448,7 @@ let editingId = null;
 let dragId = null;
 let unsubTasks = null;
 let unsubAccess = null;
+let expandedIds = new Set(); // task IDs that are currently expanded
 
 // --- Auth flow ---
 document.getElementById('gateSignIn').addEventListener('click', async () => {
@@ -444,22 +521,29 @@ function cleanupSubs() {
   if (unsubAccess) { unsubAccess(); unsubAccess = null; }
 }
 
+// True when the UI is in a state where re-rendering would yank something
+// the user is interacting with (dragging, editing in a modal, typing in a thread).
+function isUIBusy() {
+  if (dragId) return true;
+  if (document.getElementById('modal')?.classList.contains('open')) return true;
+  if (document.getElementById('teamModal')?.classList.contains('open')) return true;
+  const a = document.activeElement;
+  if (a && a.classList && a.classList.contains('update-input') && a.value) return true;
+  return false;
+}
+
+function maybeRender() {
+  if (!isUIBusy()) { render(); return; }
+  setTimeout(maybeRender, 250);
+}
+
 // --- Live subscriptions ---
 function subscribe() {
   cleanupSubs();
   // Tasks
   unsubTasks = onSnapshot(collection(db, 'tasks'), (snap) => {
     tasks = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    if (!dragId && !document.getElementById('modal').classList.contains('open')) {
-      render();
-    } else {
-      // Defer: re-render after drag/edit completes
-      const checkRender = () => {
-        if (!dragId && !document.getElementById('modal').classList.contains('open')) render();
-        else setTimeout(checkRender, 200);
-      };
-      setTimeout(checkRender, 200);
-    }
+    maybeRender();
   }, (err) => toast('Sync error: ' + err.message));
 
   // Access doc (editors can manage team)
@@ -538,21 +622,58 @@ function renderTask(t) {
   const avatars = assignees.length
     ? `<span class="task-assignees">${assignees.map(avatarHtml).join('')}</span>`
     : '';
+  const updates = Array.isArray(t.updates) ? t.updates : [];
+  const updateBadge = updates.length
+    ? `<span class="update-count" title="${updates.length} update${updates.length === 1 ? '' : 's'}">💬 ${updates.length}</span>`
+    : '';
+  const isExpanded = expandedIds.has(t.id);
+  const expanded = isExpanded ? renderExpanded(t, updates) : '';
   return `
-    <li class="task priority-${p} ${t.status === 'done' ? 'done' : ''}" draggable="true" data-id="${t.id}">
+    <li class="task priority-${p} ${t.status === 'done' ? 'done' : ''} ${isExpanded ? 'expanded' : ''}" draggable="true" data-id="${t.id}">
       <div class="task-title">${escapeHtml(t.title)}</div>
       <div class="task-meta">
         <span class="task-tags">
           <span class="priority-chip ${p}">${PRIORITY_LABEL[p]}</span>
           ${t.app ? `<span class="task-app">${escapeHtml(t.app)}</span>` : ''}
           ${avatars}
+          ${updateBadge}
         </span>
-        <span class="task-actions editor-only">
-          <button class="icon-btn" data-action="edit" title="Edit">✎</button>
-          <button class="icon-btn danger" data-action="delete" title="Delete">×</button>
+        <span class="task-actions">
+          <button class="icon-btn expand-btn" data-action="expand" title="${isExpanded ? 'Collapse' : 'Expand'}">▾</button>
+          <span class="hover-only editor-only">
+            <button class="icon-btn" data-action="edit" title="Edit">✎</button>
+            <button class="icon-btn danger" data-action="delete" title="Delete">×</button>
+          </span>
         </span>
       </div>
+      ${expanded}
     </li>`;
+}
+
+function renderExpanded(t, updates) {
+  const sorted = [...updates].sort((a, b) => tsToMillis(a.timestamp) - tsToMillis(b.timestamp));
+  const listHtml = sorted.length === 0
+    ? `<div class="update-empty">No updates yet — start the thread below.</div>`
+    : sorted.map(u => `
+        <div class="update-item">
+          ${avatarHtml(u.author)}
+          <div class="update-body">
+            <div class="update-meta">
+              <span class="update-author">${escapeHtml(emailShort(u.author))}</span>
+              <span title="${escapeHtml(fullTime(u.timestamp))}">${escapeHtml(timeAgo(u.timestamp))}</span>
+            </div>
+            <div class="update-text">${escapeHtml(u.text)}</div>
+          </div>
+        </div>
+      `).join('');
+  return `
+    <div class="task-expanded" data-task-id="${t.id}">
+      <div class="update-list">${listHtml}</div>
+      <div class="update-input-row">
+        <input class="update-input" data-task-id="${t.id}" placeholder="Add an update..." autocomplete="off">
+        <button class="update-send" data-action="send" data-task-id="${t.id}">Post</button>
+      </div>
+    </div>`;
 }
 
 function escapeHtml(s) {
@@ -597,16 +718,68 @@ function bindTaskEvents() {
       btn.addEventListener('click', e => {
         e.stopPropagation();
         const id = el.dataset.id;
-        if (btn.dataset.action === 'edit') openModal(id);
-        if (btn.dataset.action === 'delete') deleteTaskById(id);
+        const action = btn.dataset.action;
+        if (action === 'edit') openModal(id);
+        if (action === 'delete') deleteTaskById(id);
+        if (action === 'expand') toggleExpand(id);
+        if (action === 'send') submitUpdate(btn.dataset.taskId);
       });
     });
+    // Enter-to-post in update input
+    const input = el.querySelector('.update-input');
+    if (input) {
+      input.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          submitUpdate(input.dataset.taskId);
+        }
+      });
+      // Stop the parent's drag/keydown handlers from interfering with typing
+      input.addEventListener('click', e => e.stopPropagation());
+      input.addEventListener('mousedown', e => e.stopPropagation());
+    }
   });
+}
+
+function toggleExpand(taskId) {
+  if (expandedIds.has(taskId)) expandedIds.delete(taskId);
+  else expandedIds.add(taskId);
+  render();
+}
+
+async function addUpdate(taskId, text) {
+  const task = tasks.find(t => t.id === taskId);
+  if (!task) return;
+  const existing = Array.isArray(task.updates) ? task.updates : [];
+  const next = [...existing, {
+    author: currentUser.email,
+    text,
+    timestamp: Date.now()
+  }];
+  try {
+    await updateDoc(doc(db, 'tasks', taskId), { updates: next });
+  } catch (e) {
+    toast('Could not post: ' + e.message);
+  }
+}
+
+function submitUpdate(taskId) {
+  const input = document.querySelector(`.update-input[data-task-id="${taskId}"]`);
+  if (!input) return;
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  addUpdate(taskId, text);
 }
 
 // --- Drag & drop ---
 function onDragStart(e) {
   if (role !== 'editor') { e.preventDefault(); return; }
+  // Don't start a drag if the user is interacting with a control inside the card
+  if (e.target.closest('button, input, textarea, .task-expanded')) {
+    e.preventDefault();
+    return;
+  }
   dragId = e.currentTarget.dataset.id;
   e.currentTarget.classList.add('dragging');
   e.dataTransfer.effectAllowed = 'move';

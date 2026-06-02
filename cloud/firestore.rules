@@ -33,7 +33,13 @@ service cloud.firestore {
 
     match /tasks/{taskId} {
       allow read: if isViewer();
-      allow create, update, delete: if isEditor();
+      allow create, delete: if isEditor();
+      // Editors can update any field.
+      // Viewers can update *only* the `updates` field (so they can post to the thread).
+      allow update: if isEditor() || (
+        isViewer() &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['updates'])
+      );
     }
   }
 }
