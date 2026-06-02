@@ -274,6 +274,138 @@
   .gate-card p { color: var(--muted); margin: 0 0 20px; font-size: 13px; line-height: 1.5; }
   .gate-card .err { color: var(--danger); font-size: 12px; margin-top: 12px; }
 
+  /* View toggle in header */
+  .view-toggle-group {
+    display: inline-flex;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .view-toggle {
+    background: transparent; border: none;
+    padding: 6px 12px; color: var(--muted);
+    cursor: pointer; font-size: 12px; font-weight: 500;
+    border-radius: 0;
+  }
+  .view-toggle:hover { color: var(--text); }
+  .view-toggle.active { background: var(--accent-2); color: white; }
+  .view-toggle.active:hover { background: var(--accent); }
+
+  .timeline-nav { display: inline-flex; align-items: center; gap: 4px; }
+  .timeline-nav button { padding: 6px 10px; font-size: 12px; }
+  #timelineRange { font-size: 12px; color: var(--muted); margin: 0 8px; min-width: 130px; text-align: center; }
+
+  /* Timeline view */
+  .timeline-view {
+    margin: 0 20px 20px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    flex: 1; min-height: 0;
+    display: flex; flex-direction: column;
+  }
+  .t-scroll { overflow: auto; flex: 1; }
+  .t-grid { min-width: 1100px; }
+  .t-row {
+    display: flex; align-items: stretch;
+    border-bottom: 1px solid var(--border);
+    min-height: 36px;
+  }
+  .t-row:last-child { border-bottom: none; }
+  .t-name {
+    width: 240px; min-width: 240px;
+    padding: 8px 12px; font-size: 12.5px;
+    display: flex; align-items: center;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    border-right: 1px solid var(--border);
+    background: var(--panel);
+    position: sticky; left: 0; z-index: 2;
+  }
+  .t-track {
+    flex: 1; position: relative;
+    background-image:
+      linear-gradient(to right, var(--border) 1px, transparent 1px);
+    background-size: calc(100% / 28) 100%;
+    background-position: 0 0;
+  }
+  .t-header-row {
+    background: var(--panel-2);
+    position: sticky; top: 0; z-index: 6;
+  }
+  .t-header-row .t-name { background: var(--panel-2); font-weight: 600; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .3px; }
+  .t-header-row .t-track { background-image: none; padding: 0; }
+  .t-week-row, .t-day-row { display: flex; width: 100%; }
+  .t-week-row { border-bottom: 1px solid var(--border); }
+  .t-week-cell {
+    flex: 7; padding: 6px 8px;
+    font-size: 11px; font-weight: 600; color: var(--muted);
+    border-right: 1px solid var(--border); text-align: center;
+  }
+  .t-week-cell:last-child { border-right: none; }
+  .t-day-cell {
+    flex: 1; padding: 4px 0; text-align: center;
+    font-size: 10px; line-height: 1.2;
+    border-right: 1px solid var(--border);
+  }
+  .t-day-cell:last-child { border-right: none; }
+  .t-day-cell.weekend { background: rgba(139,148,167,0.07); }
+  .t-day-cell.today { background: rgba(124,156,255,0.18); }
+  .t-day-name { color: var(--muted); }
+  .t-day-num { font-weight: 600; color: var(--text); }
+  .t-day-cell.today .t-day-num { color: var(--accent); }
+
+  .t-project-row { background: rgba(124,156,255,0.04); }
+  .t-project-row .t-name {
+    font-weight: 700; font-size: 11px; color: var(--accent);
+    text-transform: uppercase; letter-spacing: .4px;
+    background: rgba(124,156,255,0.04);
+  }
+  .t-task-row .t-track {
+    background-image:
+      linear-gradient(to right, var(--border) 1px, transparent 1px);
+    background-size: calc(100% / 28) 100%;
+  }
+  .t-task-row .t-track::before {
+    content: ""; position: absolute; inset: 0;
+    background:
+      repeating-linear-gradient(to right,
+        transparent 0,
+        transparent calc(100% * 5 / 28),
+        rgba(139,148,167,0.06) calc(100% * 5 / 28),
+        rgba(139,148,167,0.06) calc(100% * 7 / 28));
+    pointer-events: none;
+  }
+  .t-bar {
+    position: absolute; top: 6px; bottom: 6px;
+    border-radius: 4px; padding: 0 8px;
+    display: flex; align-items: center;
+    font-size: 11px; font-weight: 600; color: white;
+    cursor: pointer; overflow: hidden;
+    white-space: nowrap;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    transition: filter .15s, transform .05s;
+    z-index: 1;
+  }
+  .t-bar:hover { filter: brightness(1.1); transform: translateY(-1px); }
+  .t-bar.priority-critical { background: var(--p-critical); }
+  .t-bar.priority-high     { background: var(--p-high); }
+  .t-bar.priority-medium   { background: var(--p-medium); }
+  .t-bar.priority-low      { background: var(--p-low); }
+  .t-bar.done { opacity: 0.5; text-decoration: line-through; }
+  .t-bar-label { overflow: hidden; text-overflow: ellipsis; }
+  .t-today-line {
+    position: absolute; top: 0; bottom: 0;
+    width: 2px; background: var(--accent);
+    pointer-events: none; z-index: 5;
+    box-shadow: 0 0 8px rgba(124,156,255,0.5);
+  }
+  .t-empty {
+    padding: 40px 20px; text-align: center;
+    color: var(--muted); font-style: italic; font-size: 13px;
+  }
+
   @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
 </style>
 </head>
@@ -299,6 +431,18 @@
       <option value="__me__">Me</option>
       <option value="__none__">Unassigned</option>
     </select>
+  </div>
+
+  <div class="view-toggle-group" id="viewToggleGroup">
+    <button class="view-toggle active" data-view="board">Board</button>
+    <button class="view-toggle" data-view="timeline">Timeline</button>
+  </div>
+
+  <div class="timeline-nav" id="timelineNav" style="display:none;">
+    <button class="ghost" id="tlPrev" title="Previous week">‹</button>
+    <button class="ghost" id="tlToday" title="Jump to today">Today</button>
+    <button class="ghost" id="tlNext" title="Next week">›</button>
+    <span id="timelineRange"></span>
   </div>
 
   <button id="addBtn" class="primary editor-only">+ New task</button>
@@ -332,6 +476,12 @@
     <ul class="task-list" data-status="done"></ul>
   </section>
 </main>
+
+<section class="timeline-view" id="timelineView" style="display:none;">
+  <div class="t-scroll">
+    <div class="t-grid" id="timelineGrid"></div>
+  </div>
+</section>
 
 <!-- Task modal -->
 <div class="modal-backdrop" id="modal">
@@ -537,6 +687,28 @@ let dragId = null;
 let unsubTasks = null;
 let unsubAccess = null;
 let expandedIds = new Set(); // task IDs that are currently expanded
+let currentView = (localStorage.getItem('view') === 'timeline') ? 'timeline' : 'board';
+let timelineStart = getMondayOf(new Date()); // first day of visible timeline window
+
+const TIMELINE_DAYS = 28; // 4 weeks visible at once
+
+function getMondayOf(date) {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  const day = d.getDay(); // 0=Sun
+  const diff = day === 0 ? -6 : 1 - day;
+  d.setDate(d.getDate() + diff);
+  return d;
+}
+function dateToStr(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${dd}`;
+}
+function isSameDay(a, b) {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
 
 // --- Auth flow ---
 document.getElementById('gateSignIn').addEventListener('click', async () => {
@@ -602,6 +774,9 @@ function setupUI() {
   const badge = document.getElementById('modeBadge');
   badge.textContent = isViewer ? 'View only' : 'Editor';
   badge.classList.toggle('view', isViewer);
+
+  // Apply persisted view choice (board/timeline)
+  setView(currentView);
 }
 
 function cleanupSubs() {
@@ -621,8 +796,143 @@ function isUIBusy() {
 }
 
 function maybeRender() {
-  if (!isUIBusy()) { render(); return; }
+  if (!isUIBusy()) {
+    if (currentView === 'timeline') renderTimeline();
+    else render();
+    return;
+  }
   setTimeout(maybeRender, 250);
+}
+
+function setView(view) {
+  currentView = view;
+  localStorage.setItem('view', view);
+  document.querySelector('main').style.display = view === 'board' ? '' : 'none';
+  document.getElementById('timelineView').style.display = view === 'timeline' ? 'flex' : 'none';
+  document.getElementById('timelineNav').style.display = view === 'timeline' ? 'inline-flex' : 'none';
+  document.querySelectorAll('.view-toggle').forEach(b => {
+    b.classList.toggle('active', b.dataset.view === view);
+  });
+  if (view === 'timeline') renderTimeline();
+  else render();
+}
+
+function renderTimeline() {
+  const grid = document.getElementById('timelineGrid');
+  const start = new Date(timelineStart);
+  const end = new Date(start); end.setDate(end.getDate() + TIMELINE_DAYS - 1);
+
+  document.getElementById('timelineRange').textContent =
+    `${start.toLocaleDateString(undefined, {month: 'short', day: 'numeric'})} – ${end.toLocaleDateString(undefined, {month: 'short', day: 'numeric', year: 'numeric'})}`;
+
+  // Week labels (one per 7-day chunk)
+  const weeks = [];
+  for (let w = 0; w < TIMELINE_DAYS / 7; w++) {
+    const ws = new Date(start); ws.setDate(ws.getDate() + w * 7);
+    weeks.push(`<div class="t-week-cell">Week of ${ws.toLocaleDateString(undefined, {month:'short', day:'numeric'})}</div>`);
+  }
+  // Day cells
+  const today = new Date(); today.setHours(0,0,0,0);
+  const dayNames = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+  const days = [];
+  for (let i = 0; i < TIMELINE_DAYS; i++) {
+    const d = new Date(start); d.setDate(d.getDate() + i);
+    const weekend = d.getDay() === 0 || d.getDay() === 6;
+    const isToday = isSameDay(d, today);
+    days.push(`<div class="t-day-cell ${weekend ? 'weekend' : ''} ${isToday ? 'today' : ''}">
+      <div class="t-day-name">${dayNames[d.getDay()]}</div>
+      <div class="t-day-num">${d.getDate()}</div>
+    </div>`);
+  }
+
+  // Tasks that overlap the visible range AND match current filters
+  const filtered = visibleTasks().filter(t => {
+    if (!t.startDate && !t.endDate) return false;
+    const ts = t.startDate || t.endDate;
+    const te = t.endDate || t.startDate;
+    const startStr = dateToStr(start), endStr = dateToStr(end);
+    return ts <= endStr && te >= startStr;
+  });
+
+  // Group by project (using existing `app` field internally)
+  const groups = {};
+  filtered.forEach(t => {
+    const key = t.app || '(No project)';
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(t);
+  });
+
+  const groupHtml = Object.keys(groups).sort().map(proj => {
+    const projTasks = groups[proj].sort((a,b) => (a.startDate || a.endDate || '').localeCompare(b.startDate || b.endDate || ''));
+    const rowsHtml = projTasks.map(t => renderTimelineRow(t, start)).join('');
+    return `
+      <div class="t-row t-project-row">
+        <div class="t-name">${escapeHtml(proj)}</div>
+        <div class="t-track"></div>
+      </div>
+      ${rowsHtml}
+    `;
+  }).join('');
+
+  const todayMs = today.getTime();
+  const startMs = start.getTime();
+  const dayMs = 86400000;
+  const todayDayIdx = Math.floor((todayMs - startMs) / dayMs);
+  const todayLine = (todayDayIdx >= 0 && todayDayIdx < TIMELINE_DAYS)
+    ? `<div class="t-today-line" style="left: calc(240px + (100% - 240px) * ${(todayDayIdx + 0.5) / TIMELINE_DAYS});"></div>`
+    : '';
+
+  grid.innerHTML = `
+    <div class="t-row t-header-row">
+      <div class="t-name">Task</div>
+      <div class="t-track">
+        <div class="t-week-row">${weeks.join('')}</div>
+        <div class="t-day-row">${days.join('')}</div>
+      </div>
+    </div>
+    <div style="position: relative;">
+      ${filtered.length === 0
+        ? '<div class="t-empty">No tasks scheduled in this date range.<br>Set a Start or End date on a task to see it here.</div>'
+        : groupHtml}
+      ${todayLine}
+    </div>
+  `;
+
+  grid.querySelectorAll('.t-bar').forEach(bar => {
+    bar.addEventListener('click', () => openModal(bar.dataset.id));
+  });
+}
+
+function renderTimelineRow(t, rangeStart) {
+  const startDateStr = t.startDate || t.endDate;
+  const endDateStr = t.endDate || t.startDate;
+  const ts = dateStrToDate(startDateStr);
+  const te = dateStrToDate(endDateStr);
+  if (!ts || !te) return '';
+
+  const dayMs = 86400000;
+  const rangeEnd = new Date(rangeStart); rangeEnd.setDate(rangeEnd.getDate() + TIMELINE_DAYS - 1);
+  const visStart = ts < rangeStart ? rangeStart : ts;
+  const visEnd = te > rangeEnd ? rangeEnd : te;
+  const startDay = Math.floor((visStart - rangeStart) / dayMs);
+  const endDay = Math.floor((visEnd - rangeStart) / dayMs);
+  const leftPct = (startDay / TIMELINE_DAYS) * 100;
+  const widthPct = ((endDay - startDay + 1) / TIMELINE_DAYS) * 100;
+
+  const p = t.priority || 'medium';
+  const dateText = formatDateChip(t.startDate, t.endDate) || '';
+  return `
+    <div class="t-row t-task-row">
+      <div class="t-name" title="${escapeHtml(t.title)}">${escapeHtml(t.title)}</div>
+      <div class="t-track">
+        <div class="t-bar priority-${p} ${t.status === 'done' ? 'done' : ''}"
+             style="left: ${leftPct}%; width: ${widthPct}%;"
+             data-id="${t.id}"
+             title="${escapeHtml(t.title)} — ${escapeHtml(dateText)}">
+          <span class="t-bar-label">${escapeHtml(t.title)}</span>
+        </div>
+      </div>
+    </div>`;
 }
 
 // --- Live subscriptions ---
@@ -1086,8 +1396,25 @@ document.addEventListener('keydown', e => {
     saveTask();
   }
 });
-document.getElementById('appFilter').addEventListener('change', render);
-document.getElementById('assigneeFilter').addEventListener('change', render);
+document.getElementById('appFilter').addEventListener('change', () => maybeRender());
+document.getElementById('assigneeFilter').addEventListener('change', () => maybeRender());
+
+// View toggle + timeline navigation
+document.querySelectorAll('.view-toggle').forEach(btn => {
+  btn.addEventListener('click', () => setView(btn.dataset.view));
+});
+document.getElementById('tlPrev').addEventListener('click', () => {
+  timelineStart.setDate(timelineStart.getDate() - 7);
+  renderTimeline();
+});
+document.getElementById('tlNext').addEventListener('click', () => {
+  timelineStart.setDate(timelineStart.getDate() + 7);
+  renderTimeline();
+});
+document.getElementById('tlToday').addEventListener('click', () => {
+  timelineStart = getMondayOf(new Date());
+  renderTimeline();
+});
 </script>
 </body>
 </html>
