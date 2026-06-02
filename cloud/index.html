@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>App Design Tasks</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #161a22;
+    --panel-2: #1c2230;
+    --border: #262d3d;
+    --text: #e6e9ef;
+    --muted: #8b94a7;
+    --accent: #7c9cff;
+    --accent-2: #5b7cf5;
+    --todo: #6b7a99;
+    --progress: #d4a017;
+    --done: #2faa6b;
+    --danger: #e05a5a;
+    --p-critical: #e05a5a;
+    --p-high: #e89a3d;
+    --p-medium: #5b8def;
+    --p-low: #8b94a7;
+    --shadow: 0 8px 24px rgba(0,0,0,0.35);
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f6f7fb; --panel: #ffffff; --panel-2: #f0f2f7;
+      --border: #dfe3ec; --text: #1a1d24; --muted: #687184;
+      --shadow: 0 4px 16px rgba(20,30,60,0.08);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 14px; height: 100%; }
+  body { display: flex; flex-direction: column; min-height: 100vh; }
+
+  header { display: flex; align-items: center; gap: 12px; padding: 12px 20px;
+    background: var(--panel); border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  header h1 { margin: 0; font-size: 16px; font-weight: 600; }
+  .mode-badge { font-size: 11px; padding: 3px 8px; border-radius: 10px;
+    background: var(--panel-2); color: var(--muted); border: 1px solid var(--border); }
+  .mode-badge.view { background: rgba(124,156,255,0.12); color: var(--accent); border-color: rgba(124,156,255,0.3); }
+  .user-chip { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+  .user-chip img { width: 20px; height: 20px; border-radius: 50%; }
+  .spacer { flex: 1; }
+  .filter-group { display: flex; align-items: center; gap: 8px; }
+  .filter-group label { font-size: 12px; color: var(--muted); }
+
+  select, input[type="text"], textarea, button {
+    background: var(--panel-2); color: var(--text); border: 1px solid var(--border);
+    border-radius: 6px; padding: 6px 10px; font-size: 13px; font-family: inherit; }
+  select:focus, input:focus, textarea:focus { outline: none; border-color: var(--accent); }
+  button { cursor: pointer; transition: background .15s, border-color .15s; }
+  button:hover { border-color: var(--accent); }
+  button.primary { background: var(--accent-2); border-color: var(--accent-2); color: white; }
+  button.primary:hover { background: var(--accent); border-color: var(--accent); }
+  button.danger { color: var(--danger); }
+  button.danger:hover { border-color: var(--danger); }
+  button.ghost { background: transparent; }
+
+  main { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+    padding: 16px 20px 20px; overflow: hidden; }
+  .column { background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    display: flex; flex-direction: column; min-height: 200px; overflow: hidden; }
+  .col-header { display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 14px; border-bottom: 1px solid var(--border); background: var(--panel-2); }
+  .col-title { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 13px; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .status-dot.todo { background: var(--todo); }
+  .status-dot.progress { background: var(--progress); }
+  .status-dot.done { background: var(--done); }
+  .col-count { font-size: 12px; color: var(--muted); background: var(--panel);
+    padding: 2px 8px; border-radius: 10px; border: 1px solid var(--border); }
+  .task-list { list-style: none; margin: 0; padding: 10px; flex: 1; overflow-y: auto; min-height: 100px; }
+  .task-list.drag-over { background: rgba(124,156,255,0.06); }
+
+  .task { background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 12px; margin-bottom: 8px; cursor: grab; position: relative;
+    transition: border-color .15s, box-shadow .15s; }
+  .task:hover { border-color: var(--accent); }
+  .task.dragging { opacity: 0.4; cursor: grabbing; }
+  .task.drop-before { box-shadow: 0 -2px 0 var(--accent); }
+  .task.drop-after { box-shadow: 0 2px 0 var(--accent); }
+  .task-title { font-size: 13px; font-weight: 500; margin-bottom: 4px; word-break: break-word; }
+  .task.done .task-title { text-decoration: line-through; color: var(--muted); }
+  .task-meta { display: flex; align-items: center; justify-content: space-between;
+    gap: 8px; font-size: 11px; color: var(--muted); }
+  .task-tags { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .task-app { background: rgba(124,156,255,0.12); color: var(--accent);
+    padding: 2px 8px; border-radius: 10px; font-weight: 500; }
+
+  .priority-chip { display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;
+    letter-spacing: .3px; text-transform: uppercase; }
+  .priority-chip::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .priority-chip.critical { color: var(--p-critical); background: rgba(224,90,90,.12); }
+  .priority-chip.high     { color: var(--p-high);     background: rgba(232,154,61,.14); }
+  .priority-chip.medium   { color: var(--p-medium);   background: rgba(91,141,239,.14); }
+  .priority-chip.low      { color: var(--p-low);      background: rgba(139,148,167,.16); }
+  .task.priority-critical { border-left: 3px solid var(--p-critical); }
+  .task.priority-high     { border-left: 3px solid var(--p-high); }
+  .task.priority-medium   { border-left: 3px solid var(--p-medium); }
+  .task.priority-low      { border-left: 3px solid var(--p-low); }
+
+  .task-actions { display: flex; gap: 4px; opacity: 0; transition: opacity .15s; }
+  .task:hover .task-actions { opacity: 1; }
+  .icon-btn { background: transparent; border: none; color: var(--muted);
+    padding: 2px 6px; border-radius: 4px; font-size: 12px; cursor: pointer; }
+  .icon-btn:hover { background: var(--panel); color: var(--text); }
+  .icon-btn.danger:hover { color: var(--danger); }
+  .empty { color: var(--muted); font-size: 12px; text-align: center; padding: 20px; font-style: italic; }
+
+  .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+    display: none; align-items: center; justify-content: center; z-index: 100; }
+  .modal-backdrop.open { display: flex; }
+  .modal { background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+    padding: 20px; width: min(480px, 90vw); box-shadow: var(--shadow); }
+  .modal h2 { margin: 0 0 14px; font-size: 15px; }
+  .field { margin-bottom: 12px; }
+  .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  .field input, .field textarea, .field select { width: 100%; }
+  .field textarea { min-height: 70px; resize: vertical; }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+  .modal small.hint { display: block; color: var(--muted); font-size: 11px; margin-top: 4px; }
+
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: var(--panel); border: 1px solid var(--border); padding: 10px 16px;
+    border-radius: 8px; box-shadow: var(--shadow); font-size: 13px;
+    opacity: 0; transition: opacity .2s, transform .2s; pointer-events: none; z-index: 200; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(-4px); }
+
+  body.view-mode .editor-only { display: none !important; }
+  body.view-mode .task { cursor: default; }
+  body.view-mode .task:hover { border-color: var(--border); }
+
+  /* Auth gate */
+  .gate { position: fixed; inset: 0; background: var(--bg); display: flex;
+    align-items: center; justify-content: center; z-index: 1000; }
+  .gate-card { background: var(--panel); border: 1px solid var(--border);
+    border-radius: 12px; padding: 32px; width: min(440px, 90vw);
+    box-shadow: var(--shadow); text-align: center; }
+  .gate-card h1 { margin: 0 0 8px; font-size: 18px; }
+  .gate-card p { color: var(--muted); margin: 0 0 20px; font-size: 13px; line-height: 1.5; }
+  .gate-card .err { color: var(--danger); font-size: 12px; margin-top: 12px; }
+
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>App Design Tasks</h1>
+  <span id="modeBadge" class="mode-badge">Editor</span>
+
+  <div class="spacer"></div>
+
+  <div class="filter-group">
+    <label for="appFilter">App</label>
+    <select id="appFilter">
+      <option value="__all__">All apps</option>
+    </select>
+  </div>
+
+  <button id="addBtn" class="primary editor-only">+ New task</button>
+  <button id="teamBtn" class="ghost editor-only" title="Manage who can see/edit">Team</button>
+  <span id="userChip" class="user-chip"></span>
+  <button id="signOutBtn" class="ghost">Sign out</button>
+</header>
+
+<main>
+  <section class="column" data-status="todo">
+    <div class="col-header">
+      <div class="col-title"><span class="status-dot todo"></span>To do</div>
+      <span class="col-count" data-count="todo">0</span>
+    </div>
+    <ul class="task-list" data-status="todo"></ul>
+  </section>
+
+  <section class="column" data-status="progress">
+    <div class="col-header">
+      <div class="col-title"><span class="status-dot progress"></span>In progress</div>
+      <span class="col-count" data-count="progress">0</span>
+    </div>
+    <ul class="task-list" data-status="progress"></ul>
+  </section>
+
+  <section class="column" data-status="done">
+    <div class="col-header">
+      <div class="col-title"><span class="status-dot done"></span>Done</div>
+      <span class="col-count" data-count="done">0</span>
+    </div>
+    <ul class="task-list" data-status="done"></ul>
+  </section>
+</main>
+
+<!-- Task modal -->
+<div class="modal-backdrop" id="modal">
+  <div class="modal">
+    <h2 id="modalTitle">New task</h2>
+    <div class="field">
+      <label for="taskTitle">Title</label>
+      <input type="text" id="taskTitle" placeholder="What needs to happen?" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="taskApp">App / project</label>
+      <input type="text" id="taskApp" placeholder="e.g. Accounting app, CRM, Internal portal" autocomplete="off" list="appList">
+      <datalist id="appList"></datalist>
+    </div>
+    <div class="field">
+      <label for="taskStatus">Status</label>
+      <select id="taskStatus">
+        <option value="todo">To do</option>
+        <option value="progress">In progress</option>
+        <option value="done">Done</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="taskPriority">Importance</label>
+      <select id="taskPriority">
+        <option value="critical">Critical</option>
+        <option value="high">High</option>
+        <option value="medium" selected>Medium</option>
+        <option value="low">Low</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button id="cancelBtn" class="ghost">Cancel</button>
+      <button id="saveBtn" class="primary">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Team modal -->
+<div class="modal-backdrop" id="teamModal">
+  <div class="modal">
+    <h2>Team access</h2>
+    <div class="field">
+      <label for="editorsField">Editors (one email per line)</label>
+      <textarea id="editorsField" placeholder="you@example.com"></textarea>
+      <small class="hint">Editors can add, edit, reorder, and delete tasks.</small>
+    </div>
+    <div class="field">
+      <label for="viewersField">Viewers (one email per line)</label>
+      <textarea id="viewersField" placeholder="teammate@example.com"></textarea>
+      <small class="hint">Viewers can see the board live but can't edit.</small>
+    </div>
+    <div class="modal-actions">
+      <button id="teamCancel" class="ghost">Cancel</button>
+      <button id="teamSave" class="primary">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Auth gate (shown until signed in + authorized) -->
+<div class="gate" id="gate">
+  <div class="gate-card">
+    <h1 id="gateTitle">App Design Tasks</h1>
+    <p id="gateMsg">Sign in with your Google account to continue.</p>
+    <button id="gateSignIn" class="primary">Sign in with Google</button>
+    <div id="gateErr" class="err"></div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+import {
+  getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+import {
+  getFirestore, collection, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc,
+  onSnapshot, query, serverTimestamp, writeBatch
+} from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+import { firebaseConfig } from "./firebase-config.js";
+
+const STATUSES = ['todo', 'progress', 'done'];
+const PRIORITY_RANK = { critical: 0, high: 1, medium: 2, low: 3 };
+const PRIORITY_LABEL = { critical: 'Critical', high: 'High', medium: 'Medium', low: 'Low' };
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const provider = new GoogleAuthProvider();
+
+let currentUser = null;
+let role = null; // 'editor' | 'viewer' | null
+let access = { editors: [], viewers: [] };
+let tasks = [];
+let editingId = null;
+let dragId = null;
+let unsubTasks = null;
+let unsubAccess = null;
+
+// --- Auth flow ---
+document.getElementById('gateSignIn').addEventListener('click', async () => {
+  document.getElementById('gateErr').textContent = '';
+  try { await signInWithPopup(auth, provider); }
+  catch (e) { showGateError(e.message); }
+});
+document.getElementById('signOutBtn').addEventListener('click', () => signOut(auth));
+
+onAuthStateChanged(auth, async (user) => {
+  currentUser = user;
+  if (!user) {
+    role = null;
+    cleanupSubs();
+    showGate('App Design Tasks', 'Sign in with your Google account to continue.', '');
+    return;
+  }
+  // Resolve role from /config/access
+  try {
+    const accessSnap = await getDoc(doc(db, 'config', 'access'));
+    if (!accessSnap.exists()) {
+      showGate('Setup needed', 'No team access list found. The first editor must create /config/access in the Firebase console — see firestore.rules.', user.email);
+      return;
+    }
+    access = accessSnap.data();
+    const email = (user.email || '').toLowerCase();
+    const editors = (access.editors || []).map(e => String(e).toLowerCase());
+    const viewers = (access.viewers || []).map(e => String(e).toLowerCase());
+    if (editors.includes(email)) role = 'editor';
+    else if (viewers.includes(email)) role = 'viewer';
+    else {
+      showGate('Access denied', `${user.email} isn't on the team list. Ask an editor to add you.`, '');
+      await signOut(auth); // sign out so they can re-try
+      return;
+    }
+  } catch (e) {
+    showGate('Could not load access list', e.message + ' — check Firestore rules.', '');
+    return;
+  }
+
+  hideGate();
+  setupUI();
+  subscribe();
+});
+
+function showGate(title, msg, err) {
+  document.getElementById('gateTitle').textContent = title;
+  document.getElementById('gateMsg').textContent = msg;
+  document.getElementById('gateErr').textContent = err || '';
+  document.getElementById('gate').style.display = 'flex';
+}
+function hideGate() { document.getElementById('gate').style.display = 'none'; }
+function showGateError(m) { document.getElementById('gateErr').textContent = m; }
+
+function setupUI() {
+  // Header user chip
+  const chip = document.getElementById('userChip');
+  const photo = currentUser.photoURL ? `<img src="${currentUser.photoURL}" alt="">` : '';
+  chip.innerHTML = `${photo}<span>${escapeHtml(currentUser.email)}</span>`;
+
+  const isViewer = role === 'viewer';
+  document.body.classList.toggle('view-mode', isViewer);
+  const badge = document.getElementById('modeBadge');
+  badge.textContent = isViewer ? 'View only' : 'Editor';
+  badge.classList.toggle('view', isViewer);
+}
+
+function cleanupSubs() {
+  if (unsubTasks) { unsubTasks(); unsubTasks = null; }
+  if (unsubAccess) { unsubAccess(); unsubAccess = null; }
+}
+
+// --- Live subscriptions ---
+function subscribe() {
+  cleanupSubs();
+  // Tasks
+  unsubTasks = onSnapshot(collection(db, 'tasks'), (snap) => {
+    tasks = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    if (!dragId && !document.getElementById('modal').classList.contains('open')) {
+      render();
+    } else {
+      // Defer: re-render after drag/edit completes
+      const checkRender = () => {
+        if (!dragId && !document.getElementById('modal').classList.contains('open')) render();
+        else setTimeout(checkRender, 200);
+      };
+      setTimeout(checkRender, 200);
+    }
+  }, (err) => toast('Sync error: ' + err.message));
+
+  // Access doc (editors can manage team)
+  unsubAccess = onSnapshot(doc(db, 'config', 'access'), (snap) => {
+    if (snap.exists()) access = snap.data();
+  });
+}
+
+// --- Rendering ---
+function getApps() {
+  return [...new Set(tasks.map(t => t.app).filter(Boolean))].sort();
+}
+
+function visibleTasks() {
+  const f = document.getElementById('appFilter').value;
+  return tasks.filter(t => f === '__all__' || t.app === f);
+}
+
+function render() {
+  // App filter
+  const filter = document.getElementById('appFilter');
+  const currentVal = filter.value || '__all__';
+  const apps = getApps();
+  filter.innerHTML = '<option value="__all__">All apps</option>' +
+    apps.map(a => `<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`).join('');
+  filter.value = apps.includes(currentVal) || currentVal === '__all__' ? currentVal : '__all__';
+  document.getElementById('appList').innerHTML =
+    apps.map(a => `<option value="${escapeHtml(a)}">`).join('');
+
+  const items = visibleTasks();
+  for (const status of STATUSES) {
+    const list = document.querySelector(`.task-list[data-status="${status}"]`);
+    const inCol = items.filter(t => t.status === status).sort((a, b) => {
+      const pa = PRIORITY_RANK[a.priority] ?? 2;
+      const pb = PRIORITY_RANK[b.priority] ?? 2;
+      if (pa !== pb) return pa - pb;
+      return (a.order ?? 0) - (b.order ?? 0);
+    });
+    document.querySelector(`[data-count="${status}"]`).textContent = inCol.length;
+    list.innerHTML = inCol.length === 0
+      ? `<li class="empty">No tasks</li>`
+      : inCol.map(renderTask).join('');
+  }
+  bindTaskEvents();
+}
+
+function renderTask(t) {
+  const p = t.priority || 'medium';
+  return `
+    <li class="task priority-${p} ${t.status === 'done' ? 'done' : ''}" draggable="true" data-id="${t.id}">
+      <div class="task-title">${escapeHtml(t.title)}</div>
+      <div class="task-meta">
+        <span class="task-tags">
+          <span class="priority-chip ${p}">${PRIORITY_LABEL[p]}</span>
+          ${t.app ? `<span class="task-app">${escapeHtml(t.app)}</span>` : ''}
+        </span>
+        <span class="task-actions editor-only">
+          <button class="icon-btn" data-action="edit" title="Edit">✎</button>
+          <button class="icon-btn danger" data-action="delete" title="Delete">×</button>
+        </span>
+      </div>
+    </li>`;
+}
+
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  })[c]);
+}
+
+function bindTaskEvents() {
+  document.querySelectorAll('.task').forEach(el => {
+    el.addEventListener('dragstart', onDragStart);
+    el.addEventListener('dragend', onDragEnd);
+    el.addEventListener('dragover', onTaskDragOver);
+    el.addEventListener('dragleave', onTaskDragLeave);
+    el.addEventListener('drop', onTaskDrop);
+    el.querySelectorAll('[data-action]').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        const id = el.dataset.id;
+        if (btn.dataset.action === 'edit') openModal(id);
+        if (btn.dataset.action === 'delete') deleteTaskById(id);
+      });
+    });
+  });
+}
+
+// --- Drag & drop ---
+function onDragStart(e) {
+  if (role !== 'editor') { e.preventDefault(); return; }
+  dragId = e.currentTarget.dataset.id;
+  e.currentTarget.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', dragId);
+}
+function onDragEnd(e) { e.currentTarget.classList.remove('dragging'); clearDropHints(); dragId = null; }
+function clearDropHints() {
+  document.querySelectorAll('.drop-before, .drop-after').forEach(el => el.classList.remove('drop-before', 'drop-after'));
+  document.querySelectorAll('.task-list.drag-over').forEach(el => el.classList.remove('drag-over'));
+}
+function onTaskDragOver(e) {
+  if (!dragId) return;
+  e.preventDefault();
+  const target = e.currentTarget;
+  if (target.dataset.id === dragId) return;
+  const rect = target.getBoundingClientRect();
+  const before = (e.clientY - rect.top) < rect.height / 2;
+  clearDropHints();
+  target.classList.add(before ? 'drop-before' : 'drop-after');
+}
+function onTaskDragLeave(e) { e.currentTarget.classList.remove('drop-before', 'drop-after'); }
+function onTaskDrop(e) {
+  e.preventDefault(); e.stopPropagation();
+  const target = e.currentTarget;
+  if (!dragId || target.dataset.id === dragId) return;
+  const before = target.classList.contains('drop-before');
+  const targetStatus = target.closest('.column').dataset.status;
+  moveTask(dragId, target.dataset.id, before, targetStatus);
+  clearDropHints();
+}
+
+document.querySelectorAll('.task-list').forEach(list => {
+  list.addEventListener('dragover', e => { if (dragId) { e.preventDefault(); list.classList.add('drag-over'); } });
+  list.addEventListener('dragleave', e => { if (e.target === list) list.classList.remove('drag-over'); });
+  list.addEventListener('drop', e => {
+    if (!dragId) return;
+    if (e.target.closest('.task')) return;
+    e.preventDefault();
+    moveTask(dragId, null, false, list.dataset.status);
+    clearDropHints();
+  });
+});
+
+async function moveTask(id, targetId, before, targetStatus) {
+  const task = tasks.find(t => t.id === id);
+  if (!task) return;
+  // Build the new order list for the destination column
+  const colSorted = tasks.filter(t => t.status === targetStatus && t.id !== id)
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  let insertAt = colSorted.length;
+  if (targetId) {
+    const idx = colSorted.findIndex(t => t.id === targetId);
+    if (idx >= 0) insertAt = before ? idx : idx + 1;
+  }
+  const reordered = [...colSorted.slice(0, insertAt), { ...task, status: targetStatus }, ...colSorted.slice(insertAt)];
+
+  // Batch write: status of moved + order of everyone in column
+  try {
+    const batch = writeBatch(db);
+    reordered.forEach((t, i) => {
+      const ref = doc(db, 'tasks', t.id);
+      const data = { order: i };
+      if (t.id === id) data.status = targetStatus;
+      batch.update(ref, data);
+    });
+    await batch.commit();
+  } catch (e) {
+    toast('Move failed: ' + e.message);
+  }
+}
+
+// --- Modal (create / edit) ---
+function openModal(id) {
+  if (role !== 'editor') return;
+  editingId = id || null;
+  const t = id ? tasks.find(x => x.id === id) : null;
+  document.getElementById('modalTitle').textContent = t ? 'Edit task' : 'New task';
+  document.getElementById('taskTitle').value = t ? t.title : '';
+  document.getElementById('taskApp').value = t ? (t.app || '') : '';
+  document.getElementById('taskStatus').value = t ? t.status : 'todo';
+  document.getElementById('taskPriority').value = t ? (t.priority || 'medium') : 'medium';
+  document.getElementById('modal').classList.add('open');
+  setTimeout(() => document.getElementById('taskTitle').focus(), 50);
+}
+function closeModal() { document.getElementById('modal').classList.remove('open'); editingId = null; }
+
+async function saveTask() {
+  const title = document.getElementById('taskTitle').value.trim();
+  const appName = document.getElementById('taskApp').value.trim();
+  const status = document.getElementById('taskStatus').value;
+  const priority = document.getElementById('taskPriority').value;
+  if (!title) return toast('Title required');
+
+  try {
+    if (editingId) {
+      const t = tasks.find(x => x.id === editingId);
+      const statusChanged = t && t.status !== status;
+      const update = { title, app: appName, priority };
+      if (statusChanged) {
+        update.status = status;
+        const colCount = tasks.filter(x => x.status === status && x.id !== editingId).length;
+        update.order = colCount;
+      }
+      await updateDoc(doc(db, 'tasks', editingId), update);
+    } else {
+      const colCount = tasks.filter(x => x.status === status).length;
+      await addDoc(collection(db, 'tasks'), {
+        title, app: appName, status, priority, order: colCount,
+        createdAt: serverTimestamp(),
+        createdBy: currentUser.email
+      });
+    }
+    closeModal();
+  } catch (e) {
+    toast('Save failed: ' + e.message);
+  }
+}
+
+async function deleteTaskById(id) {
+  if (!confirm('Delete this task?')) return;
+  try { await deleteDoc(doc(db, 'tasks', id)); }
+  catch (e) { toast('Delete failed: ' + e.message); }
+}
+
+// --- Team modal ---
+document.getElementById('teamBtn').addEventListener('click', () => {
+  document.getElementById('editorsField').value = (access.editors || []).join('\n');
+  document.getElementById('viewersField').value = (access.viewers || []).join('\n');
+  document.getElementById('teamModal').classList.add('open');
+});
+document.getElementById('teamCancel').addEventListener('click', () => {
+  document.getElementById('teamModal').classList.remove('open');
+});
+document.getElementById('teamSave').addEventListener('click', async () => {
+  const parse = v => v.split(/\r?\n/).map(s => s.trim().toLowerCase()).filter(Boolean);
+  const editors = parse(document.getElementById('editorsField').value);
+  const viewers = parse(document.getElementById('viewersField').value);
+  if (!editors.includes((currentUser.email || '').toLowerCase())) {
+    if (!confirm('Your email is not in the editors list — you will lose write access. Continue?')) return;
+  }
+  try {
+    await setDoc(doc(db, 'config', 'access'), { editors, viewers }, { merge: true });
+    document.getElementById('teamModal').classList.remove('open');
+    toast('Team updated');
+  } catch (e) {
+    toast('Save failed: ' + e.message);
+  }
+});
+
+// --- Toast ---
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+// --- Wire up ---
+document.getElementById('addBtn').addEventListener('click', () => openModal());
+document.getElementById('saveBtn').addEventListener('click', saveTask);
+document.getElementById('cancelBtn').addEventListener('click', closeModal);
+document.getElementById('modal').addEventListener('click', e => { if (e.target.id === 'modal') closeModal(); });
+document.getElementById('teamModal').addEventListener('click', e => {
+  if (e.target.id === 'teamModal') document.getElementById('teamModal').classList.remove('open');
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closeModal();
+    document.getElementById('teamModal').classList.remove('open');
+  }
+  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) &&
+      document.getElementById('modal').classList.contains('open')) {
+    saveTask();
+  }
+});
+document.getElementById('appFilter').addEventListener('change', render);
+</script>
+</body>
+</html>

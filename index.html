@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>App Design Tasks</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #161a22;
+    --panel-2: #1c2230;
+    --border: #262d3d;
+    --text: #e6e9ef;
+    --muted: #8b94a7;
+    --accent: #7c9cff;
+    --accent-2: #5b7cf5;
+    --todo: #6b7a99;
+    --progress: #d4a017;
+    --done: #2faa6b;
+    --danger: #e05a5a;
+    --p-critical: #e05a5a;
+    --p-high: #e89a3d;
+    --p-medium: #5b8def;
+    --p-low: #8b94a7;
+    --shadow: 0 8px 24px rgba(0,0,0,0.35);
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f6f7fb;
+      --panel: #ffffff;
+      --panel-2: #f0f2f7;
+      --border: #dfe3ec;
+      --text: #1a1d24;
+      --muted: #687184;
+      --shadow: 0 4px 16px rgba(20,30,60,0.08);
+    }
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 14px;
+    height: 100%;
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 20px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+
+  header h1 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+  }
+
+  .mode-badge {
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 10px;
+    background: var(--panel-2);
+    color: var(--muted);
+    border: 1px solid var(--border);
+  }
+  .mode-badge.view { background: rgba(124,156,255,0.12); color: var(--accent); border-color: rgba(124,156,255,0.3); }
+
+  .spacer { flex: 1; }
+
+  .filter-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .filter-group label {
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  select, input[type="text"], textarea, button {
+    background: var(--panel-2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 13px;
+    font-family: inherit;
+  }
+
+  select:focus, input:focus, textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  button {
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  button:hover { border-color: var(--accent); }
+  button.primary { background: var(--accent-2); border-color: var(--accent-2); color: white; }
+  button.primary:hover { background: var(--accent); border-color: var(--accent); }
+  button.danger { color: var(--danger); }
+  button.danger:hover { border-color: var(--danger); }
+  button.ghost { background: transparent; }
+
+  main {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    padding: 16px 20px 20px;
+    overflow: hidden;
+  }
+
+  .column {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    min-height: 200px;
+    overflow: hidden;
+  }
+
+  .col-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    background: var(--panel-2);
+  }
+
+  .col-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 13px;
+  }
+
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+  .status-dot.todo { background: var(--todo); }
+  .status-dot.progress { background: var(--progress); }
+  .status-dot.done { background: var(--done); }
+
+  .col-count {
+    font-size: 12px;
+    color: var(--muted);
+    background: var(--panel);
+    padding: 2px 8px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+  }
+
+  .task-list {
+    list-style: none;
+    margin: 0;
+    padding: 10px;
+    flex: 1;
+    overflow-y: auto;
+    min-height: 100px;
+  }
+
+  .task-list.drag-over {
+    background: rgba(124,156,255,0.06);
+  }
+
+  .task {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    cursor: grab;
+    transition: border-color 0.15s, transform 0.05s, box-shadow 0.15s;
+    position: relative;
+  }
+  .task:hover { border-color: var(--accent); }
+  .task.dragging {
+    opacity: 0.4;
+    cursor: grabbing;
+  }
+  .task.drop-before { box-shadow: 0 -2px 0 var(--accent); }
+  .task.drop-after { box-shadow: 0 2px 0 var(--accent); }
+
+  .task-title {
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 4px;
+    word-break: break-word;
+  }
+  .task.done .task-title {
+    text-decoration: line-through;
+    color: var(--muted);
+  }
+
+  .task-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .task-app {
+    background: rgba(124,156,255,0.12);
+    color: var(--accent);
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 500;
+  }
+
+  .task-tags {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .priority-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+  }
+  .priority-chip::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+  .priority-chip.critical { color: var(--p-critical); background: rgba(224,90,90,0.12); }
+  .priority-chip.high     { color: var(--p-high);     background: rgba(232,154,61,0.14); }
+  .priority-chip.medium   { color: var(--p-medium);   background: rgba(91,141,239,0.14); }
+  .priority-chip.low      { color: var(--p-low);      background: rgba(139,148,167,0.16); }
+
+  .task.priority-critical { border-left: 3px solid var(--p-critical); }
+  .task.priority-high     { border-left: 3px solid var(--p-high); }
+  .task.priority-medium   { border-left: 3px solid var(--p-medium); }
+  .task.priority-low      { border-left: 3px solid var(--p-low); }
+
+  .task-actions {
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .task:hover .task-actions { opacity: 1; }
+
+  .icon-btn {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .icon-btn:hover { background: var(--panel); color: var(--text); }
+  .icon-btn.danger:hover { color: var(--danger); }
+
+  .empty {
+    color: var(--muted);
+    font-size: 12px;
+    text-align: center;
+    padding: 20px;
+    font-style: italic;
+  }
+
+  /* Modal */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    width: min(480px, 90vw);
+    box-shadow: var(--shadow);
+  }
+  .modal h2 { margin: 0 0 14px; font-size: 15px; }
+  .field { margin-bottom: 12px; }
+  .field label {
+    display: block;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .field input, .field textarea, .field select {
+    width: 100%;
+  }
+  .field textarea {
+    min-height: 70px;
+    resize: vertical;
+    font-family: inherit;
+  }
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 16px;
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 10px 16px;
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    font-size: 13px;
+    opacity: 0;
+    transition: opacity 0.2s, transform 0.2s;
+    pointer-events: none;
+    z-index: 200;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-4px);
+  }
+
+  /* View mode */
+  body.view-mode .editor-only { display: none !important; }
+  body.view-mode .task { cursor: default; }
+  body.view-mode .task:hover { border-color: var(--border); }
+
+  @media (max-width: 900px) {
+    main { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>App Design Tasks</h1>
+  <span id="modeBadge" class="mode-badge">Editor</span>
+
+  <div class="spacer"></div>
+
+  <div class="filter-group">
+    <label for="appFilter">App</label>
+    <select id="appFilter">
+      <option value="__all__">All apps</option>
+    </select>
+  </div>
+
+  <button id="addBtn" class="primary editor-only">+ New task</button>
+  <button id="exportBtn" class="ghost" title="Download JSON backup">Export</button>
+  <button id="importBtn" class="ghost editor-only" title="Restore from JSON">Import</button>
+  <button id="viewToggle" class="ghost" title="Toggle view-only mode for sharing">View mode</button>
+  <input type="file" id="importInput" accept="application/json" style="display:none">
+</header>
+
+<main>
+  <section class="column" data-status="todo">
+    <div class="col-header">
+      <div class="col-title"><span class="status-dot todo"></span>To do</div>
+      <span class="col-count" data-count="todo">0</span>
+    </div>
+    <ul class="task-list" data-status="todo"></ul>
+  </section>
+
+  <section class="column" data-status="progress">
+    <div class="col-header">
+      <div class="col-title"><span class="status-dot progress"></span>In progress</div>
+      <span class="col-count" data-count="progress">0</span>
+    </div>
+    <ul class="task-list" data-status="progress"></ul>
+  </section>
+
+  <section class="column" data-status="done">
+    <div class="col-header">
+      <div class="col-title"><span class="status-dot done"></span>Done</div>
+      <span class="col-count" data-count="done">0</span>
+    </div>
+    <ul class="task-list" data-status="done"></ul>
+  </section>
+</main>
+
+<div class="modal-backdrop" id="modal">
+  <div class="modal">
+    <h2 id="modalTitle">New task</h2>
+    <div class="field">
+      <label for="taskTitle">Title</label>
+      <input type="text" id="taskTitle" placeholder="What needs to happen?" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="taskApp">App / project</label>
+      <input type="text" id="taskApp" placeholder="e.g. Accounting app, CRM, Internal portal" autocomplete="off" list="appList">
+      <datalist id="appList"></datalist>
+    </div>
+    <div class="field">
+      <label for="taskStatus">Status</label>
+      <select id="taskStatus">
+        <option value="todo">To do</option>
+        <option value="progress">In progress</option>
+        <option value="done">Done</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="taskPriority">Importance</label>
+      <select id="taskPriority">
+        <option value="critical">Critical</option>
+        <option value="high">High</option>
+        <option value="medium" selected>Medium</option>
+        <option value="low">Low</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button id="cancelBtn" class="ghost">Cancel</button>
+      <button id="saveBtn" class="primary">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+  const STORAGE_KEY = 'app-design-tasks-v1';
+  const STATUSES = ['todo', 'progress', 'done'];
+  const PRIORITY_RANK = { critical: 0, high: 1, medium: 2, low: 3 };
+  const PRIORITY_LABEL = { critical: 'Critical', high: 'High', medium: 'Medium', low: 'Low' };
+
+  // Mode: API when served over http(s), localStorage when opened as a file
+  const IS_API = location.protocol === 'http:' || location.protocol === 'https:';
+  const params = new URLSearchParams(location.search);
+  const TOKEN = params.get('token') || '';
+  const CLIENT_ID = Math.random().toString(36).slice(2, 10);
+
+  let state = { tasks: [] };
+  let editingId = null;
+  let dragId = null;
+  let saveTimer = null;
+
+  function loadLocal() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    return { tasks: [] };
+  }
+
+  async function loadRemote() {
+    const res = await fetch(`/api/tasks?token=${encodeURIComponent(TOKEN)}`);
+    if (res.status === 401) throw new Error('unauthorized');
+    if (!res.ok) throw new Error('load failed');
+    return res.json();
+  }
+
+  function save() {
+    if (IS_API) {
+      // Debounce rapid edits (drag, etc.) into one POST
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(pushRemote, 150);
+      return;
+    }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }
+
+  async function pushRemote() {
+    try {
+      const res = await fetch(`/api/tasks?token=${encodeURIComponent(TOKEN)}&cid=${CLIENT_ID}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(state),
+      });
+      if (!res.ok) toast('Save failed — check connection');
+    } catch (e) {
+      toast('Offline — change not saved');
+    }
+  }
+
+  function uid() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  }
+
+  function toast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => t.classList.remove('show'), 1800);
+  }
+
+  function setViewMode(on) {
+    document.body.classList.toggle('view-mode', on);
+    const badge = document.getElementById('modeBadge');
+    badge.textContent = on ? 'View only' : 'Editor';
+    badge.classList.toggle('view', on);
+    document.getElementById('viewToggle').textContent = on ? 'Exit view mode' : 'View mode';
+  }
+
+  function getApps() {
+    return [...new Set(state.tasks.map(t => t.app).filter(Boolean))].sort();
+  }
+
+  function currentFilter() {
+    return document.getElementById('appFilter').value;
+  }
+
+  function visibleTasks() {
+    const f = currentFilter();
+    return state.tasks.filter(t => f === '__all__' || t.app === f);
+  }
+
+  function render() {
+    // App filter dropdown
+    const filter = document.getElementById('appFilter');
+    const currentVal = filter.value || '__all__';
+    const apps = getApps();
+    filter.innerHTML = '<option value="__all__">All apps</option>' +
+      apps.map(a => `<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`).join('');
+    filter.value = apps.includes(currentVal) || currentVal === '__all__' ? currentVal : '__all__';
+
+    // Datalist for the modal
+    document.getElementById('appList').innerHTML =
+      apps.map(a => `<option value="${escapeHtml(a)}">`).join('');
+
+    // Columns — sort by priority first, then by manual order
+    const tasks = visibleTasks();
+    for (const status of STATUSES) {
+      const list = document.querySelector(`.task-list[data-status="${status}"]`);
+      const items = tasks.filter(t => t.status === status).sort((a, b) => {
+        const pa = PRIORITY_RANK[a.priority] ?? 2;
+        const pb = PRIORITY_RANK[b.priority] ?? 2;
+        if (pa !== pb) return pa - pb;
+        return a.order - b.order;
+      });
+      document.querySelector(`[data-count="${status}"]`).textContent = items.length;
+      if (items.length === 0) {
+        list.innerHTML = `<li class="empty">No tasks</li>`;
+        continue;
+      }
+      list.innerHTML = items.map(renderTask).join('');
+    }
+    bindTaskEvents();
+  }
+
+  function renderTask(t) {
+    const p = t.priority || 'medium';
+    return `
+      <li class="task priority-${p} ${t.status === 'done' ? 'done' : ''}" draggable="true" data-id="${t.id}">
+        <div class="task-title">${escapeHtml(t.title)}</div>
+        <div class="task-meta">
+          <span class="task-tags">
+            <span class="priority-chip ${p}">${PRIORITY_LABEL[p]}</span>
+            ${t.app ? `<span class="task-app">${escapeHtml(t.app)}</span>` : ''}
+          </span>
+          <span class="task-actions editor-only">
+            <button class="icon-btn" data-action="edit" title="Edit">✎</button>
+            <button class="icon-btn danger" data-action="delete" title="Delete">×</button>
+          </span>
+        </div>
+      </li>
+    `;
+  }
+
+  function escapeHtml(s) {
+    return String(s ?? '').replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    })[c]);
+  }
+
+  function bindTaskEvents() {
+    document.querySelectorAll('.task').forEach(el => {
+      el.addEventListener('dragstart', onDragStart);
+      el.addEventListener('dragend', onDragEnd);
+      el.addEventListener('dragover', onTaskDragOver);
+      el.addEventListener('dragleave', onTaskDragLeave);
+      el.addEventListener('drop', onTaskDrop);
+      el.querySelectorAll('[data-action]').forEach(btn => {
+        btn.addEventListener('click', e => {
+          e.stopPropagation();
+          const id = el.dataset.id;
+          const action = btn.dataset.action;
+          if (action === 'edit') openModal(id);
+          if (action === 'delete') deleteTask(id);
+        });
+      });
+    });
+  }
+
+  // Drag and drop
+  function onDragStart(e) {
+    if (document.body.classList.contains('view-mode')) {
+      e.preventDefault();
+      return;
+    }
+    dragId = e.currentTarget.dataset.id;
+    e.currentTarget.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', dragId);
+  }
+
+  function onDragEnd(e) {
+    e.currentTarget.classList.remove('dragging');
+    clearDropHints();
+    dragId = null;
+  }
+
+  function clearDropHints() {
+    document.querySelectorAll('.drop-before, .drop-after').forEach(el => {
+      el.classList.remove('drop-before', 'drop-after');
+    });
+    document.querySelectorAll('.task-list.drag-over').forEach(el => {
+      el.classList.remove('drag-over');
+    });
+  }
+
+  function onTaskDragOver(e) {
+    if (!dragId) return;
+    e.preventDefault();
+    const target = e.currentTarget;
+    if (target.dataset.id === dragId) return;
+    const rect = target.getBoundingClientRect();
+    const before = (e.clientY - rect.top) < rect.height / 2;
+    clearDropHints();
+    target.classList.add(before ? 'drop-before' : 'drop-after');
+  }
+
+  function onTaskDragLeave(e) {
+    e.currentTarget.classList.remove('drop-before', 'drop-after');
+  }
+
+  function onTaskDrop(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    const target = e.currentTarget;
+    if (!dragId || target.dataset.id === dragId) return;
+    const before = target.classList.contains('drop-before');
+    const targetStatus = target.closest('.column').dataset.status;
+    moveTask(dragId, target.dataset.id, before, targetStatus);
+    clearDropHints();
+  }
+
+  // Column drop (empty area / append)
+  document.querySelectorAll('.task-list').forEach(list => {
+    list.addEventListener('dragover', e => {
+      if (!dragId) return;
+      e.preventDefault();
+      list.classList.add('drag-over');
+    });
+    list.addEventListener('dragleave', e => {
+      if (e.target === list) list.classList.remove('drag-over');
+    });
+    list.addEventListener('drop', e => {
+      if (!dragId) return;
+      // Only handle drop on empty space (not bubbled from task)
+      if (e.target.closest('.task')) return;
+      e.preventDefault();
+      const targetStatus = list.dataset.status;
+      moveTask(dragId, null, false, targetStatus);
+      clearDropHints();
+    });
+  });
+
+  function moveTask(id, targetId, before, targetStatus) {
+    const task = state.tasks.find(t => t.id === id);
+    if (!task) return;
+    task.status = targetStatus;
+
+    // Reorder: pull task out, re-insert relative to target
+    const same = state.tasks.filter(t => t.status === targetStatus && t.id !== id)
+      .sort((a, b) => a.order - b.order);
+
+    let insertAt = same.length;
+    if (targetId) {
+      const idx = same.findIndex(t => t.id === targetId);
+      if (idx >= 0) insertAt = before ? idx : idx + 1;
+    }
+    same.splice(insertAt, 0, task);
+    same.forEach((t, i) => { t.order = i; });
+
+    save();
+    render();
+  }
+
+  // Modal
+  function openModal(id) {
+    if (document.body.classList.contains('view-mode')) return;
+    editingId = id || null;
+    const t = id ? state.tasks.find(x => x.id === id) : null;
+    document.getElementById('modalTitle').textContent = t ? 'Edit task' : 'New task';
+    document.getElementById('taskTitle').value = t ? t.title : '';
+    document.getElementById('taskApp').value = t ? (t.app || '') : '';
+    document.getElementById('taskStatus').value = t ? t.status : 'todo';
+    document.getElementById('taskPriority').value = t ? (t.priority || 'medium') : 'medium';
+    document.getElementById('modal').classList.add('open');
+    setTimeout(() => document.getElementById('taskTitle').focus(), 50);
+  }
+
+  function closeModal() {
+    document.getElementById('modal').classList.remove('open');
+    editingId = null;
+  }
+
+  function saveTask() {
+    const title = document.getElementById('taskTitle').value.trim();
+    const app = document.getElementById('taskApp').value.trim();
+    const status = document.getElementById('taskStatus').value;
+    const priority = document.getElementById('taskPriority').value;
+    if (!title) {
+      toast('Title required');
+      return;
+    }
+    if (editingId) {
+      const t = state.tasks.find(x => x.id === editingId);
+      if (t) {
+        const statusChanged = t.status !== status;
+        t.title = title;
+        t.app = app;
+        t.priority = priority;
+        if (statusChanged) {
+          t.status = status;
+          // Push to bottom of new column
+          const colTasks = state.tasks.filter(x => x.status === status && x.id !== t.id);
+          t.order = colTasks.length;
+        }
+      }
+    } else {
+      const colCount = state.tasks.filter(x => x.status === status).length;
+      state.tasks.push({
+        id: uid(),
+        title, app, status, priority,
+        order: colCount,
+        createdAt: Date.now()
+      });
+    }
+    save();
+    render();
+    closeModal();
+  }
+
+  function deleteTask(id) {
+    if (!confirm('Delete this task?')) return;
+    state.tasks = state.tasks.filter(t => t.id !== id);
+    save();
+    render();
+  }
+
+  // Export / Import
+  function exportJson() {
+    const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const stamp = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = `app-tasks-${stamp}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast('Exported');
+  }
+
+  function importJson(file) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(reader.result);
+        if (!parsed || !Array.isArray(parsed.tasks)) throw new Error('bad format');
+        if (!confirm(`Replace current ${state.tasks.length} task(s) with ${parsed.tasks.length} from file?`)) return;
+        state = parsed;
+        save();
+        render();
+        toast('Imported');
+      } catch (e) {
+        toast('Invalid file');
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  // Wire up
+  document.getElementById('addBtn').addEventListener('click', () => openModal());
+  document.getElementById('saveBtn').addEventListener('click', saveTask);
+  document.getElementById('cancelBtn').addEventListener('click', closeModal);
+  document.getElementById('modal').addEventListener('click', e => {
+    if (e.target.id === 'modal') closeModal();
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeModal();
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && document.getElementById('modal').classList.contains('open')) {
+      saveTask();
+    }
+  });
+
+  document.getElementById('appFilter').addEventListener('change', render);
+
+  document.getElementById('exportBtn').addEventListener('click', exportJson);
+  document.getElementById('importBtn').addEventListener('click', () => {
+    document.getElementById('importInput').click();
+  });
+  document.getElementById('importInput').addEventListener('change', e => {
+    if (e.target.files[0]) importJson(e.target.files[0]);
+    e.target.value = '';
+  });
+
+  document.getElementById('viewToggle').addEventListener('click', () => {
+    setViewMode(!document.body.classList.contains('view-mode'));
+  });
+
+  // --- Startup ---
+  async function init() {
+    // URL ?view=1 forces view-only locally (works in both modes)
+    if (params.get('view') === '1') setViewMode(true);
+
+    if (IS_API) {
+      if (!TOKEN) {
+        const t = prompt('Access token required:');
+        if (t) {
+          params.set('token', t);
+          location.search = params.toString();
+        }
+        return;
+      }
+
+      // Check role to decide editor vs viewer
+      try {
+        const who = await fetch(`/api/whoami?token=${encodeURIComponent(TOKEN)}`).then(r => r.json());
+        if (who.role === 'viewer') setViewMode(true);
+      } catch (e) {
+        toast('Server unreachable');
+        return;
+      }
+
+      try {
+        state = await loadRemote();
+      } catch (e) {
+        alert('Could not load tasks: ' + e.message + '\n\nIf your token changed, edit the URL.');
+        return;
+      }
+
+      // Migrate any pre-priority tasks once (editor only)
+      let migrated = false;
+      state.tasks.forEach(t => { if (!t.priority) { t.priority = 'medium'; migrated = true; } });
+      if (migrated && !document.body.classList.contains('view-mode')) save();
+
+      render();
+
+      // Subscribe to live updates from other clients
+      const es = new EventSource(`/api/stream?token=${encodeURIComponent(TOKEN)}`);
+      es.onmessage = (ev) => {
+        try {
+          const incoming = JSON.parse(ev.data);
+          if (!incoming || !Array.isArray(incoming.tasks)) return;
+          // Skip echo of our own write
+          if (incoming._from && incoming._from === CLIENT_ID) return;
+          // Don't yank the UI while user is dragging or editing
+          if (dragId) return;
+          if (document.getElementById('modal').classList.contains('open')) return;
+          state = { tasks: incoming.tasks };
+          render();
+        } catch {}
+      };
+      es.onerror = () => { /* EventSource auto-reconnects */ };
+      return;
+    }
+
+    // File mode: localStorage
+    state = loadLocal();
+    let migrated = false;
+    state.tasks.forEach(t => { if (!t.priority) { t.priority = 'medium'; migrated = true; } });
+    if (migrated) save();
+
+    if (state.tasks.length === 0) {
+      state.tasks = [
+        { id: uid(), title: 'Sketch dashboard layout', app: 'Internal portal', status: 'todo', priority: 'high', order: 0, createdAt: Date.now() },
+        { id: uid(), title: 'Decide on icon library', app: 'Internal portal', status: 'todo', priority: 'low', order: 1, createdAt: Date.now() },
+        { id: uid(), title: 'Wire up auth flow', app: 'Internal portal', status: 'progress', priority: 'critical', order: 0, createdAt: Date.now() },
+        { id: uid(), title: 'Pick CSS framework', app: 'CRM', status: 'done', priority: 'medium', order: 0, createdAt: Date.now() },
+      ];
+      save();
+    }
+    render();
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>

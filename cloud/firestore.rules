@@ -1,0 +1,39 @@
+// Paste this into your Firebase project:
+//   Firestore Database -> Rules tab -> overwrite -> Publish
+//
+// Model:
+//   - /config/access is a single document holding the team:
+//       editors: [<email>, ...]   can read + write tasks
+//       viewers: [<email>, ...]   can read only
+//   - /tasks/{id} is one task per document.
+//
+// Bootstrap (one time, in the Firestore console):
+//   - Manually create a document at path: config/access
+//   - Add field `editors` (array of strings) with at least YOUR email
+//   - Optionally add `viewers` (array of strings)
+//   - Without this doc, nobody can read anything (intentional).
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() { return request.auth != null; }
+    function userEmail() { return request.auth.token.email; }
+    function accessDoc() { return get(/databases/$(database)/documents/config/access).data; }
+    function emailIn(field) {
+      return accessDoc()[field] is list && userEmail() in accessDoc()[field];
+    }
+    function isEditor() { return isSignedIn() && emailIn('editors'); }
+    function isViewer() { return isSignedIn() && (emailIn('editors') || emailIn('viewers')); }
+
+    match /config/access {
+      allow read: if isSignedIn();
+      allow write: if isEditor();
+    }
+
+    match /tasks/{taskId} {
+      allow read: if isViewer();
+      allow create, update, delete: if isEditor();
+    }
+  }
+}

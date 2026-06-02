@@ -1,0 +1,16 @@
+# Runtime data — your local tasks (LAN server mode)
+data.json
+data.json.tmp
+
+# Secrets — auto-generated server tokens (LAN server mode)
+.tokens.json
+
+# Local Claude Code config
+.claude/
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
