@@ -105,6 +105,46 @@
   .task.priority-medium   { border-left: 3px solid var(--p-medium); }
   .task.priority-low      { border-left: 3px solid var(--p-low); }
 
+  /* Assignee avatars (on task cards) */
+  .task-assignees { display: inline-flex; align-items: center; }
+  .avatar {
+    width: 20px; height: 20px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 9px; font-weight: 700; color: white; letter-spacing: 0.2px;
+    border: 2px solid var(--panel-2);
+    margin-left: -6px;
+  }
+  .avatar:first-child { margin-left: 0; }
+
+  /* Assignee picker (in task modal) */
+  .assignee-picker {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    padding: 8px;
+    border: 1px solid var(--border); border-radius: 6px;
+    background: var(--panel-2);
+    min-height: 40px;
+  }
+  .assignee-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 3px 10px 3px 3px;
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 14px; font-size: 12px;
+    cursor: pointer; user-select: none;
+    transition: border-color .15s, background .15s;
+  }
+  .assignee-pill:hover { border-color: var(--accent); }
+  .assignee-pill.selected {
+    background: rgba(124,156,255,0.12);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .assignee-pill .avatar { margin: 0; width: 18px; height: 18px; border-width: 0; }
+  .assignee-pill.empty {
+    color: var(--muted); font-style: italic;
+    padding: 4px 10px; cursor: default; background: transparent; border: none;
+  }
+  .assignee-pill.empty:hover { border-color: transparent; }
+
   .task-actions { display: flex; gap: 4px; opacity: 0; transition: opacity .15s; }
   .task:hover .task-actions { opacity: 1; }
   .icon-btn { background: transparent; border: none; color: var(--muted);
@@ -161,6 +201,15 @@
     <label for="appFilter">App</label>
     <select id="appFilter">
       <option value="__all__">All apps</option>
+    </select>
+  </div>
+
+  <div class="filter-group">
+    <label for="assigneeFilter">Assigned to</label>
+    <select id="assigneeFilter">
+      <option value="__all__">Anyone</option>
+      <option value="__me__">Me</option>
+      <option value="__none__">Unassigned</option>
     </select>
   </div>
 
@@ -226,6 +275,11 @@
         <option value="low">Low</option>
       </select>
     </div>
+    <div class="field">
+      <label>Assignees</label>
+      <div class="assignee-picker" id="assigneePicker"></div>
+      <small class="hint">Click a teammate to toggle. Multiple people can own the same task.</small>
+    </div>
     <div class="modal-actions">
       <button id="cancelBtn" class="ghost">Cancel</button>
       <button id="saveBtn" class="primary">Save</button>
@@ -280,6 +334,30 @@ import { firebaseConfig } from "./firebase-config.js";
 const STATUSES = ['todo', 'progress', 'done'];
 const PRIORITY_RANK = { critical: 0, high: 1, medium: 2, low: 3 };
 const PRIORITY_LABEL = { critical: 'Critical', high: 'High', medium: 'Medium', low: 'Low' };
+const AVATAR_PALETTE = ['#e05a5a', '#e89a3d', '#d4a017', '#5b8def', '#7c9cff', '#2faa6b', '#34a0a4', '#9b59b6', '#c77dff'];
+
+function getTeam() {
+  const editors = (access.editors || []).map(e => String(e).toLowerCase());
+  const viewers = (access.viewers || []).map(e => String(e).toLowerCase());
+  return [...new Set([...editors, ...viewers])].sort();
+}
+function emailShort(email) { return String(email || '').split('@')[0]; }
+function initialsFor(email) {
+  const local = String(email || '').split('@')[0];
+  if (!local) return '?';
+  const parts = local.split(/[._\-+]+/).filter(Boolean);
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+  return local.slice(0, 2).toUpperCase();
+}
+function colorFor(email) {
+  const e = String(email || '').toLowerCase();
+  let hash = 0;
+  for (let i = 0; i < e.length; i++) hash = ((hash << 5) - hash + e.charCodeAt(i)) | 0;
+  return AVATAR_PALETTE[Math.abs(hash) % AVATAR_PALETTE.length];
+}
+function avatarHtml(email) {
+  return `<span class="avatar" style="background:${colorFor(email)}" title="${escapeHtml(email)}">${escapeHtml(initialsFor(email))}</span>`;
+}
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -396,8 +474,17 @@ function getApps() {
 }
 
 function visibleTasks() {
-  const f = document.getElementById('appFilter').value;
-  return tasks.filter(t => f === '__all__' || t.app === f);
+  const appF = document.getElementById('appFilter').value;
+  const assF = document.getElementById('assigneeFilter').value;
+  const me = (currentUser?.email || '').toLowerCase();
+  return tasks.filter(t => {
+    if (appF !== '__all__' && t.app !== appF) return false;
+    const assignees = (t.assignees || []).map(e => String(e).toLowerCase());
+    if (assF === '__all__') return true;
+    if (assF === '__me__') return assignees.includes(me);
+    if (assF === '__none__') return assignees.length === 0;
+    return assignees.includes(assF.toLowerCase());
+  });
 }
 
 function render() {
@@ -410,6 +497,19 @@ function render() {
   filter.value = apps.includes(currentVal) || currentVal === '__all__' ? currentVal : '__all__';
   document.getElementById('appList').innerHTML =
     apps.map(a => `<option value="${escapeHtml(a)}">`).join('');
+
+  // Assignee filter — repopulate with current team members
+  const assFilter = document.getElementById('assigneeFilter');
+  const assCurrent = assFilter.value || '__all__';
+  const team = getTeam();
+  const me = (currentUser?.email || '').toLowerCase();
+  assFilter.innerHTML =
+    '<option value="__all__">Anyone</option>' +
+    (team.includes(me) ? '<option value="__me__">Me</option>' : '') +
+    '<option value="__none__">Unassigned</option>' +
+    team.map(e => `<option value="${escapeHtml(e)}">${escapeHtml(emailShort(e))}</option>`).join('');
+  const validValues = new Set(['__all__', '__me__', '__none__', ...team]);
+  assFilter.value = validValues.has(assCurrent) ? assCurrent : '__all__';
 
   const items = visibleTasks();
   for (const status of STATUSES) {
@@ -434,6 +534,10 @@ function render() {
 
 function renderTask(t) {
   const p = t.priority || 'medium';
+  const assignees = Array.isArray(t.assignees) ? t.assignees : [];
+  const avatars = assignees.length
+    ? `<span class="task-assignees">${assignees.map(avatarHtml).join('')}</span>`
+    : '';
   return `
     <li class="task priority-${p} ${t.status === 'done' ? 'done' : ''}" draggable="true" data-id="${t.id}">
       <div class="task-title">${escapeHtml(t.title)}</div>
@@ -441,6 +545,7 @@ function renderTask(t) {
         <span class="task-tags">
           <span class="priority-chip ${p}">${PRIORITY_LABEL[p]}</span>
           ${t.app ? `<span class="task-app">${escapeHtml(t.app)}</span>` : ''}
+          ${avatars}
         </span>
         <span class="task-actions editor-only">
           <button class="icon-btn" data-action="edit" title="Edit">✎</button>
@@ -454,6 +559,31 @@ function escapeHtml(s) {
   return String(s ?? '').replace(/[&<>"']/g, c => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
   })[c]);
+}
+
+function renderAssigneePicker(selectedEmails) {
+  const picker = document.getElementById('assigneePicker');
+  const team = getTeam();
+  const sel = new Set((selectedEmails || []).map(e => String(e).toLowerCase()));
+  if (team.length === 0) {
+    picker.innerHTML = '<span class="assignee-pill empty">No team members yet — add them via the Team button.</span>';
+    return;
+  }
+  picker.innerHTML = team.map(email => {
+    const isSel = sel.has(email);
+    return `<span class="assignee-pill ${isSel ? 'selected' : ''}" data-email="${escapeHtml(email)}">
+      <span class="avatar" style="background:${colorFor(email)}">${escapeHtml(initialsFor(email))}</span>
+      <span>${escapeHtml(emailShort(email))}</span>
+    </span>`;
+  }).join('');
+  picker.querySelectorAll('.assignee-pill').forEach(el => {
+    el.addEventListener('click', () => el.classList.toggle('selected'));
+  });
+}
+
+function readAssigneePicker() {
+  return [...document.querySelectorAll('#assigneePicker .assignee-pill.selected')]
+    .map(el => el.dataset.email.toLowerCase());
 }
 
 function bindTaskEvents() {
@@ -558,6 +688,7 @@ function openModal(id) {
   document.getElementById('taskApp').value = t ? (t.app || '') : '';
   document.getElementById('taskStatus').value = t ? t.status : 'todo';
   document.getElementById('taskPriority').value = t ? (t.priority || 'medium') : 'medium';
+  renderAssigneePicker(t ? (t.assignees || []) : []);
   document.getElementById('modal').classList.add('open');
   setTimeout(() => document.getElementById('taskTitle').focus(), 50);
 }
@@ -568,13 +699,14 @@ async function saveTask() {
   const appName = document.getElementById('taskApp').value.trim();
   const status = document.getElementById('taskStatus').value;
   const priority = document.getElementById('taskPriority').value;
+  const assignees = readAssigneePicker();
   if (!title) return toast('Title required');
 
   try {
     if (editingId) {
       const t = tasks.find(x => x.id === editingId);
       const statusChanged = t && t.status !== status;
-      const update = { title, app: appName, priority };
+      const update = { title, app: appName, priority, assignees };
       if (statusChanged) {
         update.status = status;
         const colCount = tasks.filter(x => x.status === status && x.id !== editingId).length;
@@ -584,7 +716,7 @@ async function saveTask() {
     } else {
       const colCount = tasks.filter(x => x.status === status).length;
       await addDoc(collection(db, 'tasks'), {
-        title, app: appName, status, priority, order: colCount,
+        title, app: appName, status, priority, assignees, order: colCount,
         createdAt: serverTimestamp(),
         createdBy: currentUser.email
       });
@@ -654,6 +786,7 @@ document.addEventListener('keydown', e => {
   }
 });
 document.getElementById('appFilter').addEventListener('change', render);
+document.getElementById('assigneeFilter').addEventListener('change', render);
 </script>
 </body>
 </html>
