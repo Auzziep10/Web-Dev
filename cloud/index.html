@@ -180,6 +180,16 @@
     display: flex; align-items: baseline; gap: 6px;
   }
   .update-author { font-weight: 600; color: var(--text); }
+  .update-delete {
+    background: transparent; border: none; color: var(--muted);
+    font-size: 14px; line-height: 1;
+    padding: 0 6px; border-radius: 4px;
+    cursor: pointer;
+    opacity: 0; transition: opacity .15s, color .15s;
+    margin-left: auto;
+  }
+  .update-item:hover .update-delete { opacity: 0.55; }
+  .update-delete:hover { color: var(--danger); opacity: 1 !important; }
   .update-text {
     font-size: 12.5px; line-height: 1.45;
     word-wrap: break-word; white-space: pre-wrap;
@@ -652,20 +662,29 @@ function renderTask(t) {
 
 function renderExpanded(t, updates) {
   const sorted = [...updates].sort((a, b) => tsToMillis(a.timestamp) - tsToMillis(b.timestamp));
+  const meEmail = (currentUser?.email || '').toLowerCase();
   const listHtml = sorted.length === 0
     ? `<div class="update-empty">No updates yet — start the thread below.</div>`
-    : sorted.map(u => `
+    : sorted.map(u => {
+        const isMine = String(u.author || '').toLowerCase() === meEmail;
+        const canDelete = isMine || role === 'editor';
+        const delBtn = canDelete
+          ? `<button class="update-delete" data-action="delete-update" data-task-id="${t.id}" data-ts="${u.timestamp}" title="Delete this post">×</button>`
+          : '';
+        return `
         <div class="update-item">
           ${avatarHtml(u.author)}
           <div class="update-body">
             <div class="update-meta">
               <span class="update-author">${escapeHtml(emailShort(u.author))}</span>
               <span title="${escapeHtml(fullTime(u.timestamp))}">${escapeHtml(timeAgo(u.timestamp))}</span>
+              ${delBtn}
             </div>
             <div class="update-text">${escapeHtml(u.text)}</div>
           </div>
         </div>
-      `).join('');
+      `;
+      }).join('');
   return `
     <div class="task-expanded" data-task-id="${t.id}">
       <div class="update-list">${listHtml}</div>
@@ -723,6 +742,7 @@ function bindTaskEvents() {
         if (action === 'delete') deleteTaskById(id);
         if (action === 'expand') toggleExpand(id);
         if (action === 'send') submitUpdate(btn.dataset.taskId);
+        if (action === 'delete-update') deleteUpdate(btn.dataset.taskId, Number(btn.dataset.ts));
       });
     });
     // Enter-to-post in update input
@@ -770,6 +790,24 @@ function submitUpdate(taskId) {
   if (!text) return;
   input.value = '';
   addUpdate(taskId, text);
+}
+
+async function deleteUpdate(taskId, timestamp) {
+  const task = tasks.find(t => t.id === taskId);
+  if (!task) return;
+  const target = (task.updates || []).find(u => u.timestamp === timestamp);
+  if (!target) return;
+  const meEmail = (currentUser?.email || '').toLowerCase();
+  const isMine = String(target.author || '').toLowerCase() === meEmail;
+  if (!isMine && role !== 'editor') return;
+  const preview = target.text.length > 50 ? target.text.slice(0, 50) + '…' : target.text;
+  if (!confirm(`Delete this post?\n\n"${preview}"`)) return;
+  const next = (task.updates || []).filter(u => u.timestamp !== timestamp);
+  try {
+    await updateDoc(doc(db, 'tasks', taskId), { updates: next });
+  } catch (e) {
+    toast('Could not delete: ' + e.message);
+  }
 }
 
 // --- Drag & drop ---
