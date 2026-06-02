@@ -92,6 +92,32 @@
   .task-app { background: rgba(124,156,255,0.12); color: var(--accent);
     padding: 2px 8px; border-radius: 10px; font-weight: 500; }
 
+  /* Date chip on task cards */
+  .date-chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 8px; border-radius: 10px;
+    font-size: 11px; font-weight: 500;
+    background: var(--panel); color: var(--muted);
+    border: 1px solid var(--border);
+  }
+  .date-chip.overdue {
+    background: rgba(224,90,90,0.15); color: var(--p-critical);
+    border-color: rgba(224,90,90,0.35);
+  }
+  .date-chip.due-soon {
+    background: rgba(232,154,61,0.14); color: var(--p-high);
+    border-color: rgba(232,154,61,0.35);
+  }
+
+  /* Date inputs in the modal (side by side) */
+  .date-fields { display: flex; gap: 10px; }
+  .date-fields > div { flex: 1; }
+  .date-fields small.label {
+    display: block; font-size: 10px; color: var(--muted);
+    margin-bottom: 4px; text-transform: uppercase; letter-spacing: .3px;
+  }
+  .date-fields input[type="date"] { width: 100%; }
+
   .priority-chip { display: inline-flex; align-items: center; gap: 4px;
     padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;
     letter-spacing: .3px; text-transform: uppercase; }
@@ -338,6 +364,19 @@
       </select>
     </div>
     <div class="field">
+      <label>Dates <span style="color:var(--muted);font-weight:400;font-size:11px;">(optional)</span></label>
+      <div class="date-fields">
+        <div>
+          <small class="label">Start</small>
+          <input type="date" id="taskStartDate">
+        </div>
+        <div>
+          <small class="label">End / due</small>
+          <input type="date" id="taskEndDate">
+        </div>
+      </div>
+    </div>
+    <div class="field">
       <label>Assignees</label>
       <div class="assignee-picker" id="assigneePicker"></div>
       <small class="hint">Click a teammate to toggle. Multiple people can own the same task.</small>
@@ -443,6 +482,45 @@ function timeAgo(ts) {
 function fullTime(ts) {
   const t = tsToMillis(ts);
   return t ? new Date(t).toLocaleString() : '';
+}
+
+// --- Date helpers (YYYY-MM-DD strings from <input type="date">) ---
+function dateStrToDate(s) {
+  if (!s) return null;
+  const [y, m, d] = String(s).split('-').map(Number);
+  if (!y || !m || !d) return null;
+  return new Date(y, m - 1, d);
+}
+function todayLocal() {
+  const d = new Date();
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+function shortDate(s) {
+  const d = dateStrToDate(s);
+  return d ? d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '';
+}
+function formatDateChip(start, end) {
+  if (!start && !end) return null;
+  if (start && end) {
+    if (start === end) return shortDate(start);
+    const ds = dateStrToDate(start), de = dateStrToDate(end);
+    if (ds && de && ds.getFullYear() === de.getFullYear() && ds.getMonth() === de.getMonth()) {
+      return `${shortDate(start)} – ${de.getDate()}`;
+    }
+    return `${shortDate(start)} – ${shortDate(end)}`;
+  }
+  if (end) return `Due ${shortDate(end)}`;
+  if (start) return `From ${shortDate(start)}`;
+  return null;
+}
+function dateChipClass(end, taskStatus) {
+  if (!end || taskStatus === 'done') return '';
+  const e = dateStrToDate(end);
+  if (!e) return '';
+  const diffDays = Math.floor((e - todayLocal()) / 86400000);
+  if (diffDays < 0) return 'overdue';
+  if (diffDays <= 2) return 'due-soon';
+  return '';
 }
 
 const app = initializeApp(firebaseConfig);
@@ -636,6 +714,10 @@ function renderTask(t) {
   const updateBadge = updates.length
     ? `<span class="update-count" title="${updates.length} update${updates.length === 1 ? '' : 's'}">💬 ${updates.length}</span>`
     : '';
+  const dateText = formatDateChip(t.startDate, t.endDate);
+  const dateBadge = dateText
+    ? `<span class="date-chip ${dateChipClass(t.endDate, t.status)}" title="${escapeHtml((t.startDate || '') + (t.startDate && t.endDate ? ' to ' : '') + (t.endDate || ''))}">📅 ${escapeHtml(dateText)}</span>`
+    : '';
   const isExpanded = expandedIds.has(t.id);
   const expanded = isExpanded ? renderExpanded(t, updates) : '';
   return `
@@ -646,6 +728,7 @@ function renderTask(t) {
           <span class="priority-chip ${p}">${PRIORITY_LABEL[p]}</span>
           ${t.app ? `<span class="task-app">${escapeHtml(t.app)}</span>` : ''}
           ${avatars}
+          ${dateBadge}
           ${updateBadge}
         </span>
         <span class="task-actions">
@@ -899,6 +982,8 @@ function openModal(id) {
   document.getElementById('taskApp').value = t ? (t.app || '') : '';
   document.getElementById('taskStatus').value = t ? t.status : 'todo';
   document.getElementById('taskPriority').value = t ? (t.priority || 'medium') : 'medium';
+  document.getElementById('taskStartDate').value = t ? (t.startDate || '') : '';
+  document.getElementById('taskEndDate').value = t ? (t.endDate || '') : '';
   renderAssigneePicker(t ? (t.assignees || []) : []);
   document.getElementById('modal').classList.add('open');
   setTimeout(() => document.getElementById('taskTitle').focus(), 50);
@@ -910,14 +995,19 @@ async function saveTask() {
   const appName = document.getElementById('taskApp').value.trim();
   const status = document.getElementById('taskStatus').value;
   const priority = document.getElementById('taskPriority').value;
+  const startDate = document.getElementById('taskStartDate').value || '';
+  const endDate = document.getElementById('taskEndDate').value || '';
   const assignees = readAssigneePicker();
   if (!title) return toast('Title required');
+  if (startDate && endDate && startDate > endDate) {
+    return toast('Start date must be on or before end date');
+  }
 
   try {
     if (editingId) {
       const t = tasks.find(x => x.id === editingId);
       const statusChanged = t && t.status !== status;
-      const update = { title, app: appName, priority, assignees };
+      const update = { title, app: appName, priority, assignees, startDate, endDate };
       if (statusChanged) {
         update.status = status;
         const colCount = tasks.filter(x => x.status === status && x.id !== editingId).length;
@@ -927,7 +1017,7 @@ async function saveTask() {
     } else {
       const colCount = tasks.filter(x => x.status === status).length;
       await addDoc(collection(db, 'tasks'), {
-        title, app: appName, status, priority, assignees, order: colCount,
+        title, app: appName, status, priority, assignees, startDate, endDate, order: colCount,
         createdAt: serverTimestamp(),
         createdBy: currentUser.email
       });
