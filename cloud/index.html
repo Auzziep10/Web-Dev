@@ -415,10 +415,14 @@ function render() {
   for (const status of STATUSES) {
     const list = document.querySelector(`.task-list[data-status="${status}"]`);
     const inCol = items.filter(t => t.status === status).sort((a, b) => {
-      const pa = PRIORITY_RANK[a.priority] ?? 2;
-      const pb = PRIORITY_RANK[b.priority] ?? 2;
-      if (pa !== pb) return pa - pb;
-      return (a.order ?? 0) - (b.order ?? 0);
+      // Manual drag order is king. Importance is shown via chip + border only.
+      const oa = a.order ?? 0;
+      const ob = b.order ?? 0;
+      if (oa !== ob) return oa - ob;
+      // Tiebreaker for tasks that haven't been individually ordered yet
+      const ta = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+      const tb = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+      return ta - tb;
     });
     document.querySelector(`[data-count="${status}"]`).textContent = inCol.length;
     list.innerHTML = inCol.length === 0

@@ -564,10 +564,11 @@
     for (const status of STATUSES) {
       const list = document.querySelector(`.task-list[data-status="${status}"]`);
       const items = tasks.filter(t => t.status === status).sort((a, b) => {
-        const pa = PRIORITY_RANK[a.priority] ?? 2;
-        const pb = PRIORITY_RANK[b.priority] ?? 2;
-        if (pa !== pb) return pa - pb;
-        return a.order - b.order;
+        // Manual drag order is king. Importance is shown via chip + border only.
+        const oa = a.order ?? 0;
+        const ob = b.order ?? 0;
+        if (oa !== ob) return oa - ob;
+        return (a.createdAt ?? 0) - (b.createdAt ?? 0);
       });
       document.querySelector(`[data-count="${status}"]`).textContent = items.length;
       if (items.length === 0) {
