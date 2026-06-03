@@ -480,6 +480,93 @@
     color: var(--muted); font-style: italic; font-size: 13px;
   }
 
+  /* List view (Asana-style) */
+  .list-view {
+    flex: 1; overflow-y: auto;
+    padding: 16px 20px 20px;
+  }
+  .list-project { margin-bottom: 22px; }
+  .list-project-header {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px 8px 0 0;
+    border-bottom: 2px solid var(--accent-2);
+    font-weight: 700; font-size: 13px;
+  }
+  .lp-name { flex: 1; color: var(--text); letter-spacing: 0.2px; }
+  .lp-count {
+    background: var(--panel-2); color: var(--muted);
+    font-size: 11px; font-weight: 500;
+    padding: 2px 9px; border-radius: 10px;
+  }
+  .list-rows {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    overflow: hidden;
+  }
+  .list-item {
+    border-bottom: 1px solid var(--border);
+  }
+  .list-item:last-child { border-bottom: none; }
+  .list-item.expanded { background: var(--panel-2); }
+  .list-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 14px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background .1s;
+  }
+  .list-row:hover { background: var(--panel-2); }
+  .list-item.done .lr-title {
+    text-decoration: line-through; color: var(--muted);
+  }
+  .lr-status {
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    border: 2px solid var(--muted);
+    flex-shrink: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: white;
+    line-height: 1;
+  }
+  .lr-status.progress {
+    background: conic-gradient(var(--progress) 0% 50%, transparent 50% 100%);
+    border-color: var(--progress);
+  }
+  .lr-status.done {
+    background: var(--done); border-color: var(--done);
+  }
+  .lr-status.done::before { content: "✓"; }
+  .lr-title {
+    flex: 1; min-width: 0;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    font-weight: 500;
+  }
+  .lr-chips {
+    display: flex; align-items: center; gap: 6px;
+    flex-shrink: 0;
+  }
+  .lr-actions {
+    display: flex; gap: 4px;
+    opacity: 0; transition: opacity .15s;
+  }
+  .list-row:hover .lr-actions { opacity: 1; }
+  .list-item .expand-btn { color: var(--muted); }
+  .list-item.expanded .expand-btn { transform: rotate(180deg); }
+  .list-item .task-expanded {
+    padding: 0 14px 14px;
+    margin-top: 0;
+    border-top: none;
+  }
+  .list-empty {
+    padding: 60px 20px; text-align: center;
+    color: var(--muted); font-style: italic; font-size: 13px;
+  }
+
   @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
 </style>
 </head>
@@ -509,6 +596,7 @@
 
   <div class="view-toggle-group" id="viewToggleGroup">
     <button class="view-toggle active" data-view="board">Board</button>
+    <button class="view-toggle" data-view="list">List</button>
     <button class="view-toggle" data-view="timeline">Timeline</button>
   </div>
 
@@ -556,6 +644,8 @@
     <div class="t-grid" id="timelineGrid"></div>
   </div>
 </section>
+
+<section class="list-view" id="listView" style="display:none;"></section>
 
 <!-- Task modal -->
 <div class="modal-backdrop" id="modal">
@@ -970,6 +1060,7 @@ function isUIBusy() {
 function maybeRender() {
   if (!isUIBusy()) {
     if (currentView === 'timeline') renderTimeline();
+    else if (currentView === 'list') renderList();
     else render();
     return;
   }
@@ -981,11 +1072,13 @@ function setView(view) {
   localStorage.setItem('view', view);
   document.querySelector('main').style.display = view === 'board' ? '' : 'none';
   document.getElementById('timelineView').style.display = view === 'timeline' ? 'flex' : 'none';
+  document.getElementById('listView').style.display = view === 'list' ? 'block' : 'none';
   document.getElementById('timelineNav').style.display = view === 'timeline' ? 'inline-flex' : 'none';
   document.querySelectorAll('.view-toggle').forEach(b => {
     b.classList.toggle('active', b.dataset.view === view);
   });
   if (view === 'timeline') renderTimeline();
+  else if (view === 'list') renderList();
   else render();
 }
 
@@ -1072,6 +1165,134 @@ function renderTimeline() {
 
   grid.querySelectorAll('.t-bar').forEach(bar => {
     bar.addEventListener('click', () => openModal(bar.dataset.id));
+  });
+}
+
+function renderList() {
+  const container = document.getElementById('listView');
+  const items = visibleTasks();
+
+  if (items.length === 0) {
+    container.innerHTML = '<div class="list-empty">No tasks match the current filters.</div>';
+    return;
+  }
+
+  // Group by project (uses internal `app` field)
+  const groups = {};
+  items.forEach(t => {
+    const key = t.app || '(No project)';
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(t);
+  });
+
+  // Within each project: todo first, then in-progress, then done.
+  // Inside each status bucket: by importance, then by manual order.
+  const STATUS_RANK = { todo: 0, progress: 1, done: 2 };
+  Object.values(groups).forEach(arr => {
+    arr.sort((a, b) => {
+      const sa = STATUS_RANK[a.status] ?? 99;
+      const sb = STATUS_RANK[b.status] ?? 99;
+      if (sa !== sb) return sa - sb;
+      const pa = PRIORITY_RANK[a.priority] ?? 2;
+      const pb = PRIORITY_RANK[b.priority] ?? 2;
+      if (pa !== pb) return pa - pb;
+      return (a.order ?? 0) - (b.order ?? 0);
+    });
+  });
+
+  container.innerHTML = Object.keys(groups).sort().map(proj => {
+    const projTasks = groups[proj];
+    const rows = projTasks.map(renderListItem).join('');
+    return `
+      <div class="list-project">
+        <div class="list-project-header">
+          <span class="lp-name">${escapeHtml(proj)}</span>
+          <span class="lp-count">${projTasks.length} ${projTasks.length === 1 ? 'task' : 'tasks'}</span>
+        </div>
+        <div class="list-rows">${rows}</div>
+      </div>
+    `;
+  }).join('');
+
+  bindListEvents();
+}
+
+function renderListItem(t) {
+  const p = t.priority || 'medium';
+  const assignees = Array.isArray(t.assignees) ? t.assignees : [];
+  const avatars = assignees.length
+    ? `<span class="task-assignees">${assignees.map(avatarHtml).join('')}</span>`
+    : '';
+  const updates = Array.isArray(t.updates) ? t.updates : [];
+  const updateBadge = updates.length
+    ? `<span class="update-count" title="${updates.length} update${updates.length === 1 ? '' : 's'}">💬 ${updates.length}</span>`
+    : '';
+  const dateText = formatDateChip(t.startDate, t.endDate);
+  const dateBadge = dateText
+    ? `<span class="date-chip ${dateChipClass(t.endDate, t.status)}">📅 ${escapeHtml(dateText)}</span>`
+    : '';
+  const statusLabel = t.status === 'todo' ? 'To do'
+                   : t.status === 'progress' ? 'In progress'
+                   : 'Done';
+  const isExpanded = expandedIds.has(t.id);
+  const expanded = isExpanded ? renderExpanded(t, updates) : '';
+  return `
+    <div class="list-item ${isExpanded ? 'expanded' : ''} ${t.status === 'done' ? 'done' : ''}">
+      <div class="list-row" data-id="${t.id}">
+        <button class="icon-btn expand-btn" data-action="expand" title="${isExpanded ? 'Collapse' : 'Expand'}">▾</button>
+        <span class="lr-status ${t.status}" title="${statusLabel}"></span>
+        <span class="lr-title">${escapeHtml(t.title)}</span>
+        <span class="lr-chips">
+          <span class="priority-chip ${p}">${PRIORITY_LABEL[p]}</span>
+          ${avatars}
+          ${dateBadge}
+          ${updateBadge}
+        </span>
+        <span class="lr-actions editor-only">
+          <button class="icon-btn" data-action="edit" title="Edit">✎</button>
+          <button class="icon-btn danger" data-action="delete" title="Delete">×</button>
+        </span>
+      </div>
+      ${expanded}
+    </div>`;
+}
+
+function bindListEvents() {
+  document.querySelectorAll('.list-item').forEach(item => {
+    const row = item.querySelector('.list-row');
+    const id = row.dataset.id;
+
+    // Click anywhere on the row (except controls) → open edit modal
+    row.addEventListener('click', e => {
+      if (e.target.closest('button, input, [data-action]')) return;
+      openModal(id);
+    });
+
+    // Action buttons (expand / edit / delete / send / delete-update)
+    item.querySelectorAll('[data-action]').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        const action = btn.dataset.action;
+        if (action === 'edit') openModal(id);
+        if (action === 'delete') deleteTaskById(id);
+        if (action === 'expand') toggleExpand(id);
+        if (action === 'send') submitUpdate(btn.dataset.taskId);
+        if (action === 'delete-update') deleteUpdate(btn.dataset.taskId, Number(btn.dataset.ts));
+      });
+    });
+
+    // Enter-to-post in the update input
+    const input = item.querySelector('.update-input');
+    if (input) {
+      input.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          submitUpdate(input.dataset.taskId);
+        }
+      });
+      input.addEventListener('click', e => e.stopPropagation());
+      input.addEventListener('mousedown', e => e.stopPropagation());
+    }
   });
 }
 
