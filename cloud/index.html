@@ -528,15 +528,20 @@
   /* Progress UI */
   .task-progress {
     margin: 8px -12px 0;
-    height: 4px;
+    height: 5px;
     background: rgba(139,148,167,0.18);
     overflow: hidden;
+    cursor: pointer;
+    transition: background .15s, height .15s;
   }
+  .task-progress:hover { background: rgba(139,148,167,0.32); height: 7px; }
   .task-progress:last-child {
     margin-bottom: -10px;
     border-radius: 0 0 7px 7px;
   }
   .task-progress-fill { height: 100%; transition: width .3s; }
+  body.view-mode .task-progress { cursor: default; }
+  body.view-mode .task-progress:hover { background: rgba(139,148,167,0.18); height: 5px; }
   .task.priority-critical .task-progress-fill { background: var(--p-critical); }
   .task.priority-high     .task-progress-fill { background: var(--p-high); }
   .task.priority-medium   .task-progress-fill { background: var(--p-medium); }
@@ -550,12 +555,55 @@
     background: var(--panel); color: var(--muted);
     border: 1px solid var(--border);
     font-variant-numeric: tabular-nums;
+    cursor: pointer;
+    transition: border-color .15s, color .15s;
   }
+  .progress-badge:hover { color: var(--accent); border-color: var(--accent); }
   .progress-badge.complete {
     background: rgba(47,170,107,0.12);
     color: var(--done);
     border-color: rgba(47,170,107,0.35);
   }
+  body.view-mode .progress-badge { cursor: default; }
+  body.view-mode .progress-badge:hover { color: var(--muted); border-color: var(--border); }
+  body.view-mode .progress-badge.complete:hover { color: var(--done); border-color: rgba(47,170,107,0.35); }
+
+  /* Progress quick-edit popover */
+  .progress-popover {
+    position: absolute;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    padding: 14px;
+    z-index: 300;
+    display: none;
+    min-width: 240px;
+  }
+  .progress-popover.open { display: block; }
+  .pp-header {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 8px;
+  }
+  .pp-title {
+    font-size: 11px; font-weight: 600; color: var(--muted);
+    text-transform: uppercase; letter-spacing: .3px;
+  }
+  .pp-value {
+    font-size: 18px; font-weight: 700; color: var(--accent);
+    font-variant-numeric: tabular-nums;
+  }
+  .pp-presets {
+    display: flex; gap: 4px; margin-top: 12px;
+  }
+  .pp-presets button {
+    flex: 1;
+    background: var(--panel-2); border: 1px solid var(--border);
+    color: var(--muted); border-radius: 5px;
+    padding: 5px 0; font-size: 11px; font-weight: 600; cursor: pointer;
+    font-variant-numeric: tabular-nums;
+  }
+  .pp-presets button:hover { color: var(--accent); border-color: var(--accent); }
 
   .t-bar-progress {
     position: absolute; top: 0; bottom: 0; left: 0;
@@ -859,10 +907,6 @@
       </select>
     </div>
     <div class="field">
-      <label for="taskProgress">Progress<span id="progressValue">0%</span></label>
-      <input type="range" id="taskProgress" min="0" max="100" step="5" value="0" class="progress-slider">
-    </div>
-    <div class="field">
       <label>Dates <span style="color:var(--muted);font-weight:400;font-size:11px;">(optional)</span></label>
       <div class="daterange-display">
         <div class="dr-pair">
@@ -907,6 +951,22 @@
       <button id="teamCancel" class="ghost">Cancel</button>
       <button id="teamSave" class="primary">Save</button>
     </div>
+  </div>
+</div>
+
+<!-- Progress quick-edit popover -->
+<div class="progress-popover" id="progressPopover">
+  <div class="pp-header">
+    <span class="pp-title">Progress</span>
+    <span class="pp-value" id="ppValue">0%</span>
+  </div>
+  <input type="range" class="progress-slider" id="ppSlider" min="0" max="100" step="5" value="0">
+  <div class="pp-presets">
+    <button type="button" data-value="0">0%</button>
+    <button type="button" data-value="25">25%</button>
+    <button type="button" data-value="50">50%</button>
+    <button type="button" data-value="75">75%</button>
+    <button type="button" data-value="100">100%</button>
   </div>
 </div>
 
@@ -1544,9 +1604,7 @@ function renderListItem(t) {
                    : t.status === 'progress' ? 'In progress'
                    : 'Done';
   const prog = progressOf(t);
-  const progressBadge = prog > 0
-    ? `<span class="progress-badge ${prog === 100 ? 'complete' : ''}">${prog}%</span>`
-    : '';
+  const progressBadge = `<span class="progress-badge ${prog === 100 ? 'complete' : ''}" data-action="progress" title="Click to update progress">${prog}%</span>`;
   const isExpanded = expandedIds.has(t.id);
   const expanded = isExpanded ? renderExpanded(t, updates) : '';
   return `
@@ -1582,7 +1640,7 @@ function bindListEvents() {
       openModal(id);
     });
 
-    // Action buttons (expand / edit / delete / send / delete-update)
+    // Action buttons (expand / edit / delete / send / delete-update / progress)
     item.querySelectorAll('[data-action]').forEach(btn => {
       btn.addEventListener('click', e => {
         e.stopPropagation();
@@ -1592,6 +1650,7 @@ function bindListEvents() {
         if (action === 'expand') toggleExpand(id);
         if (action === 'send') submitUpdate(btn.dataset.taskId);
         if (action === 'delete-update') deleteUpdate(btn.dataset.taskId, Number(btn.dataset.ts));
+        if (action === 'progress') openProgressPopover(id, btn);
       });
     });
 
@@ -1745,9 +1804,7 @@ function renderTask(t) {
   const isExpanded = expandedIds.has(t.id);
   const expanded = isExpanded ? renderExpanded(t, updates) : '';
   const prog = progressOf(t);
-  const progressBar = prog > 0
-    ? `<div class="task-progress"><div class="task-progress-fill" style="width: ${prog}%"></div></div>`
-    : '';
+  const progressBar = `<div class="task-progress" data-action="progress" title="${prog}% complete — click to update"><div class="task-progress-fill" style="width: ${prog}%"></div></div>`;
   return `
     <li class="task priority-${p} ${t.status === 'done' ? 'done' : ''} ${isExpanded ? 'expanded' : ''}" draggable="true" data-id="${t.id}">
       <div class="task-title">${escapeHtml(t.title)}</div>
@@ -1855,6 +1912,7 @@ function bindTaskEvents() {
         if (action === 'expand') toggleExpand(id);
         if (action === 'send') submitUpdate(btn.dataset.taskId);
         if (action === 'delete-update') deleteUpdate(btn.dataset.taskId, Number(btn.dataset.ts));
+        if (action === 'progress') openProgressPopover(id, btn);
       });
     });
     // Enter-to-post in update input
@@ -2011,12 +2069,6 @@ function openModal(id) {
   document.getElementById('taskApp').value = t ? (t.app || '') : '';
   document.getElementById('taskStatus').value = t ? t.status : 'todo';
   document.getElementById('taskPriority').value = t ? (t.priority || 'medium') : 'medium';
-  // Progress slider — done tasks lock to 100
-  const initialProgress = t
-    ? (t.status === 'done' ? 100 : Math.max(0, Math.min(100, Number(t.progress) || 0)))
-    : 0;
-  document.getElementById('taskProgress').value = initialProgress;
-  document.getElementById('progressValue').textContent = initialProgress + '%';
   // Date range picker state
   modalStartDate = t ? (t.startDate || '') : '';
   modalEndDate = t ? (t.endDate || '') : '';
@@ -2047,8 +2099,11 @@ async function saveTask() {
   const startDate = modalStartDate || '';
   const endDate = modalEndDate || '';
   const assignees = readAssigneePicker();
-  const rawProgress = Number(document.getElementById('taskProgress').value) || 0;
-  const progress = status === 'done' ? 100 : Math.max(0, Math.min(100, rawProgress));
+  // Progress is edited via the popover, not this dialog.
+  // Preserve the existing value here; force 100 if status is Done.
+  const existingTask = editingId ? tasks.find(x => x.id === editingId) : null;
+  const existingProgress = existingTask ? Math.max(0, Math.min(100, Number(existingTask.progress) || 0)) : 0;
+  const progress = status === 'done' ? 100 : existingProgress;
   if (!title) return toast('Title required');
   if (startDate && endDate && startDate > endDate) {
     return toast('Start date must be on or before end date');
@@ -2146,22 +2201,96 @@ document.getElementById('drClearBtn').addEventListener('click', () => {
   renderCalendar();
 });
 
-// Progress slider live display
-document.getElementById('taskProgress').addEventListener('input', (e) => {
-  document.getElementById('progressValue').textContent = e.target.value + '%';
-});
-// When Status changes to Done, snap progress to 100 in the modal
-document.getElementById('taskStatus').addEventListener('change', (e) => {
-  if (e.target.value === 'done') {
-    document.getElementById('taskProgress').value = 100;
-    document.getElementById('progressValue').textContent = '100%';
-  }
-});
-
 // Document-level handlers for timeline bar drag (set up once)
 document.addEventListener('pointermove', onTimelinePointerMove);
 document.addEventListener('pointerup', onTimelinePointerUp);
 document.addEventListener('pointercancel', onTimelinePointerUp);
+
+// --- Progress quick-edit popover ---
+let progressPopoverTaskId = null;
+let progressSaveTimer = null;
+
+function openProgressPopover(taskId, anchorEl) {
+  if (role !== 'editor') return;
+  const task = tasks.find(t => t.id === taskId);
+  if (!task) return;
+  progressPopoverTaskId = taskId;
+
+  const popover = document.getElementById('progressPopover');
+  const slider = document.getElementById('ppSlider');
+  const valueEl = document.getElementById('ppValue');
+
+  const current = progressOf(task);
+  slider.value = current;
+  valueEl.textContent = current + '%';
+
+  // Show first so we can measure, then position
+  popover.classList.add('open');
+  const ppRect = popover.getBoundingClientRect();
+  const aRect = anchorEl.getBoundingClientRect();
+
+  // Default: open below the anchor, left-aligned
+  let left = aRect.left + window.scrollX;
+  let top = aRect.bottom + window.scrollY + 6;
+  // Keep within viewport horizontally
+  const maxLeft = window.scrollX + window.innerWidth - ppRect.width - 12;
+  if (left > maxLeft) left = maxLeft;
+  if (left < window.scrollX + 12) left = window.scrollX + 12;
+  // If no room below, flip above
+  if (aRect.bottom + ppRect.height + 12 > window.innerHeight) {
+    top = aRect.top + window.scrollY - ppRect.height - 6;
+  }
+  popover.style.left = left + 'px';
+  popover.style.top = top + 'px';
+}
+
+function closeProgressPopover() {
+  document.getElementById('progressPopover').classList.remove('open');
+  progressPopoverTaskId = null;
+  clearTimeout(progressSaveTimer);
+}
+
+async function saveProgress(taskId, raw) {
+  const value = Math.max(0, Math.min(100, Math.round(Number(raw) / 5) * 5));
+  try {
+    await updateDoc(doc(db, 'tasks', taskId), { progress: value });
+  } catch (e) {
+    toast('Could not update progress: ' + e.message);
+  }
+}
+
+document.getElementById('ppSlider').addEventListener('input', (e) => {
+  document.getElementById('ppValue').textContent = e.target.value + '%';
+  clearTimeout(progressSaveTimer);
+  const v = Number(e.target.value);
+  // Debounce so dragging doesn't hammer Firestore
+  progressSaveTimer = setTimeout(() => {
+    if (progressPopoverTaskId) saveProgress(progressPopoverTaskId, v);
+  }, 250);
+});
+
+document.querySelectorAll('#progressPopover .pp-presets button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const v = Number(btn.dataset.value);
+    document.getElementById('ppSlider').value = v;
+    document.getElementById('ppValue').textContent = v + '%';
+    if (progressPopoverTaskId) saveProgress(progressPopoverTaskId, v);
+  });
+});
+
+// Close popover when clicking outside it or any progress anchor
+document.addEventListener('mousedown', (e) => {
+  const popover = document.getElementById('progressPopover');
+  if (!popover.classList.contains('open')) return;
+  if (popover.contains(e.target)) return;
+  // Don't close if user clicks another progress anchor — let the new open replace it
+  if (e.target.closest('[data-action="progress"]')) return;
+  closeProgressPopover();
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeProgressPopover();
+});
 
 // View toggle + timeline navigation
 document.querySelectorAll('.view-toggle').forEach(btn => {
