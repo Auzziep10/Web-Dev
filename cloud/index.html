@@ -459,13 +459,40 @@
     border-radius: 4px; padding: 0 8px;
     display: flex; align-items: center;
     font-size: 11px; font-weight: 600; color: white;
-    cursor: pointer; overflow: hidden;
+    cursor: grab; overflow: hidden;
     white-space: nowrap;
     box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-    transition: filter .15s, transform .05s;
+    transition: filter .15s, transform .05s, box-shadow .15s;
     z-index: 1;
+    user-select: none;
+    touch-action: pan-y;
   }
-  .t-bar:hover { filter: brightness(1.1); transform: translateY(-1px); }
+  .t-bar:hover { filter: brightness(1.1); }
+  .t-bar.dragging {
+    cursor: grabbing; opacity: 0.92; z-index: 12;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+  }
+  .t-bar-handle {
+    position: absolute; top: 0; bottom: 0;
+    width: 7px;
+    cursor: ew-resize;
+    background: transparent;
+    transition: background .15s;
+  }
+  .t-bar:hover .t-bar-handle { background: rgba(255,255,255,0.18); }
+  .t-bar-handle:hover { background: rgba(255,255,255,0.35) !important; }
+  .t-bar-handle.left { left: 0; border-radius: 4px 0 0 4px; }
+  .t-bar-handle.right { right: 0; border-radius: 0 4px 4px 0; }
+  .t-bar-label { overflow: hidden; text-overflow: ellipsis; padding: 0 4px; pointer-events: none; }
+  /* No drag affordance for viewers */
+  body.view-mode .t-bar { cursor: pointer; }
+  body.view-mode .t-bar-handle { display: none; }
+  /* No drag on mobile (would fight with touch scrolling) */
+  @media (max-width: 768px) {
+    .t-bar { cursor: pointer; }
+    .t-bar-handle { display: none; }
+  }
   .t-bar.priority-critical { background: var(--p-critical); }
   .t-bar.priority-high     { background: var(--p-high); }
   .t-bar.priority-medium   { background: var(--p-medium); }
@@ -1037,6 +1064,7 @@ let calendarMonth = new Date(); // month currently displayed in the picker
 let drMode = 'first'; // 'first' = next click sets a fresh range; 'second' = next click extends
 let currentView = (localStorage.getItem('view') === 'timeline') ? 'timeline' : 'board';
 let timelineStart = getMondayOf(new Date()); // first day of visible timeline window
+let timelineDragState = null; // active drag/resize on a timeline bar
 
 const TIMELINE_DAYS = 28; // 4 weeks visible at once
 
@@ -1136,6 +1164,7 @@ function cleanupSubs() {
 // the user is interacting with (dragging, editing in a modal, typing in a thread).
 function isUIBusy() {
   if (dragId) return true;
+  if (timelineDragState) return true;
   if (document.getElementById('modal')?.classList.contains('open')) return true;
   if (document.getElementById('teamModal')?.classList.contains('open')) return true;
   const a = document.activeElement;
@@ -1250,8 +1279,126 @@ function renderTimeline() {
   `;
 
   grid.querySelectorAll('.t-bar').forEach(bar => {
-    bar.addEventListener('click', () => openModal(bar.dataset.id));
+    bar.addEventListener('pointerdown', e => onBarPointerDown(e, bar));
   });
+}
+
+function addDays(dateStr, days) {
+  const d = dateStrToDate(dateStr);
+  if (!d) return dateStr;
+  d.setDate(d.getDate() + days);
+  return dateToStr(d);
+}
+
+function onBarPointerDown(e, bar) {
+  if (e.button !== 0) return; // primary button only
+  const taskId = bar.dataset.id;
+  const task = tasks.find(t => t.id === taskId);
+  if (!task) return;
+
+  // Touch / mobile: tap-to-open only, no drag
+  const isMobile = window.matchMedia('(max-width: 768px)').matches;
+  const isTouch = e.pointerType !== 'mouse';
+  const canDrag = role === 'editor' && !isMobile && !isTouch;
+
+  const handle = e.target.dataset && e.target.dataset.handle;
+  const mode = !canDrag ? 'click'
+             : handle === 'left' ? 'resize-left'
+             : handle === 'right' ? 'resize-right'
+             : 'move';
+
+  timelineDragState = {
+    taskId,
+    bar,
+    trackEl: bar.parentElement,
+    mode,
+    pointerStartX: e.clientX,
+    origLeftPct: parseFloat(bar.style.left) || 0,
+    origWidthPct: parseFloat(bar.style.width) || 0,
+    origStartDate: task.startDate || task.endDate || '',
+    origEndDate: task.endDate || task.startDate || '',
+    moved: false
+  };
+
+  if (canDrag) bar.classList.add('dragging');
+  e.preventDefault();
+}
+
+function onTimelinePointerMove(e) {
+  const s = timelineDragState;
+  if (!s) return;
+  const deltaPx = e.clientX - s.pointerStartX;
+  if (Math.abs(deltaPx) > 3) s.moved = true;
+  if (s.mode === 'click') return; // viewer / touch — no visual update
+
+  const trackWidth = s.trackEl.offsetWidth;
+  if (!trackWidth) return;
+  const dayWidth = trackWidth / TIMELINE_DAYS;
+  const deltaDays = Math.round(deltaPx / dayWidth);
+  const onePct = 100 / TIMELINE_DAYS;
+
+  if (s.mode === 'move') {
+    s.bar.style.left = (s.origLeftPct + deltaDays * onePct) + '%';
+  } else if (s.mode === 'resize-left') {
+    let newLeft = s.origLeftPct + deltaDays * onePct;
+    let newWidth = s.origWidthPct - deltaDays * onePct;
+    if (newWidth < onePct) {
+      newWidth = onePct;
+      newLeft = s.origLeftPct + s.origWidthPct - onePct;
+    }
+    s.bar.style.left = newLeft + '%';
+    s.bar.style.width = newWidth + '%';
+  } else if (s.mode === 'resize-right') {
+    let newWidth = s.origWidthPct + deltaDays * onePct;
+    if (newWidth < onePct) newWidth = onePct;
+    s.bar.style.width = newWidth + '%';
+  }
+}
+
+async function onTimelinePointerUp(e) {
+  const s = timelineDragState;
+  if (!s) return;
+  s.bar.classList.remove('dragging');
+
+  // Treat as click if pointer didn't move enough
+  if (!s.moved || s.mode === 'click') {
+    timelineDragState = null;
+    openModal(s.taskId);
+    return;
+  }
+
+  const trackWidth = s.trackEl.offsetWidth;
+  const dayWidth = trackWidth / TIMELINE_DAYS;
+  const deltaDays = Math.round((e.clientX - s.pointerStartX) / dayWidth);
+  timelineDragState = null;
+
+  if (deltaDays === 0) {
+    renderTimeline(); // restore visual to snapped position
+    return;
+  }
+
+  let newStart = s.origStartDate;
+  let newEnd = s.origEndDate;
+  if (s.mode === 'move') {
+    newStart = addDays(s.origStartDate, deltaDays);
+    newEnd = addDays(s.origEndDate, deltaDays);
+  } else if (s.mode === 'resize-left') {
+    newStart = addDays(s.origStartDate, deltaDays);
+    if (newStart > s.origEndDate) newStart = s.origEndDate;
+  } else if (s.mode === 'resize-right') {
+    newEnd = addDays(s.origEndDate, deltaDays);
+    if (newEnd < s.origStartDate) newEnd = s.origStartDate;
+  }
+
+  try {
+    await updateDoc(doc(db, 'tasks', s.taskId), {
+      startDate: newStart,
+      endDate: newEnd
+    });
+  } catch (err) {
+    toast('Could not update dates: ' + err.message);
+    renderTimeline();
+  }
 }
 
 function renderList() {
@@ -1408,7 +1555,9 @@ function renderTimelineRow(t, rangeStart) {
              style="left: ${leftPct}%; width: ${widthPct}%;"
              data-id="${t.id}"
              title="${escapeHtml(t.title)} — ${escapeHtml(dateText)}">
+          <span class="t-bar-handle left" data-handle="left"></span>
           <span class="t-bar-label">${escapeHtml(t.title)}</span>
+          <span class="t-bar-handle right" data-handle="right"></span>
         </div>
       </div>
     </div>`;
@@ -1897,6 +2046,11 @@ document.getElementById('drClearBtn').addEventListener('click', () => {
   drMode = 'first';
   renderCalendar();
 });
+
+// Document-level handlers for timeline bar drag (set up once)
+document.addEventListener('pointermove', onTimelinePointerMove);
+document.addEventListener('pointerup', onTimelinePointerUp);
+document.addEventListener('pointercancel', onTimelinePointerUp);
 
 // View toggle + timeline navigation
 document.querySelectorAll('.view-toggle').forEach(btn => {
