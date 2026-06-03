@@ -109,14 +109,87 @@
     border-color: rgba(232,154,61,0.35);
   }
 
-  /* Date inputs in the modal (side by side) */
-  .date-fields { display: flex; gap: 10px; }
-  .date-fields > div { flex: 1; }
-  .date-fields small.label {
-    display: block; font-size: 10px; color: var(--muted);
-    margin-bottom: 4px; text-transform: uppercase; letter-spacing: .3px;
+  /* Date range picker in the modal */
+  .daterange-display {
+    display: flex; align-items: center; gap: 16px;
+    padding: 10px 12px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 6px 6px 0 0;
+    border-bottom: none;
+    font-size: 12px;
   }
-  .date-fields input[type="date"] { width: 100%; }
+  .daterange-display .dr-pair {
+    display: flex; flex-direction: column; gap: 1px;
+  }
+  .daterange-display .dr-label {
+    color: var(--muted); font-size: 10px;
+    text-transform: uppercase; letter-spacing: .3px;
+  }
+  .daterange-display .dr-value { font-weight: 600; color: var(--text); }
+  .daterange-display .dr-value.empty { color: var(--muted); font-weight: 400; font-style: italic; }
+  .daterange-display .dr-clear {
+    margin-left: auto; background: transparent; border: none;
+    color: var(--accent); font-size: 12px; cursor: pointer; padding: 4px 8px;
+    border-radius: 4px;
+  }
+  .daterange-display .dr-clear:hover { background: var(--panel); }
+
+  .daterange-cal {
+    border: 1px solid var(--border);
+    border-radius: 0 0 6px 6px;
+    background: var(--panel-2);
+    padding: 10px 12px 12px;
+  }
+  .dr-nav {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .dr-nav button {
+    background: transparent; border: none; color: var(--muted);
+    cursor: pointer; padding: 4px 10px; font-size: 16px; line-height: 1;
+    border-radius: 4px;
+  }
+  .dr-nav button:hover { background: var(--panel); color: var(--text); }
+  .dr-month-label { font-weight: 600; font-size: 13px; color: var(--text); }
+  .dr-hint { font-size: 11px; color: var(--muted); margin-top: 6px; text-align: center; font-style: italic; }
+  .dr-grid {
+    display: grid; grid-template-columns: repeat(7, 1fr);
+    gap: 0;
+  }
+  .dr-dow {
+    text-align: center; font-size: 10px; font-weight: 600;
+    color: var(--muted); text-transform: uppercase;
+    padding: 4px 0 6px;
+  }
+  .dr-cell {
+    text-align: center; padding: 7px 0;
+    font-size: 12.5px; cursor: pointer;
+    border: 1px solid transparent;
+    user-select: none;
+    transition: background .1s;
+  }
+  .dr-cell:hover:not(.range-start):not(.range-end):not(.in-range) {
+    background: var(--panel);
+  }
+  .dr-cell.other-month { color: var(--muted); opacity: 0.4; }
+  .dr-cell.today {
+    border-color: var(--accent);
+    font-weight: 700;
+  }
+  .dr-cell.in-range {
+    background: rgba(124,156,255,0.18);
+    color: var(--text);
+  }
+  .dr-cell.range-start, .dr-cell.range-end {
+    background: var(--accent-2);
+    color: white !important;
+    font-weight: 700;
+    border-color: var(--accent-2);
+  }
+  .dr-cell.range-start { border-radius: 6px 0 0 6px; }
+  .dr-cell.range-end { border-radius: 0 6px 6px 0; }
+  .dr-cell.range-start.range-end { border-radius: 6px; }
 
   .priority-chip { display: inline-flex; align-items: center; gap: 4px;
     padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;
@@ -245,7 +318,8 @@
     display: none; align-items: center; justify-content: center; z-index: 100; }
   .modal-backdrop.open { display: flex; }
   .modal { background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
-    padding: 20px; width: min(480px, 90vw); box-shadow: var(--shadow); }
+    padding: 20px; width: min(480px, 90vw); max-height: 90vh; overflow-y: auto;
+    box-shadow: var(--shadow); }
   .modal h2 { margin: 0 0 14px; font-size: 15px; }
   .field { margin-bottom: 12px; }
   .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
@@ -515,16 +589,18 @@
     </div>
     <div class="field">
       <label>Dates <span style="color:var(--muted);font-weight:400;font-size:11px;">(optional)</span></label>
-      <div class="date-fields">
-        <div>
-          <small class="label">Start</small>
-          <input type="date" id="taskStartDate">
+      <div class="daterange-display">
+        <div class="dr-pair">
+          <span class="dr-label">Start</span>
+          <span id="drStartDisplay" class="dr-value empty">— pick a date —</span>
         </div>
-        <div>
-          <small class="label">End / due</small>
-          <input type="date" id="taskEndDate">
+        <div class="dr-pair">
+          <span class="dr-label">End</span>
+          <span id="drEndDisplay" class="dr-value empty">— pick a date —</span>
         </div>
+        <button type="button" class="dr-clear" id="drClearBtn">Clear</button>
       </div>
+      <div class="daterange-cal" id="drCalendar"></div>
     </div>
     <div class="field">
       <label>Assignees</label>
@@ -672,6 +748,98 @@ function dateChipClass(end, taskStatus) {
   if (diffDays <= 2) return 'due-soon';
   return '';
 }
+function displayDate(s) {
+  const d = dateStrToDate(s);
+  return d ? d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+}
+
+// --- Inline date-range picker ---
+function renderCalendar() {
+  const cal = document.getElementById('drCalendar');
+  if (!cal) return;
+  const monthStart = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), 1);
+  const monthLabel = monthStart.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+
+  // Grid starts on the Sunday before the 1st (so the 1st is in the right column)
+  const startOfGrid = new Date(monthStart);
+  startOfGrid.setDate(1 - monthStart.getDay());
+
+  const today = todayLocal();
+  const dows = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+  const cells = [];
+  for (let i = 0; i < 42; i++) {
+    const d = new Date(startOfGrid);
+    d.setDate(d.getDate() + i);
+    const dStr = dateToStr(d);
+    const otherMonth = d.getMonth() !== monthStart.getMonth();
+    const isToday = isSameDay(d, today);
+    const inRange = modalStartDate && modalEndDate
+      && dStr >= modalStartDate && dStr <= modalEndDate;
+    const isStart = !!modalStartDate && dStr === modalStartDate;
+    const isEnd = !!modalEndDate && dStr === modalEndDate;
+    const classes = ['dr-cell'];
+    if (otherMonth) classes.push('other-month');
+    if (isToday) classes.push('today');
+    if (inRange) classes.push('in-range');
+    if (isStart) classes.push('range-start');
+    if (isEnd) classes.push('range-end');
+    cells.push(`<div class="${classes.join(' ')}" data-date="${dStr}">${d.getDate()}</div>`);
+  }
+
+  cal.innerHTML = `
+    <div class="dr-nav">
+      <button type="button" id="drPrev" title="Previous month">‹</button>
+      <div class="dr-month-label">${escapeHtml(monthLabel)}</div>
+      <button type="button" id="drNext" title="Next month">›</button>
+    </div>
+    <div class="dr-grid">
+      ${dows.map(d => `<div class="dr-dow">${d}</div>`).join('')}
+      ${cells.join('')}
+    </div>
+    <div class="dr-hint">${drMode === 'first'
+      ? 'Click a date to start the range'
+      : 'Click another date to set the end (or the same day for a single-day task)'}</div>
+  `;
+
+  // Update the display row
+  const startEl = document.getElementById('drStartDisplay');
+  const endEl = document.getElementById('drEndDisplay');
+  startEl.textContent = modalStartDate ? displayDate(modalStartDate) : '— pick a date —';
+  startEl.classList.toggle('empty', !modalStartDate);
+  endEl.textContent = modalEndDate ? displayDate(modalEndDate) : '— pick a date —';
+  endEl.classList.toggle('empty', !modalEndDate);
+
+  // Wire up navigation
+  document.getElementById('drPrev').addEventListener('click', () => {
+    calendarMonth.setMonth(calendarMonth.getMonth() - 1);
+    renderCalendar();
+  });
+  document.getElementById('drNext').addEventListener('click', () => {
+    calendarMonth.setMonth(calendarMonth.getMonth() + 1);
+    renderCalendar();
+  });
+  cal.querySelectorAll('.dr-cell').forEach(cell => {
+    cell.addEventListener('click', () => onPickDate(cell.dataset.date));
+  });
+}
+
+function onPickDate(dateStr) {
+  if (drMode === 'first') {
+    // Start fresh — single-day range
+    modalStartDate = dateStr;
+    modalEndDate = dateStr;
+    drMode = 'second';
+  } else {
+    // Extend or swap to the earlier side
+    if (dateStr < modalStartDate) {
+      modalStartDate = dateStr;
+    } else {
+      modalEndDate = dateStr;
+    }
+    drMode = 'first'; // next click starts a fresh range
+  }
+  renderCalendar();
+}
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -687,6 +855,10 @@ let dragId = null;
 let unsubTasks = null;
 let unsubAccess = null;
 let expandedIds = new Set(); // task IDs that are currently expanded
+let modalStartDate = ''; // YYYY-MM-DD, controlled by the inline picker
+let modalEndDate = '';
+let calendarMonth = new Date(); // month currently displayed in the picker
+let drMode = 'first'; // 'first' = next click sets a fresh range; 'second' = next click extends
 let currentView = (localStorage.getItem('view') === 'timeline') ? 'timeline' : 'board';
 let timelineStart = getMondayOf(new Date()); // first day of visible timeline window
 
@@ -1292,8 +1464,22 @@ function openModal(id) {
   document.getElementById('taskApp').value = t ? (t.app || '') : '';
   document.getElementById('taskStatus').value = t ? t.status : 'todo';
   document.getElementById('taskPriority').value = t ? (t.priority || 'medium') : 'medium';
-  document.getElementById('taskStartDate').value = t ? (t.startDate || '') : '';
-  document.getElementById('taskEndDate').value = t ? (t.endDate || '') : '';
+  // Date range picker state
+  modalStartDate = t ? (t.startDate || '') : '';
+  modalEndDate = t ? (t.endDate || '') : '';
+  drMode = 'first';
+  // Default calendar month to startDate's month, or today
+  if (modalStartDate) {
+    const [y, m] = modalStartDate.split('-').map(Number);
+    calendarMonth = new Date(y, m - 1, 1);
+  } else if (modalEndDate) {
+    const [y, m] = modalEndDate.split('-').map(Number);
+    calendarMonth = new Date(y, m - 1, 1);
+  } else {
+    const now = new Date();
+    calendarMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  }
+  renderCalendar();
   renderAssigneePicker(t ? (t.assignees || []) : []);
   document.getElementById('modal').classList.add('open');
   setTimeout(() => document.getElementById('taskTitle').focus(), 50);
@@ -1305,8 +1491,8 @@ async function saveTask() {
   const appName = document.getElementById('taskApp').value.trim();
   const status = document.getElementById('taskStatus').value;
   const priority = document.getElementById('taskPriority').value;
-  const startDate = document.getElementById('taskStartDate').value || '';
-  const endDate = document.getElementById('taskEndDate').value || '';
+  const startDate = modalStartDate || '';
+  const endDate = modalEndDate || '';
   const assignees = readAssigneePicker();
   if (!title) return toast('Title required');
   if (startDate && endDate && startDate > endDate) {
@@ -1398,6 +1584,12 @@ document.addEventListener('keydown', e => {
 });
 document.getElementById('appFilter').addEventListener('change', () => maybeRender());
 document.getElementById('assigneeFilter').addEventListener('change', () => maybeRender());
+document.getElementById('drClearBtn').addEventListener('click', () => {
+  modalStartDate = '';
+  modalEndDate = '';
+  drMode = 'first';
+  renderCalendar();
+});
 
 // View toggle + timeline navigation
 document.querySelectorAll('.view-toggle').forEach(btn => {
