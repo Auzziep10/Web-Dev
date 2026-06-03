@@ -348,7 +348,7 @@
   .gate-card p { color: var(--muted); margin: 0 0 20px; font-size: 13px; line-height: 1.5; }
   .gate-card .err { color: var(--danger); font-size: 12px; margin-top: 12px; }
 
-  /* View toggle in header */
+  /* View toggle in header (desktop default) */
   .view-toggle-group {
     display: inline-flex;
     background: var(--panel-2);
@@ -361,10 +361,13 @@
     padding: 6px 12px; color: var(--muted);
     cursor: pointer; font-size: 12px; font-weight: 500;
     border-radius: 0;
+    display: inline-flex; align-items: center; gap: 6px;
   }
   .view-toggle:hover { color: var(--text); }
   .view-toggle.active { background: var(--accent-2); color: white; }
   .view-toggle.active:hover { background: var(--accent); }
+  /* Icons hidden on desktop — label only */
+  .vt-icon { display: none; }
 
   .timeline-nav { display: inline-flex; align-items: center; gap: 4px; }
   .timeline-nav button { padding: 6px 10px; font-size: 12px; }
@@ -568,6 +571,68 @@
   }
 
   @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+
+  /* ───── Mobile (phones in portrait, tablets in narrow modes) ───── */
+  @media (max-width: 768px) {
+    /* Slim down the top header so it fits */
+    header {
+      padding: 10px 12px;
+      gap: 8px;
+      row-gap: 8px;
+    }
+    header h1 { font-size: 14px; }
+    .user-chip span { display: none; }   /* avatar only */
+    .filter-group label { display: none; } /* "Project"/"Assigned to" labels off, the dropdown speaks for itself */
+
+    /* Move view toggle to a fixed bottom bar */
+    .view-toggle-group {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      z-index: 50;
+      background: var(--panel);
+      border: none;
+      border-top: 1px solid var(--border);
+      border-radius: 0;
+      box-shadow: 0 -2px 12px rgba(0,0,0,0.18);
+      display: flex;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    .view-toggle {
+      flex: 1;
+      flex-direction: column;
+      gap: 3px;
+      padding: 9px 4px 7px;
+      min-height: 56px;
+      font-size: 10.5px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      color: var(--muted);
+      background: transparent;
+      position: relative;
+      border-radius: 0;
+    }
+    .view-toggle.active {
+      background: transparent;
+      color: var(--accent);
+    }
+    .view-toggle.active:hover { background: transparent; }
+    .view-toggle.active::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: var(--accent);
+    }
+    .vt-icon { display: block; }
+
+    /* Keep page content above the bottom tab bar */
+    body { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
+
+    /* Timeline nav: make sure it fits and wraps cleanly */
+    .timeline-nav { flex-wrap: wrap; }
+    #timelineRange { min-width: 0; }
+  }
 </style>
 </head>
 <body>
@@ -595,9 +660,30 @@
   </div>
 
   <div class="view-toggle-group" id="viewToggleGroup">
-    <button class="view-toggle active" data-view="board">Board</button>
-    <button class="view-toggle" data-view="list">List</button>
-    <button class="view-toggle" data-view="timeline">Timeline</button>
+    <button class="view-toggle active" data-view="board" aria-label="Board view">
+      <svg class="vt-icon" viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true">
+        <rect x="3" y="3" width="5" height="18" rx="1.2"/>
+        <rect x="10" y="3" width="5" height="13" rx="1.2"/>
+        <rect x="17" y="3" width="4" height="8" rx="1.2"/>
+      </svg>
+      <span class="vt-label">Board</span>
+    </button>
+    <button class="view-toggle" data-view="list" aria-label="List view">
+      <svg class="vt-icon" viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true">
+        <rect x="3" y="5" width="18" height="2.5" rx="1"/>
+        <rect x="3" y="10.75" width="18" height="2.5" rx="1"/>
+        <rect x="3" y="16.5" width="18" height="2.5" rx="1"/>
+      </svg>
+      <span class="vt-label">List</span>
+    </button>
+    <button class="view-toggle" data-view="timeline" aria-label="Timeline view">
+      <svg class="vt-icon" viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true">
+        <rect x="3" y="4.5" width="14" height="3" rx="1.5"/>
+        <rect x="8" y="10.5" width="13" height="3" rx="1.5"/>
+        <rect x="3" y="16.5" width="10" height="3" rx="1.5"/>
+      </svg>
+      <span class="vt-label">Timeline</span>
+    </button>
   </div>
 
   <div class="timeline-nav" id="timelineNav" style="display:none;">
