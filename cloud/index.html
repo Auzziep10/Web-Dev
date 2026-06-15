@@ -16,6 +16,7 @@
     --accent-2: #5b7cf5;
     --todo: #6b7a99;
     --progress: #d4a017;
+    --active: #14b8a6;
     --done: #2faa6b;
     --danger: #e05a5a;
     --p-critical: #e05a5a;
@@ -61,7 +62,7 @@
   button.danger:hover { border-color: var(--danger); }
   button.ghost { background: transparent; }
 
-  main { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+  main { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
     padding: 16px 20px 20px; overflow: hidden; }
   .column { background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
     display: flex; flex-direction: column; min-height: 200px; overflow: hidden; }
@@ -71,6 +72,7 @@
   .status-dot { width: 8px; height: 8px; border-radius: 50%; }
   .status-dot.todo { background: var(--todo); }
   .status-dot.progress { background: var(--progress); }
+  .status-dot.active { background: var(--active); }
   .status-dot.done { background: var(--done); }
   .col-count { font-size: 12px; color: var(--muted); background: var(--panel);
     padding: 2px 8px; border-radius: 10px; border: 1px solid var(--border); }
@@ -683,6 +685,10 @@
     background: conic-gradient(var(--progress) 0% 50%, transparent 50% 100%);
     border-color: var(--progress);
   }
+  .lr-status.active {
+    background: conic-gradient(var(--active) 0% 75%, transparent 75% 100%);
+    border-color: var(--active);
+  }
   .lr-status.done {
     background: var(--done); border-color: var(--done);
   }
@@ -859,6 +865,14 @@
     <ul class="task-list" data-status="progress"></ul>
   </section>
 
+  <section class="column" data-status="active">
+    <div class="col-header">
+      <div class="col-title"><span class="status-dot active"></span>Active</div>
+      <span class="col-count" data-count="active">0</span>
+    </div>
+    <ul class="task-list" data-status="active"></ul>
+  </section>
+
   <section class="column" data-status="done">
     <div class="col-header">
       <div class="col-title"><span class="status-dot done"></span>Done</div>
@@ -894,6 +908,7 @@
       <select id="taskStatus">
         <option value="todo">To do</option>
         <option value="progress">In progress</option>
+        <option value="active">Active</option>
         <option value="done">Done</option>
       </select>
     </div>
@@ -993,7 +1008,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 import { firebaseConfig } from "./firebase-config.js";
 
-const STATUSES = ['todo', 'progress', 'done'];
+const STATUSES = ['todo', 'progress', 'active', 'done'];
 const PRIORITY_RANK = { critical: 0, high: 1, medium: 2, low: 3 };
 const PRIORITY_LABEL = { critical: 'Critical', high: 'High', medium: 'Medium', low: 'Low' };
 const AVATAR_PALETTE = ['#e05a5a', '#e89a3d', '#d4a017', '#5b8def', '#7c9cff', '#2faa6b', '#34a0a4', '#9b59b6', '#c77dff'];
@@ -1556,7 +1571,7 @@ function renderList() {
 
   // Within each project: todo first, then in-progress, then done.
   // Inside each status bucket: by importance, then by manual order.
-  const STATUS_RANK = { todo: 0, progress: 1, done: 2 };
+  const STATUS_RANK = { todo: 0, progress: 1, active: 2, done: 3 };
   Object.values(groups).forEach(arr => {
     arr.sort((a, b) => {
       const sa = STATUS_RANK[a.status] ?? 99;
@@ -1602,6 +1617,7 @@ function renderListItem(t) {
     : '';
   const statusLabel = t.status === 'todo' ? 'To do'
                    : t.status === 'progress' ? 'In progress'
+                   : t.status === 'active' ? 'Active'
                    : 'Done';
   const prog = progressOf(t);
   const progressBadge = `<span class="progress-badge ${prog === 100 ? 'complete' : ''}" data-action="progress" title="Click to update progress">${prog}%</span>`;
