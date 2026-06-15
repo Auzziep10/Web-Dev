@@ -287,6 +287,35 @@
     margin-bottom: 6px;
   }
 
+  /* Floating hover tooltip showing task details */
+  .details-tooltip {
+    position: fixed;
+    z-index: 400;
+    max-width: 340px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px 11px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.35);
+    font-size: 12.5px; line-height: 1.5;
+    color: var(--text);
+    white-space: pre-wrap; word-wrap: break-word;
+    pointer-events: none;
+    display: none;
+  }
+  .details-tooltip.show { display: block; }
+  .details-tooltip::before {
+    content: "Details";
+    display: block;
+    font-size: 10px; font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase; letter-spacing: .3px;
+    margin-bottom: 6px;
+  }
+  @media (max-width: 768px), (pointer: coarse) {
+    .details-tooltip { display: none !important; }
+  }
+
   /* Expanded thread panel */
   .task-expanded {
     margin-top: 12px; padding-top: 10px;
@@ -1686,6 +1715,8 @@ function bindListEvents() {
     const row = item.querySelector('.list-row');
     const id = row.dataset.id;
 
+    attachDetailsHover(row, id);
+
     // Click anywhere on the row (except controls) → open edit modal
     row.addEventListener('click', e => {
       if (e.target.closest('button, input, [data-action]')) return;
@@ -1963,6 +1994,7 @@ function bindTaskEvents() {
     el.addEventListener('dragover', onTaskDragOver);
     el.addEventListener('dragleave', onTaskDragLeave);
     el.addEventListener('drop', onTaskDrop);
+    attachDetailsHover(el, el.dataset.id);
     el.querySelectorAll('[data-action]').forEach(btn => {
       btn.addEventListener('click', e => {
         e.stopPropagation();
@@ -2268,6 +2300,54 @@ document.getElementById('drClearBtn').addEventListener('click', () => {
 document.addEventListener('pointermove', onTimelinePointerMove);
 document.addEventListener('pointerup', onTimelinePointerUp);
 document.addEventListener('pointercancel', onTimelinePointerUp);
+
+// --- Details hover tooltip ---
+const detailsTooltip = document.createElement('div');
+detailsTooltip.className = 'details-tooltip';
+document.body.appendChild(detailsTooltip);
+let tooltipShowTimer = null;
+
+function showDetailsTooltip(text, x, y) {
+  detailsTooltip.textContent = text;
+  detailsTooltip.classList.add('show');
+  positionDetailsTooltip(x, y);
+}
+function hideDetailsTooltip() {
+  clearTimeout(tooltipShowTimer);
+  detailsTooltip.classList.remove('show');
+}
+function positionDetailsTooltip(x, y) {
+  const rect = detailsTooltip.getBoundingClientRect();
+  const pad = 14;
+  let left = x + pad;
+  let top = y + pad;
+  if (left + rect.width > window.innerWidth - 10) left = x - rect.width - pad;
+  if (top + rect.height > window.innerHeight - 10) top = y - rect.height - pad;
+  if (left < 10) left = 10;
+  if (top < 10) top = 10;
+  detailsTooltip.style.left = left + 'px';
+  detailsTooltip.style.top = top + 'px';
+}
+function attachDetailsHover(el, taskId) {
+  el.addEventListener('mouseenter', e => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task || !task.details || !task.details.trim()) return;
+    if (dragId || timelineDragState) return;
+    if (expandedIds.has(taskId)) return; // already showing in expanded view
+    clearTimeout(tooltipShowTimer);
+    const x = e.clientX, y = e.clientY;
+    tooltipShowTimer = setTimeout(() => showDetailsTooltip(task.details, x, y), 450);
+  });
+  el.addEventListener('mousemove', e => {
+    if (detailsTooltip.classList.contains('show')) {
+      positionDetailsTooltip(e.clientX, e.clientY);
+    }
+  });
+  el.addEventListener('mouseleave', hideDetailsTooltip);
+  el.addEventListener('mousedown', hideDetailsTooltip);
+}
+// Hide if a modal opens or any drag starts
+document.addEventListener('keydown', e => { if (e.key === 'Escape') hideDetailsTooltip(); });
 
 // --- Progress quick-edit popover ---
 let progressPopoverTaskId = null;
