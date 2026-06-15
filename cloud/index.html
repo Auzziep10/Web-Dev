@@ -259,6 +259,33 @@
     background: rgba(124,156,255,0.10); color: var(--accent);
     padding: 1px 7px; border-radius: 10px; font-size: 11px; font-weight: 600;
   }
+  .details-indicator {
+    background: rgba(124,156,255,0.10); color: var(--accent);
+    padding: 1px 7px; border-radius: 10px; font-size: 11px; font-weight: 600;
+    line-height: 1;
+  }
+
+  /* Details block inside expanded task panel */
+  .task-details {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 12px 11px;
+    margin-bottom: 12px;
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--text);
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+  .task-details::before {
+    content: "Details";
+    display: block;
+    font-size: 10px; font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase; letter-spacing: .3px;
+    margin-bottom: 6px;
+  }
 
   /* Expanded thread panel */
   .task-expanded {
@@ -897,6 +924,10 @@
     <div class="field">
       <label for="taskTitle">Title</label>
       <input type="text" id="taskTitle" placeholder="What needs to happen?" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="taskDetails">Details <span style="color:var(--muted);font-weight:400;font-size:11px;">(optional)</span></label>
+      <textarea id="taskDetails" placeholder="Notes, requirements, links, context..." rows="4"></textarea>
     </div>
     <div class="field">
       <label for="taskApp">Project</label>
@@ -1621,6 +1652,10 @@ function renderListItem(t) {
                    : 'Done';
   const prog = progressOf(t);
   const progressBadge = `<span class="progress-badge ${prog === 100 ? 'complete' : ''}" data-action="progress" title="Click to update progress">${prog}%</span>`;
+  const hasDetails = !!(t.details && t.details.trim());
+  const detailsBadge = hasDetails
+    ? `<span class="details-indicator" title="Has details — expand to read">📝</span>`
+    : '';
   const isExpanded = expandedIds.has(t.id);
   const expanded = isExpanded ? renderExpanded(t, updates) : '';
   return `
@@ -1633,6 +1668,7 @@ function renderListItem(t) {
           <span class="priority-chip ${p}">${PRIORITY_LABEL[p]}</span>
           ${avatars}
           ${dateBadge}
+          ${detailsBadge}
           ${progressBadge}
           ${updateBadge}
         </span>
@@ -1817,6 +1853,10 @@ function renderTask(t) {
   const dateBadge = dateText
     ? `<span class="date-chip ${dateChipClass(t.endDate, t.status)}" title="${escapeHtml((t.startDate || '') + (t.startDate && t.endDate ? ' to ' : '') + (t.endDate || ''))}">📅 ${escapeHtml(dateText)}</span>`
     : '';
+  const hasDetails = !!(t.details && t.details.trim());
+  const detailsBadge = hasDetails
+    ? `<span class="details-indicator" title="Has details — expand to read">📝</span>`
+    : '';
   const isExpanded = expandedIds.has(t.id);
   const expanded = isExpanded ? renderExpanded(t, updates) : '';
   const prog = progressOf(t);
@@ -1830,6 +1870,7 @@ function renderTask(t) {
           ${t.app ? `<span class="task-app">${escapeHtml(t.app)}</span>` : ''}
           ${avatars}
           ${dateBadge}
+          ${detailsBadge}
           ${updateBadge}
         </span>
         <span class="task-actions">
@@ -1870,8 +1911,12 @@ function renderExpanded(t, updates) {
         </div>
       `;
       }).join('');
+  const detailsHtml = t.details && t.details.trim()
+    ? `<div class="task-details">${escapeHtml(t.details)}</div>`
+    : '';
   return `
     <div class="task-expanded" data-task-id="${t.id}">
+      ${detailsHtml}
       <div class="update-list">${listHtml}</div>
       <div class="update-input-row">
         <input class="update-input" data-task-id="${t.id}" placeholder="Add an update..." autocomplete="off">
@@ -2082,6 +2127,7 @@ function openModal(id) {
   const t = id ? tasks.find(x => x.id === id) : null;
   document.getElementById('modalTitle').textContent = t ? 'Edit task' : 'New task';
   document.getElementById('taskTitle').value = t ? t.title : '';
+  document.getElementById('taskDetails').value = t ? (t.details || '') : '';
   document.getElementById('taskApp').value = t ? (t.app || '') : '';
   document.getElementById('taskStatus').value = t ? t.status : 'todo';
   document.getElementById('taskPriority').value = t ? (t.priority || 'medium') : 'medium';
@@ -2109,6 +2155,7 @@ function closeModal() { document.getElementById('modal').classList.remove('open'
 
 async function saveTask() {
   const title = document.getElementById('taskTitle').value.trim();
+  const details = document.getElementById('taskDetails').value;
   const appName = document.getElementById('taskApp').value.trim();
   const status = document.getElementById('taskStatus').value;
   const priority = document.getElementById('taskPriority').value;
@@ -2129,7 +2176,7 @@ async function saveTask() {
     if (editingId) {
       const t = tasks.find(x => x.id === editingId);
       const statusChanged = t && t.status !== status;
-      const update = { title, app: appName, priority, assignees, startDate, endDate, progress };
+      const update = { title, details, app: appName, priority, assignees, startDate, endDate, progress };
       if (statusChanged) {
         update.status = status;
         const colCount = tasks.filter(x => x.status === status && x.id !== editingId).length;
@@ -2139,7 +2186,7 @@ async function saveTask() {
     } else {
       const colCount = tasks.filter(x => x.status === status).length;
       await addDoc(collection(db, 'tasks'), {
-        title, app: appName, status, priority, assignees, startDate, endDate, progress, order: colCount,
+        title, details, app: appName, status, priority, assignees, startDate, endDate, progress, order: colCount,
         createdAt: serverTimestamp(),
         createdBy: currentUser.email
       });
