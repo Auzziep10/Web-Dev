@@ -17,8 +17,8 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function isSignedIn() { return request.auth != null; }
-    function userEmail() { return request.auth.token.email; }
+    function isSignedIn() { return request.auth != null && request.auth.token.email != null; }
+    function userEmail() { return request.auth.token.email.lower(); }
     function accessDoc() { return get(/databases/$(database)/documents/config/access).data; }
     function emailIn(field) {
       return accessDoc()[field] is list && userEmail() in accessDoc()[field];
