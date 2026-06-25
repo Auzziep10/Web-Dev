@@ -983,7 +983,7 @@
   }
   .expanded-split {
     display: grid;
-    grid-template-columns: 1.2fr 1fr;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
     gap: 20px;
     margin-bottom: 14px;
   }
@@ -3011,8 +3011,8 @@ function renderExpanded(t, updates) {
   const disabledAttr = isEditor ? '' : 'disabled';
 
   return `
-    <div class="task-expanded" data-task-id="${t.id}" style="padding: 16px 8px 8px; border-top: 1px solid var(--border); margin-top: 8px;">
-      <div class="expanded-split" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+    <div class="task-expanded" data-task-id="${t.id}">
+      <div class="expanded-split">
         
         <!-- Left Column: Project, Assignees, Subtasks -->
         <div class="expanded-col" style="display: flex; flex-direction: column; gap: 16px;">
