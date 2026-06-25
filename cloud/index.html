@@ -2208,7 +2208,6 @@ function renderListItem(t, team) {
           <span class="lr-status ${t.status}" data-action="toggle-status" title="${statusLabel} (Click to toggle completion)"></span>
         </div>
         <input type="text" class="lr-title-input ${t.status === 'done' ? 'slashed' : ''}" data-field="title" value="${escapeHtml(t.title || '')}" placeholder="Deliverable..." ${disabledAttr}>
-        <input type="text" class="lr-details-input" data-field="details" value="${escapeHtml(t.details || '')}" placeholder="Notes / Dependencies..." ${disabledAttr}>
         <div class="lr-chips">
           <!-- Priority select -->
           <div class="lr-priority-col">
