@@ -3431,6 +3431,15 @@ function bindTaskEvents() {
         if (action === 'progress') openProgressPopover(id, btn);
       });
     });
+    // Click anywhere on card to expand/collapse (except interactive fields or expanded panel)
+    el.addEventListener('click', e => {
+      const target = e.target;
+      if (target.closest('button, input, select, textarea, a, .task-expanded, [data-action]')) {
+        return;
+      }
+      const id = el.dataset.id;
+      toggleExpand(id);
+    });
     // Enter-to-post in update input
     const input = el.querySelector('.update-input');
     if (input) {
