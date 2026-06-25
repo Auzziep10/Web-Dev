@@ -2610,21 +2610,21 @@ function bindListEvents() {
     }
 
     // Inline Project input edits
-    const projectInput = item.querySelector('.expanded-project-input');
-    if (projectInput) {
-      projectInput.addEventListener('change', async () => {
-        const val = projectInput.value.trim();
+    const expProjectInput = item.querySelector('.expanded-project-input');
+    if (expProjectInput) {
+      expProjectInput.addEventListener('change', async () => {
+        const val = expProjectInput.value.trim();
         try {
           await updateDoc(doc(db, 'tasks', id), { app: val });
         } catch (err) {
           toast('Failed to update project: ' + err.message);
         }
       });
-      projectInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') projectInput.blur();
+      expProjectInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') expProjectInput.blur();
         if (e.key === 'Escape') {
-          projectInput.value = task.app || '';
-          projectInput.blur();
+          expProjectInput.value = task.app || '';
+          expProjectInput.blur();
         }
       });
     }
