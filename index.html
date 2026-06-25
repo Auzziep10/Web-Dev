@@ -317,13 +317,13 @@
     box-shadow: var(--shadow);
   }
   #modal .modal {
-    width: 100vw;
-    height: 100vh;
-    max-width: 100vw;
-    max-height: 100vh;
-    border-radius: 0;
-    border: none;
-    padding: 24px 40px;
+    width: min(1200px, 95vw);
+    height: min(850px, 90vh);
+    max-width: 95vw;
+    max-height: 90vh;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    padding: 24px 32px;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;

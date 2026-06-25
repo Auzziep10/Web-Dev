@@ -41,5 +41,10 @@ service cloud.firestore {
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['updates'])
       );
     }
+
+    match /profiles/{email} {
+      allow read: if isViewer();
+      allow write: if isEditor() || (isSignedIn() && userEmail().lower() == email.lower());
+    }
   }
 }
