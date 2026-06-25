@@ -79,30 +79,33 @@
     width: 200px;
     transition: width 0.2s ease;
   }
-  .search-wrapper input {
+  .search-wrapper input[type="text"] {
     width: 100%;
-    padding: 6px 12px 6px 30px;
+    padding: 6px 12px 6px 32px;
     font-size: 13px;
-    border-radius: 6px;
+    border-radius: 20px;
     border: 1px solid var(--border);
     background: var(--panel-2);
     color: var(--text);
     transition: width 0.2s ease, border-color 0.2s, box-shadow 0.2s;
   }
-  .search-wrapper input:focus {
+  .search-wrapper input[type="text"]:focus {
     width: 260px;
     border-color: var(--accent);
     box-shadow: 0 0 0 2px var(--accent-shadow);
     background: var(--panel);
   }
-  .search-icon {
+  .search-icon-svg {
     position: absolute;
-    left: 10px;
+    left: 12px;
     top: 50%;
     transform: translateY(-50%);
     color: var(--muted);
-    font-size: 12px;
     pointer-events: none;
+    transition: color 0.15s;
+  }
+  .search-wrapper input[type="text"]:focus + .search-icon-svg {
+    color: var(--accent);
   }
   .filter-group { display: flex; align-items: center; gap: 8px; }
   .filter-group label { font-size: 12px; color: var(--muted); }
@@ -746,7 +749,7 @@
     align-items: center;
     gap: 8px;
   }
-  .lp-name-input {
+  input[type="text"].lp-name-input {
     background: transparent;
     border: 1px solid transparent;
     color: var(--text);
@@ -772,11 +775,11 @@
     font-family: inherit;
     margin-left: -6px;
   }
-  .lp-name-input:hover {
+  input[type="text"].lp-name-input:hover {
     background: var(--panel-2);
     border-color: var(--border);
   }
-  .lp-name-input:focus {
+  input[type="text"].lp-name-input:focus {
     background: var(--panel);
     border-color: var(--accent);
     outline: none;
@@ -1285,7 +1288,7 @@
       margin-right: 0;
       margin-left: 4px;
     }
-    .search-wrapper input:focus {
+    .search-wrapper input[type="text"]:focus {
       width: 140px;
     }
   }
@@ -1345,8 +1348,8 @@
   <span id="modeBadge" class="mode-badge">Editor</span>
 
   <div class="search-wrapper">
-    <span class="search-icon">🔍</span>
     <input type="text" id="taskSearch" placeholder="Search tasks..." autocomplete="off">
+    <svg class="search-icon-svg" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
   </div>
 
   <div class="spacer"></div>
