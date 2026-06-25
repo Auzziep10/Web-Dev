@@ -1766,6 +1766,14 @@ function setupUI() {
   const chip = document.getElementById('userChip');
   const photo = currentUser.photoURL ? `<img src="${currentUser.photoURL}" alt="">` : '';
   chip.innerHTML = `${photo}<span>${escapeHtml(currentUser.email)}</span>`;
+  chip.style.cursor = 'pointer';
+  chip.onclick = () => {
+    const email = (currentUser.email || '').toLowerCase();
+    const p = profiles[email] || {};
+    document.getElementById('profileFirstName').value = p.firstName || '';
+    document.getElementById('profileLastName').value = p.lastName || '';
+    document.getElementById('profileModal').classList.add('open');
+  };
 
   const isViewer = role === 'viewer';
   document.body.classList.toggle('view-mode', isViewer);
@@ -2157,8 +2165,13 @@ function renderList() {
 function renderListItem(t, team) {
   const p = t.priority || 'medium';
   const lead = Array.isArray(t.assignees) && t.assignees[0] ? t.assignees[0] : '';
-  const leadAvatarHtml = lead
-    ? `<span class="avatar lead-avatar" style="background:${colorFor(lead)}" title="Lead: ${escapeHtml(lead)}">${escapeHtml(initialsFor(lead))}</span>`
+  const support = Array.isArray(t.assignees) && t.assignees[1] ? t.assignees[1] : '';
+  const subtaskAssignees = (t.subtasks || [])
+    .map(s => s.assignee)
+    .filter(Boolean);
+  const allAssignees = [...new Set([lead, support, ...subtaskAssignees].filter(Boolean))];
+  const assigneesHtml = allAssignees.length
+    ? `<span class="task-assignees" style="margin-left: 0;">${allAssignees.map(avatarHtml).join('')}</span>`
     : `<span class="avatar-inline-placeholder" title="No Lead" style="border: 1px dashed var(--border); background: transparent; color: var(--muted); display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; font-size: 11px; font-weight: 600;">+L</span>`;
   
   const cadenceValue = t.cadence || (t.startDate && t.endDate ? formatDateChip(t.startDate, t.endDate) : '');
@@ -2208,7 +2221,7 @@ function renderListItem(t, team) {
           </div>
           <!-- Lead Avatar Display -->
           <div class="lr-lead-display" style="flex-shrink: 0; display: inline-flex; align-items: center;">
-            ${leadAvatarHtml}
+            ${assigneesHtml}
           </div>
           <!-- Cadence input -->
           <div class="inline-cadence-wrapper">
@@ -2887,7 +2900,7 @@ function render() {
     '<option value="__all__">Anyone</option>' +
     (team.includes(me) ? '<option value="__me__">Me</option>' : '') +
     '<option value="__none__">Unassigned</option>' +
-    team.map(e => `<option value="${escapeHtml(e)}">${escapeHtml(emailShort(e))}</option>`).join('');
+    team.map(e => `<option value="${escapeHtml(e)}">${escapeHtml(getDisplayShort(e))}</option>`).join('');
   const validValues = new Set(['__all__', '__me__', '__none__', ...team]);
   assFilter.value = validValues.has(assCurrent) ? assCurrent : '__all__';
 
@@ -2914,9 +2927,13 @@ function render() {
 
 function renderTask(t) {
   const p = t.priority || 'medium';
-  const assignees = Array.isArray(t.assignees) ? t.assignees : [];
-  const avatars = assignees.length
-    ? `<span class="task-assignees">${assignees.map(avatarHtml).join('')}</span>`
+  const parentAssignees = Array.isArray(t.assignees) ? t.assignees : [];
+  const subtaskAssignees = (t.subtasks || [])
+    .map(s => s.assignee)
+    .filter(Boolean);
+  const allAssignees = [...new Set([...parentAssignees, ...subtaskAssignees])];
+  const avatars = allAssignees.length
+    ? `<span class="task-assignees">${allAssignees.map(avatarHtml).join('')}</span>`
     : '';
   const updates = Array.isArray(t.updates) ? t.updates : [];
   const updateBadge = updates.length
@@ -2980,7 +2997,7 @@ function renderExpanded(t, updates) {
           ${avatarHtml(u.author)}
           <div class="update-body">
             <div class="update-meta">
-              <span class="update-author">${escapeHtml(emailShort(u.author))}</span>
+              <span class="update-author">${escapeHtml(getDisplayShort(u.author))}</span>
               <span title="${escapeHtml(fullTime(u.timestamp))}">${escapeHtml(timeAgo(u.timestamp))}</span>
               ${delBtn}
             </div>
@@ -3015,14 +3032,14 @@ function renderExpanded(t, updates) {
                   <span style="font-size:11px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:0.3px;">Lead</span>
                   <select class="expanded-lead-select" style="width:100%; font-size:13px; padding:6px 8px; border-radius:4px; border:1px solid var(--border); background:var(--panel); color:var(--text);" ${disabledAttr}>
                     <option value="">Unassigned</option>
-                    ${team.map(email => `<option value="${escapeHtml(email)}" ${lead === email ? 'selected' : ''}>${escapeHtml(emailShort(email))}</option>`).join('')}
+                    ${team.map(email => `<option value="${escapeHtml(email)}" ${lead === email ? 'selected' : ''}>${escapeHtml(getDisplayShort(email))}</option>`).join('')}
                   </select>
                 </div>
                 <div style="flex:1; display:flex; flex-direction:column; gap:4px;">
                   <span style="font-size:11px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:0.3px;">Support</span>
                   <select class="expanded-support-select" style="width:100%; font-size:13px; padding:6px 8px; border-radius:4px; border:1px solid var(--border); background:var(--panel); color:var(--text);" ${disabledAttr}>
                     <option value="">Unassigned</option>
-                    ${team.map(email => `<option value="${escapeHtml(email)}" ${support === email ? 'selected' : ''}>${escapeHtml(emailShort(email))}</option>`).join('')}
+                    ${team.map(email => `<option value="${escapeHtml(email)}" ${support === email ? 'selected' : ''}>${escapeHtml(getDisplayShort(email))}</option>`).join('')}
                   </select>
                 </div>
               </div>
@@ -3043,7 +3060,7 @@ function renderExpanded(t, updates) {
                     <input type="text" class="subtask-text-input-inline ${s.completed ? 'completed' : ''}" data-task-id="${t.id}" data-index="${idx}" value="${escapeHtml(s.title)}" placeholder="Subtask name..." ${disabledAttr} style="flex:1; border:none; background:transparent; border-bottom:1px solid transparent; padding:2px; font-size:12px; color: ${s.completed ? 'var(--muted)' : 'var(--text)'};">
                     <select class="subtask-assignee-select-inline" data-task-id="${t.id}" data-index="${idx}" ${disabledAttr} style="font-size:11px; padding:2px 4px; border-radius:4px; border:1px solid var(--border); background:var(--panel); color:var(--text); max-width:110px;">
                       <option value="">Assign...</option>
-                      ${team.map(email => `<option value="${escapeHtml(email)}" ${s.assignee === email ? 'selected' : ''}>${escapeHtml(emailShort(email))}</option>`).join('')}
+                      ${team.map(email => `<option value="${escapeHtml(email)}" ${s.assignee === email ? 'selected' : ''}>${escapeHtml(getDisplayShort(email))}</option>`).join('')}
                     </select>
                     ${isEditor ? `<button type="button" class="delete-subtask-inline" data-task-id="${t.id}" data-index="${idx}" style="background:none; border:none; font-size:14px; color:var(--muted); cursor:pointer;">×</button>` : ''}
                   </div>
@@ -3121,8 +3138,8 @@ function renderAssigneePicker(selectedEmails) {
   picker.innerHTML = team.map(email => {
     const isSel = sel.has(email);
     return `<span class="assignee-pill ${isSel ? 'selected' : ''}" data-email="${escapeHtml(email)}">
-      <span class="avatar" style="background:${colorFor(email)}">${escapeHtml(initialsFor(email))}</span>
-      <span>${escapeHtml(emailShort(email))}</span>
+      <span class="avatar" style="background:${colorFor(email)}">${escapeHtml(getDisplayInitials(email))}</span>
+      <span>${escapeHtml(getDisplayShort(email))}</span>
     </span>`;
   }).join('');
   picker.querySelectorAll('.assignee-pill').forEach(el => {
@@ -3314,7 +3331,7 @@ function renderModalSubtasks() {
         <input type="text" class="subtask-text-input ${s.completed ? 'completed' : ''}" value="${escapeHtml(s.title)}" data-index="${index}" placeholder="Subtask name..." style="flex:1;">
         <select class="subtask-assignee-select" data-index="${index}" style="font-size:11px; padding:2px 4px; border-radius:4px; border:1px solid var(--border); background:var(--panel); color:var(--text); max-width:110px;">
           <option value="">Assign...</option>
-          ${team.map(email => `<option value="${escapeHtml(email)}" ${s.assignee === email ? 'selected' : ''}>${escapeHtml(emailShort(email))}</option>`).join('')}
+          ${team.map(email => `<option value="${escapeHtml(email)}" ${s.assignee === email ? 'selected' : ''}>${escapeHtml(getDisplayShort(email))}</option>`).join('')}
         </select>
         <button type="button" class="delete-subtask-btn" data-index="${index}" title="Delete subtask">×</button>
       </div>
