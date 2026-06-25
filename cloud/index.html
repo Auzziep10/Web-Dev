@@ -1339,6 +1339,167 @@
   .delete-subtask-btn:hover {
     color: var(--danger);
   }
+
+  /* Popovers */
+  .progress-popover,
+  .support-popover {
+    position: absolute;
+    z-index: 1000;
+    display: none;
+    flex-direction: column;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    box-shadow: 0 4px 12px var(--accent-shadow);
+    padding: 12px;
+    width: 200px;
+  }
+  .progress-popover.open,
+  .support-popover.open {
+    display: flex;
+  }
+  .pp-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .pp-title {
+    color: var(--text);
+  }
+  .pp-value {
+    color: var(--muted);
+  }
+  .progress-slider {
+    width: 100%;
+    margin-bottom: 12px;
+    accent-color: var(--accent);
+  }
+  .pp-presets {
+    display: flex;
+    justify-content: space-between;
+    gap: 4px;
+  }
+  .pp-presets button {
+    flex: 1;
+    font-size: 11px;
+    padding: 4px 0;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    border-radius: 4px;
+    cursor: pointer;
+    color: var(--text);
+    transition: all 0.15s ease;
+  }
+  .pp-presets button:hover:not(:disabled) {
+    background: var(--accent-bg-04);
+    border-color: var(--accent);
+  }
+  .pp-presets button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .sp-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+  .sp-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    user-select: none;
+    padding: 4px;
+    border-radius: 4px;
+    transition: background 0.15s ease;
+  }
+  .sp-item:hover {
+    background: var(--accent-bg-04);
+  }
+  .sp-checkbox {
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
+    accent-color: var(--accent);
+  }
+  .sp-label {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text);
+  }
+
+  /* Support Pills */
+  .support-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    font-size: 12px;
+    color: var(--text);
+  }
+  .remove-support-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: bold;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.15s ease;
+  }
+  .remove-support-btn:hover {
+    color: var(--danger);
+  }
+  .add-support-select {
+    font-size: 12px;
+    padding: 2px 6px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    color: var(--text);
+    cursor: pointer;
+    outline: none;
+  }
+  .add-support-select:focus {
+    border-color: var(--accent);
+  }
+
+  .inline-support-wrapper {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+  }
+  .inline-support-label {
+    cursor: pointer;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    max-width: 100%;
+    display: inline-block;
+    padding: 4px;
+    font-size: 13px;
+    color: var(--text);
+  }
+  .inline-support-label:hover {
+    background: rgba(0,0,0,0.04);
+    border-radius: 4px;
+  }
 </style>
 </head>
 <body>
@@ -1604,6 +1765,11 @@
     <button type="button" data-value="75">75%</button>
     <button type="button" data-value="100">100%</button>
   </div>
+</div>
+
+<!-- Support quick-edit popover -->
+<div class="support-popover" id="supportPopover">
+  <div class="sp-list" id="spList"></div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -2367,8 +2533,12 @@ function renderList() {
 
 function renderListItem(t, team) {
   const p = t.priority || 'medium';
-  const lead = Array.isArray(t.assignees) && t.assignees[0] ? t.assignees[0] : '';
-  const support = Array.isArray(t.assignees) && t.assignees[1] ? t.assignees[1] : '';
+  const parentAssignees = Array.isArray(t.assignees) ? t.assignees : [];
+  const lead = parentAssignees[0] || '';
+  const supportEmails = parentAssignees.slice(1);
+  const supportLabelText = supportEmails.length > 0 
+    ? supportEmails.map(getDisplayShort).join(', ') 
+    : 'Unassigned';
   
   const cadenceValue = t.cadence || (t.startDate && t.endDate ? formatDateChip(t.startDate, t.endDate) : '');
   
@@ -2417,10 +2587,9 @@ function renderListItem(t, team) {
         </div>
         <!-- 4. Support -->
         <div class="lr-support-cell">
-          <select class="lr-assignee-select lr-support-select" ${disabledAttr}>
-            <option value="">Unassigned</option>
-            ${team.map(email => `<option value="${escapeHtml(email)}" ${support === email ? 'selected' : ''}>${escapeHtml(getDisplayShort(email))}</option>`).join('')}
-          </select>
+          <div class="inline-support-wrapper" data-action="edit-support" title="Click to edit support assignees">
+            <span class="inline-support-label">${escapeHtml(supportLabelText)}</span>
+          </div>
         </div>
         <!-- 5. Start / End -->
         <div class="lr-cadence-cell">
@@ -2460,7 +2629,256 @@ function renderListItem(t, team) {
       ${expanded}
     </div>
   `;
-}function bindListEvents() {
+}function bindSharedExpandedEvents(item, task, id) {
+  const isEditor = role === 'editor';
+
+  // 1. Lead Change select
+  const expLeadSelect = item.querySelector('.expanded-lead-select');
+  if (expLeadSelect) {
+    expLeadSelect.addEventListener('change', async () => {
+      const val = expLeadSelect.value;
+      const parentAssignees = Array.isArray(task.assignees) ? [...task.assignees] : [];
+      const supportEmails = parentAssignees.slice(1);
+      const newAssignees = [];
+      if (val) newAssignees.push(val);
+      // Filter out the new lead from the support candidates
+      const filteredSupport = supportEmails.filter(email => email.toLowerCase() !== val.toLowerCase());
+      newAssignees.push(...filteredSupport);
+      try {
+        await updateDoc(doc(db, 'tasks', id), { assignees: newAssignees });
+      } catch (err) {
+        toast('Failed to update lead: ' + err.message);
+      }
+    });
+  }
+
+  // 2. Add Support select
+  const addSupportSelect = item.querySelector('.add-support-select');
+  if (addSupportSelect) {
+    addSupportSelect.addEventListener('change', async () => {
+      const val = addSupportSelect.value;
+      if (!val) return;
+      const parentAssignees = Array.isArray(task.assignees) ? [...task.assignees] : [];
+      const lead = parentAssignees[0] || '';
+      const supportEmails = parentAssignees.slice(1).map(e => e.toLowerCase());
+      if (!supportEmails.includes(val.toLowerCase())) {
+        supportEmails.push(val);
+      }
+      const newAssignees = [];
+      if (lead) newAssignees.push(lead);
+      newAssignees.push(...supportEmails);
+      try {
+        await updateDoc(doc(db, 'tasks', id), { assignees: newAssignees });
+      } catch (err) {
+        toast('Failed to add support assignee: ' + err.message);
+      }
+    });
+  }
+
+  // 3. Remove Support pills
+  item.querySelectorAll('.remove-support-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const email = btn.dataset.email;
+      if (!email) return;
+      const parentAssignees = Array.isArray(task.assignees) ? [...task.assignees] : [];
+      const lead = parentAssignees[0] || '';
+      const supportEmails = parentAssignees.slice(1).filter(e => e.toLowerCase() !== email.toLowerCase());
+      const newAssignees = [];
+      if (lead) newAssignees.push(lead);
+      newAssignees.push(...supportEmails);
+      try {
+        await updateDoc(doc(db, 'tasks', id), { assignees: newAssignees });
+      } catch (err) {
+        toast('Failed to remove support assignee: ' + err.message);
+      }
+    });
+  });
+
+  // 4. Inline Project input edits
+  const expProjectInput = item.querySelector('.expanded-project-input');
+  if (expProjectInput) {
+    expProjectInput.addEventListener('change', async () => {
+      const val = expProjectInput.value.trim();
+      try {
+        await updateDoc(doc(db, 'tasks', id), { app: val });
+      } catch (err) {
+        toast('Failed to update project: ' + err.message);
+      }
+    });
+    expProjectInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') expProjectInput.blur();
+      if (e.key === 'Escape') {
+        expProjectInput.value = task.app || '';
+        expProjectInput.blur();
+      }
+    });
+  }
+
+  // 5. Expanded Section Notes / Links inline editing
+  const expandedNotes = item.querySelector('.expanded-textarea[data-field="details"]');
+  if (expandedNotes) {
+    expandedNotes.addEventListener('change', async () => {
+      const val = expandedNotes.value;
+      try {
+        await updateDoc(doc(db, 'tasks', id), { details: val });
+      } catch (err) {
+        toast('Failed to update notes: ' + err.message);
+      }
+    });
+  }
+
+  const expandedLink = item.querySelector('.expanded-input[data-field="link"]');
+  if (expandedLink) {
+    expandedLink.addEventListener('change', async () => {
+      const val = expandedLink.value.trim();
+      try {
+        await updateDoc(doc(db, 'tasks', id), { link: val });
+      } catch (err) {
+        toast('Failed to update link: ' + err.message);
+      }
+    });
+  }
+
+  // 6. Inline Subtasks checkbox completion toggle
+  item.querySelectorAll('.subtask-checkbox-inline').forEach(cb => {
+    cb.addEventListener('change', async () => {
+      const index = parseInt(cb.dataset.index);
+      const subtasksCopy = JSON.parse(JSON.stringify(task.subtasks || []));
+      if (subtasksCopy[index]) {
+        subtasksCopy[index].completed = cb.checked;
+        const completed = subtasksCopy.filter(s => s.completed).length;
+        const progress = Math.round((completed / subtasksCopy.length) * 100);
+        try {
+          await updateDoc(doc(db, 'tasks', id), { 
+            subtasks: subtasksCopy,
+            progress: progress
+          });
+        } catch (err) {
+          toast('Failed to update subtask: ' + err.message);
+        }
+      }
+    });
+  });
+
+  // 7. Inline Subtasks text edits
+  item.querySelectorAll('.subtask-text-input-inline').forEach(input => {
+    input.addEventListener('change', async () => {
+      const index = parseInt(input.dataset.index);
+      const subtasksCopy = JSON.parse(JSON.stringify(task.subtasks || []));
+      if (subtasksCopy[index]) {
+        subtasksCopy[index].title = input.value.trim();
+        try {
+          await updateDoc(doc(db, 'tasks', id), { subtasks: subtasksCopy });
+        } catch (err) {
+          toast('Failed to update subtask text: ' + err.message);
+        }
+      }
+    });
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') input.blur();
+      if (e.key === 'Escape') {
+        input.value = (task.subtasks[parseInt(input.dataset.index)] || {}).title || '';
+        input.blur();
+      }
+    });
+  });
+
+  // 8. Inline Subtasks assignee change
+  item.querySelectorAll('.subtask-assignee-select-inline').forEach(sel => {
+    sel.addEventListener('change', async () => {
+      const index = parseInt(sel.dataset.index);
+      const subtasksCopy = JSON.parse(JSON.stringify(task.subtasks || []));
+      if (subtasksCopy[index]) {
+        subtasksCopy[index].assignee = sel.value;
+        try {
+          await updateDoc(doc(db, 'tasks', id), { subtasks: subtasksCopy });
+        } catch (err) {
+          toast('Failed to update subtask assignee: ' + err.message);
+        }
+      }
+    });
+  });
+
+  // 9. Inline Subtasks notes edits
+  item.querySelectorAll('.subtask-notes-input-inline').forEach(input => {
+    input.addEventListener('change', async () => {
+      const index = parseInt(input.dataset.index);
+      const subtasksCopy = JSON.parse(JSON.stringify(task.subtasks || []));
+      if (subtasksCopy[index]) {
+        subtasksCopy[index].notes = input.value.trim();
+        try {
+          await updateDoc(doc(db, 'tasks', id), { subtasks: subtasksCopy });
+        } catch (err) {
+          toast('Failed to update subtask notes: ' + err.message);
+        }
+      }
+    });
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') input.blur();
+      if (e.key === 'Escape') {
+        input.value = (task.subtasks[parseInt(input.dataset.index)] || {}).notes || '';
+        input.blur();
+      }
+    });
+  });
+
+  // 10. Inline Subtasks delete
+  item.querySelectorAll('.delete-subtask-inline').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const index = parseInt(btn.dataset.index);
+      const subtasksCopy = JSON.parse(JSON.stringify(task.subtasks || []));
+      subtasksCopy.splice(index, 1);
+      const progress = subtasksCopy.length > 0
+        ? Math.round((subtasksCopy.filter(s => s.completed).length / subtasksCopy.length) * 100)
+        : task.progress || 0;
+      try {
+        await updateDoc(doc(db, 'tasks', id), { 
+          subtasks: subtasksCopy,
+          progress: progress
+        });
+      } catch (err) {
+        toast('Failed to delete subtask: ' + err.message);
+      }
+    });
+  });
+
+  // 11. Inline Subtask add
+  const addInlineInput = item.querySelector('.new-subtask-input-inline');
+  const addInlineBtn = item.querySelector('.add-subtask-btn-inline');
+  if (addInlineInput && addInlineBtn) {
+    const addInlineAction = async () => {
+      const val = addInlineInput.value.trim();
+      if (!val) return;
+      const subtasksCopy = JSON.parse(JSON.stringify(task.subtasks || []));
+      subtasksCopy.push({
+        id: Math.random().toString(36).substring(2, 9),
+        title: val,
+        completed: false,
+        notes: ''
+      });
+      const progress = Math.round((subtasksCopy.filter(s => s.completed).length / subtasksCopy.length) * 100);
+      try {
+        await updateDoc(doc(db, 'tasks', id), { 
+          subtasks: subtasksCopy,
+          progress: progress
+        });
+      } catch (err) {
+        toast('Failed to add subtask: ' + err.message);
+      }
+    };
+
+    addInlineBtn.addEventListener('click', addInlineAction);
+    addInlineInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        addInlineAction();
+      }
+    });
+  }
+}
+
+function bindListEvents() {
   const container = document.getElementById('listView');
 
   // Handle Table Header Clicking for sorting
@@ -2642,269 +3060,37 @@ function renderListItem(t, team) {
       });
     }
 
-    // Lead & Support select changes (both inline and expanded)
+    // Lead inline change
     const rowLeadSelect = item.querySelector('.lr-lead-select');
-    const rowSupportSelect = item.querySelector('.lr-support-select');
-    const expLeadSelect = item.querySelector('.expanded-lead-select');
-    const expSupportSelect = item.querySelector('.expanded-support-select');
-    
-    const handleAssigneeChange = async (e) => {
-      let leadVal = rowLeadSelect ? rowLeadSelect.value : (expLeadSelect ? expLeadSelect.value : '');
-      let supportVal = rowSupportSelect ? rowSupportSelect.value : (expSupportSelect ? expSupportSelect.value : '');
-      
-      if (e && (e.target === rowLeadSelect || e.target === expLeadSelect)) {
-        leadVal = e.target.value;
-      }
-      if (e && (e.target === rowSupportSelect || e.target === expSupportSelect)) {
-        supportVal = e.target.value;
-      }
-      
-      const assignees = [];
-      if (leadVal) assignees.push(leadVal);
-      if (supportVal) assignees.push(supportVal);
-      
-      try {
-        await updateDoc(doc(db, 'tasks', id), { assignees });
-      } catch (err) {
-        toast('Failed to update assignees: ' + err.message);
-      }
-    };
-    
-    if (rowLeadSelect) rowLeadSelect.addEventListener('change', handleAssigneeChange);
-    if (rowSupportSelect) rowSupportSelect.addEventListener('change', handleAssigneeChange);
-    if (expLeadSelect) expLeadSelect.addEventListener('change', handleAssigneeChange);
-    if (expSupportSelect) expSupportSelect.addEventListener('change', handleAssigneeChange);
-
-    // Cadence Click-to-Edit
-    const cadenceLabel = item.querySelector('.inline-cadence-label');
-    const cadenceInput = item.querySelector('.inline-cadence-input');
-    if (cadenceLabel && cadenceInput) {
-      cadenceLabel.addEventListener('click', () => {
-        if (role !== 'editor') return;
-        cadenceLabel.style.display = 'none';
-        cadenceInput.style.display = 'inline-block';
-        cadenceInput.focus();
-      });
-      
-      cadenceInput.addEventListener('change', async () => {
-        const val = cadenceInput.value.trim();
+    if (rowLeadSelect) {
+      rowLeadSelect.addEventListener('change', async () => {
+        const val = rowLeadSelect.value;
+        const parentAssignees = Array.isArray(task.assignees) ? [...task.assignees] : [];
+        const supportEmails = parentAssignees.slice(1);
+        const newAssignees = [];
+        if (val) newAssignees.push(val);
+        // Filter out the new lead from the support candidates
+        const filteredSupport = supportEmails.filter(email => email.toLowerCase() !== val.toLowerCase());
+        newAssignees.push(...filteredSupport);
         try {
-          await updateDoc(doc(db, 'tasks', id), { cadence: val });
+          await updateDoc(doc(db, 'tasks', id), { assignees: newAssignees });
         } catch (err) {
-          toast('Failed to update cadence: ' + err.message);
-        }
-      });
-      
-      cadenceInput.addEventListener('blur', () => {
-        cadenceLabel.style.display = 'inline-block';
-        cadenceInput.style.display = 'none';
-      });
-      
-      cadenceInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') cadenceInput.blur();
-        if (e.key === 'Escape') {
-          cadenceInput.value = task.cadence || '';
-          cadenceInput.blur();
+          toast('Failed to update lead: ' + err.message);
         }
       });
     }
 
-    // Progress Badge Click (opens popover)
-    const progressBtn = item.querySelector('[data-action="progress"]');
-    if (progressBtn) {
-      progressBtn.addEventListener('click', (e) => {
+    // Support click-to-edit (opens supportPopover)
+    const supportLabel = item.querySelector('[data-action="edit-support"]');
+    if (supportLabel) {
+      supportLabel.addEventListener('click', (e) => {
         e.stopPropagation();
-        openProgressPopover(id, progressBtn);
+        openSupportPopover(id, supportLabel);
       });
     }
 
-    // Delete Task Row Button
-    const deleteBtn = item.querySelector('[data-action="delete"]');
-    if (deleteBtn) {
-      deleteBtn.addEventListener('click', () => deleteTaskById(id));
-    }
-
-    // Inline Subtasks checkbox completion toggle
-    item.querySelectorAll('.subtask-checkbox-inline').forEach(cb => {
-      cb.addEventListener('change', async () => {
-        const index = parseInt(cb.dataset.index);
-        const subtasksCopy = JSON.parse(JSON.stringify(task.subtasks || []));
-        if (subtasksCopy[index]) {
-          subtasksCopy[index].completed = cb.checked;
-          const completed = subtasksCopy.filter(s => s.completed).length;
-          const progress = Math.round((completed / subtasksCopy.length) * 100);
-          try {
-            await updateDoc(doc(db, 'tasks', id), { 
-              subtasks: subtasksCopy,
-              progress: progress
-            });
-          } catch (err) {
-            toast('Failed to update subtask: ' + err.message);
-          }
-        }
-      });
-    });
-
-    // Inline Subtasks text edits
-    item.querySelectorAll('.subtask-text-input-inline').forEach(input => {
-      input.addEventListener('change', async () => {
-        const index = parseInt(input.dataset.index);
-        const subtasksCopy = JSON.parse(JSON.stringify(task.subtasks || []));
-        if (subtasksCopy[index]) {
-          subtasksCopy[index].title = input.value.trim();
-          try {
-            await updateDoc(doc(db, 'tasks', id), { subtasks: subtasksCopy });
-          } catch (err) {
-            toast('Failed to update subtask text: ' + err.message);
-          }
-        }
-      });
-      input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') input.blur();
-        if (e.key === 'Escape') {
-          input.value = (task.subtasks[parseInt(input.dataset.index)] || {}).title || '';
-          input.blur();
-        }
-      });
-    });
-
-    // Inline Subtasks assignee change
-    item.querySelectorAll('.subtask-assignee-select-inline').forEach(sel => {
-      sel.addEventListener('change', async () => {
-        const index = parseInt(sel.dataset.index);
-        const subtasksCopy = JSON.parse(JSON.stringify(task.subtasks || []));
-        if (subtasksCopy[index]) {
-          subtasksCopy[index].assignee = sel.value;
-          try {
-            await updateDoc(doc(db, 'tasks', id), { subtasks: subtasksCopy });
-          } catch (err) {
-            toast('Failed to update subtask assignee: ' + err.message);
-          }
-        }
-      });
-    });
-
-    // Inline Subtasks notes edits
-    item.querySelectorAll('.subtask-notes-input-inline').forEach(input => {
-      input.addEventListener('change', async () => {
-        const index = parseInt(input.dataset.index);
-        const subtasksCopy = JSON.parse(JSON.stringify(task.subtasks || []));
-        if (subtasksCopy[index]) {
-          subtasksCopy[index].notes = input.value.trim();
-          try {
-            await updateDoc(doc(db, 'tasks', id), { subtasks: subtasksCopy });
-          } catch (err) {
-            toast('Failed to update subtask notes: ' + err.message);
-          }
-        }
-      });
-      input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') input.blur();
-        if (e.key === 'Escape') {
-          input.value = (task.subtasks[parseInt(input.dataset.index)] || {}).notes || '';
-          input.blur();
-        }
-      });
-    });
-
-    // Inline Subtasks delete
-    item.querySelectorAll('.delete-subtask-inline').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const index = parseInt(btn.dataset.index);
-        const subtasksCopy = JSON.parse(JSON.stringify(task.subtasks || []));
-        subtasksCopy.splice(index, 1);
-        const progress = subtasksCopy.length > 0
-          ? Math.round((subtasksCopy.filter(s => s.completed).length / subtasksCopy.length) * 100)
-          : task.progress || 0;
-        try {
-          await updateDoc(doc(db, 'tasks', id), { 
-            subtasks: subtasksCopy,
-            progress: progress
-          });
-        } catch (err) {
-          toast('Failed to delete subtask: ' + err.message);
-        }
-      });
-    });
-
-    // Inline Subtask add
-    const addInlineInput = item.querySelector('.new-subtask-input-inline');
-    const addInlineBtn = item.querySelector('.add-subtask-btn-inline');
-    if (addInlineInput && addInlineBtn) {
-      const addInlineAction = async () => {
-        const val = addInlineInput.value.trim();
-        if (!val) return;
-        const subtasksCopy = JSON.parse(JSON.stringify(task.subtasks || []));
-        subtasksCopy.push({
-          id: Math.random().toString(36).substring(2, 9),
-          title: val,
-          completed: false,
-          notes: ''
-        });
-        const progress = Math.round((subtasksCopy.filter(s => s.completed).length / subtasksCopy.length) * 100);
-        try {
-          await updateDoc(doc(db, 'tasks', id), { 
-            subtasks: subtasksCopy,
-            progress: progress
-          });
-        } catch (err) {
-          toast('Failed to add subtask: ' + err.message);
-        }
-      };
-
-      addInlineBtn.addEventListener('click', addInlineAction);
-      addInlineInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          addInlineAction();
-        }
-      });
-    }
-
-    // Inline Project input edits
-    const expProjectInput = item.querySelector('.expanded-project-input');
-    if (expProjectInput) {
-      expProjectInput.addEventListener('change', async () => {
-        const val = expProjectInput.value.trim();
-        try {
-          await updateDoc(doc(db, 'tasks', id), { app: val });
-        } catch (err) {
-          toast('Failed to update project: ' + err.message);
-        }
-      });
-      expProjectInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') expProjectInput.blur();
-        if (e.key === 'Escape') {
-          expProjectInput.value = task.app || '';
-          expProjectInput.blur();
-        }
-      });
-    }
-
-    // Expanded Section Notes / Links inline editing
-    const expandedNotes = item.querySelector('.expanded-textarea[data-field="details"]');
-    if (expandedNotes) {
-      expandedNotes.addEventListener('change', async () => {
-        const val = expandedNotes.value;
-        try {
-          await updateDoc(doc(db, 'tasks', id), { details: val });
-        } catch (err) {
-          toast('Failed to update notes: ' + err.message);
-        }
-      });
-    }
-
-    const expandedLink = item.querySelector('.expanded-input[data-field="link"]');
-    if (expandedLink) {
-      expandedLink.addEventListener('change', async () => {
-        const val = expandedLink.value.trim();
-        try {
-          await updateDoc(doc(db, 'tasks', id), { link: val });
-        } catch (err) {
-          toast('Failed to update link: ' + err.message);
-        }
-      });
-    }
+    // Bind shared expanded event listeners
+    bindSharedExpandedEvents(item, task, id);
 
     // Comment sending and delete updates (standard comment logic)
     item.querySelectorAll('[data-action]').forEach(btn => {
@@ -3183,13 +3369,13 @@ function renderTask(t) {
   const parentAssignees = Array.isArray(t.assignees) ? t.assignees : [];
   
   const leadEmail = parentAssignees[0] || '';
-  const supportEmail = parentAssignees[1] || '';
+  const supportEmails = parentAssignees.slice(1);
   
   const leadLabel = leadEmail 
     ? `<span class="task-lead-badge" title="Lead: ${escapeHtml(leadEmail)}">👤 Lead: ${escapeHtml(getDisplayShort(leadEmail))}</span>` 
     : '';
-  const supportLabel = supportEmail 
-    ? `<span class="task-support-badge" title="Support: ${escapeHtml(supportEmail)}">👥 Support: ${escapeHtml(getDisplayShort(supportEmail))}</span>` 
+  const supportLabel = supportEmails.length > 0
+    ? `<span class="task-support-badge" title="Support: ${escapeHtml(supportEmails.join(', '))}">👥 Support: ${escapeHtml(supportEmails.map(getDisplayShort).join(', '))}</span>` 
     : '';
 
   const updates = Array.isArray(t.updates) ? t.updates : [];
@@ -3238,9 +3424,14 @@ function renderExpanded(t, updates) {
   const sorted = [...updates].sort((a, b) => tsToMillis(a.timestamp) - tsToMillis(b.timestamp));
   const meEmail = (currentUser?.email || '').toLowerCase();
   
-  const lead = Array.isArray(t.assignees) && t.assignees[0] ? t.assignees[0] : '';
-  const support = Array.isArray(t.assignees) && t.assignees[1] ? t.assignees[1] : '';
+  const parentAssignees = Array.isArray(t.assignees) ? t.assignees : [];
+  const lead = parentAssignees[0] || '';
+  const supportEmails = parentAssignees.slice(1);
   const team = getTeam();
+  const remainingCandidates = team.filter(email => 
+    email.toLowerCase() !== lead.toLowerCase() && 
+    !supportEmails.some(se => se.toLowerCase() === email.toLowerCase())
+  );
 
   const listHtml = sorted.length === 0
     ? `<div class="update-empty" style="font-size:12px; color:var(--muted); font-style:italic; padding:10px 0;">No updates yet — start the thread below.</div>`
@@ -3295,10 +3486,20 @@ function renderExpanded(t, updates) {
                 </div>
                 <div style="flex:1; display:flex; flex-direction:column; gap:4px;">
                   <span style="font-size:11px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:0.3px;">Support</span>
-                  <select class="expanded-support-select" style="width:100%; font-size:13px; padding:6px 8px; border-radius:4px; border:1px solid var(--border); background:var(--panel); color:var(--text);" ${disabledAttr}>
-                    <option value="">Unassigned</option>
-                    ${team.map(email => `<option value="${escapeHtml(email)}" ${support === email ? 'selected' : ''}>${escapeHtml(getDisplayShort(email))}</option>`).join('')}
-                  </select>
+                  <div class="expanded-support-container" style="display:flex; flex-wrap:wrap; gap:6px; align-items:center;">
+                    ${supportEmails.map(email => `
+                      <span class="support-pill">
+                        ${escapeHtml(getDisplayShort(email))}
+                        ${isEditor ? `<button type="button" class="remove-support-btn" data-email="${escapeHtml(email)}" data-task-id="${t.id}">×</button>` : ''}
+                      </span>
+                    `).join('')}
+                    ${isEditor && remainingCandidates.length > 0 ? `
+                      <select class="add-support-select" data-task-id="${t.id}">
+                        <option value="">+ Add Support</option>
+                        ${remainingCandidates.map(email => `<option value="${escapeHtml(email)}">${escapeHtml(getDisplayShort(email))}</option>`).join('')}
+                      </select>
+                    ` : (supportEmails.length === 0 ? '<span style="font-size:12px; color:var(--muted); font-style:italic;">Unassigned</span>' : '')}
+                  </div>
                 </div>
               </div>
             </div>
@@ -3412,16 +3613,22 @@ function readAssigneePicker() {
 
 function bindTaskEvents() {
   document.querySelectorAll('.task').forEach(el => {
+    const id = el.dataset.id;
+    const task = tasks.find(t => t.id === id);
+    if (!task) return;
+
     el.addEventListener('dragstart', onDragStart);
     el.addEventListener('dragend', onDragEnd);
     el.addEventListener('dragover', onTaskDragOver);
     el.addEventListener('dragleave', onTaskDragLeave);
     el.addEventListener('drop', onTaskDrop);
-    attachDetailsHover(el, el.dataset.id);
+    attachDetailsHover(el, id);
+
+    bindSharedExpandedEvents(el, task, id);
+
     el.querySelectorAll('[data-action]').forEach(btn => {
       btn.addEventListener('click', e => {
         e.stopPropagation();
-        const id = el.dataset.id;
         const action = btn.dataset.action;
         if (action === 'edit') openModal(id);
         if (action === 'delete') deleteTaskById(id);
@@ -4251,18 +4458,115 @@ document.querySelectorAll('#progressPopover .pp-presets button').forEach(btn => 
   });
 });
 
-// Close popover when clicking outside it or any progress anchor
+// --- Support quick-edit popover ---
+let supportPopoverTaskId = null;
+
+function openSupportPopover(taskId, anchorEl) {
+  if (role !== 'editor') return;
+  const task = tasks.find(t => t.id === taskId);
+  if (!task) return;
+  supportPopoverTaskId = taskId;
+
+  const popover = document.getElementById('supportPopover');
+  const listEl = document.getElementById('spList');
+  listEl.innerHTML = '';
+
+  const parentAssignees = Array.isArray(task.assignees) ? task.assignees : [];
+  const lead = parentAssignees[0] || '';
+  const currentSupports = parentAssignees.slice(1).map(email => email.toLowerCase());
+  const team = getTeam();
+
+  // Filter out the Lead from the support choices
+  const supportOptions = team.filter(email => email.toLowerCase() !== lead.toLowerCase());
+
+  if (supportOptions.length === 0) {
+    listEl.innerHTML = '<div style="font-size:12px; color:var(--muted); font-style:italic; text-align:center; padding:8px 0;">No support candidates</div>';
+  } else {
+    supportOptions.forEach(email => {
+      const isChecked = currentSupports.includes(email.toLowerCase());
+      const itemEl = document.createElement('label');
+      itemEl.className = 'sp-item';
+      itemEl.innerHTML = `
+        <input type="checkbox" class="sp-checkbox" data-email="${escapeHtml(email)}" ${isChecked ? 'checked' : ''}>
+        <span class="sp-label" title="${escapeHtml(email)}">${escapeHtml(getDisplayShort(email))}</span>
+      `;
+      // Checkbox event
+      const checkbox = itemEl.querySelector('.sp-checkbox');
+      checkbox.addEventListener('change', async () => {
+        await toggleSupportAssignee(taskId, email, checkbox.checked);
+      });
+      listEl.appendChild(itemEl);
+    });
+  }
+
+  // Show first so we can measure, then position
+  popover.classList.add('open');
+  const ppRect = popover.getBoundingClientRect();
+  const aRect = anchorEl.getBoundingClientRect();
+
+  // Default: open below the anchor, left-aligned
+  let left = aRect.left + window.scrollX;
+  let top = aRect.bottom + window.scrollY + 6;
+  // Keep within viewport horizontally
+  const maxLeft = window.scrollX + window.innerWidth - ppRect.width - 12;
+  if (left > maxLeft) left = maxLeft;
+  if (left < window.scrollX + 12) left = window.scrollX + 12;
+  // If no room below, flip above
+  if (aRect.bottom + ppRect.height + 12 > window.innerHeight) {
+    top = aRect.top + window.scrollY - ppRect.height - 6;
+  }
+  popover.style.left = left + 'px';
+  popover.style.top = top + 'px';
+}
+
+function closeSupportPopover() {
+  document.getElementById('supportPopover').classList.remove('open');
+  supportPopoverTaskId = null;
+}
+
+async function toggleSupportAssignee(taskId, email, add) {
+  const task = tasks.find(t => t.id === taskId);
+  if (!task) return;
+  const parentAssignees = Array.isArray(task.assignees) ? [...task.assignees] : [];
+  const lead = parentAssignees[0] || '';
+  let supportEmails = parentAssignees.slice(1).map(e => e.toLowerCase());
+
+  if (add) {
+    if (!supportEmails.includes(email.toLowerCase())) {
+      supportEmails.push(email.toLowerCase());
+    }
+  } else {
+    supportEmails = supportEmails.filter(e => e !== email.toLowerCase());
+  }
+
+  const newAssignees = [];
+  if (lead) newAssignees.push(lead);
+  newAssignees.push(...supportEmails);
+
+  try {
+    await updateDoc(doc(db, 'tasks', taskId), { assignees: newAssignees });
+  } catch (err) {
+    toast('Failed to update support assignees: ' + err.message);
+  }
+}
+
+// Close popovers when clicking outside them
 document.addEventListener('mousedown', (e) => {
-  const popover = document.getElementById('progressPopover');
-  if (!popover.classList.contains('open')) return;
-  if (popover.contains(e.target)) return;
-  // Don't close if user clicks another progress anchor — let the new open replace it
-  if (e.target.closest('[data-action="progress"]')) return;
-  closeProgressPopover();
+  const pp = document.getElementById('progressPopover');
+  if (pp && pp.classList.contains('open') && !pp.contains(e.target) && !e.target.closest('[data-action="progress"]')) {
+    closeProgressPopover();
+  }
+  const sp = document.getElementById('supportPopover');
+  if (sp && sp.classList.contains('open') && !sp.contains(e.target) && !e.target.closest('[data-action="edit-support"]')) {
+    closeSupportPopover();
+  }
 });
 
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') closeProgressPopover();
+  if (e.key === 'Escape') {
+    closeProgressPopover();
+    closeSupportPopover();
+  }
 });
 
 // View toggle + timeline navigation
