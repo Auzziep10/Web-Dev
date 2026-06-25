@@ -715,15 +715,48 @@
     border: 1px solid var(--border);
   }
 
+  .list-table-container {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    background: var(--panel);
+  }
+  .list-table-header {
+    display: grid;
+    grid-template-columns: 35px 160px 1fr 110px 110px 140px 130px 100px 35px;
+    align-items: stretch;
+    background: #72825b; /* dark olive/green background */
+    color: white;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    user-select: none;
+  }
+  .list-table-header > div {
+    display: flex;
+    align-items: center;
+    padding: 8px 10px;
+    border-right: 1px solid rgba(255, 255, 255, 0.15);
+    color: white;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .list-table-header > div.clickable {
+    cursor: pointer;
+  }
+  .list-table-header > div.clickable:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+  .list-table-header > div:last-child {
+    border-right: none;
+  }
+
   .list-rows {
     display: flex;
     flex-direction: column;
     background: var(--panel);
-    border: 1px solid var(--border);
-    border-top: 3px solid var(--accent-2);
-    border-radius: 8px;
-    box-shadow: var(--shadow);
-    overflow: hidden;
   }
   .list-item {
     border-bottom: 1px solid var(--border);
@@ -736,204 +769,118 @@
     background: rgba(129, 140, 248, 0.01);
   }
   .list-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 8px 14px;
+    display: grid;
+    grid-template-columns: 35px 160px 1fr 110px 110px 140px 130px 100px 35px;
+    align-items: stretch;
+    min-height: 38px;
     font-size: 13px;
     position: relative;
   }
   .list-row:hover {
-    background: rgba(124,156,255,0.02);
+    background: rgba(124, 156, 255, 0.02);
   }
 
-  /* Inline columns */
-  .lr-expand-col {
-    width: 20px;
+  /* Inline cell columns & inputs */
+  .lr-expand-cell {
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-shrink: 0;
+    border-right: 1px solid var(--border);
   }
-  .lr-status-col {
-    width: 24px;
+  .lr-project-cell {
+    background: #f1f3eb; /* light olive/green background matching screenshot */
+    border-right: 1px solid var(--border);
     display: flex;
     align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
+    padding: 2px 6px;
   }
-  .lr-status {
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    border: 2px solid var(--muted);
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 11px;
-    font-weight: 700;
-    color: white;
-    line-height: 1;
-    transition: all 0.1s ease;
+  .lr-project-input {
+    width: 100%;
+    border: none;
+    background: transparent;
+    font-size: 13px;
+    font-weight: 600;
+    color: #4f5a43; /* slightly darker olive green text */
+    padding: 4px;
+    border-radius: 4px;
+    font-family: inherit;
   }
-  .lr-status.progress {
-    background: conic-gradient(var(--progress) 0% 50%, transparent 50% 100%);
-    border-color: var(--progress);
-  }
-  .lr-status.active {
-    background: conic-gradient(var(--active) 0% 75%, transparent 75% 100%);
-    border-color: var(--active);
-  }
-  .lr-status.done {
-    background: var(--done);
-    border-color: var(--done);
-  }
-  .lr-status.done::before {
-    content: "✓";
+  .lr-project-input:focus {
+    background: white;
+    outline: none;
+    box-shadow: 0 0 0 1px #72825b;
   }
 
+  .lr-title-cell {
+    display: flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-right: 1px solid var(--border);
+  }
   .lr-title-input {
-    flex: 1.5;
+    width: 100%;
     border: 1px solid transparent;
     background: transparent;
     color: var(--text);
     padding: 4px 6px;
-    border-radius: 4px;
     font-size: 13px;
     font-weight: 500;
     font-family: inherit;
-    min-width: 100px;
-    transition: all 0.1s ease;
+    text-overflow: ellipsis;
   }
   .lr-title-input:hover {
-    background: rgba(124,156,255,0.04);
+    background: rgba(0,0,0,0.02);
   }
   .lr-title-input:focus {
-    background: var(--panel);
-    border-color: var(--accent);
+    background: white;
     outline: none;
+    box-shadow: 0 0 0 1px #72825b;
   }
   .lr-title-input.slashed {
     text-decoration: line-through;
     color: var(--muted);
   }
 
-  .lr-details-input {
-    flex: 2;
-    border: 1px solid transparent;
-    background: transparent;
-    color: var(--muted);
-    padding: 4px 6px;
-    border-radius: 4px;
-    font-size: 13px;
-    font-weight: 400;
-    font-family: inherit;
-    min-width: 100px;
-    transition: all 0.1s ease;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    overflow: hidden;
-  }
-  .lr-details-input:hover {
-    background: rgba(124,156,255,0.04);
-  }
-  .lr-details-input:focus {
-    background: var(--panel);
-    border-color: var(--accent);
-    color: var(--text);
-    outline: none;
-  }
-
-  .lr-chips {
+  .lr-lead-cell, .lr-support-cell {
     display: flex;
     align-items: center;
-    gap: 12px;
-    flex-shrink: 0;
+    padding: 2px 6px;
+    border-right: 1px solid var(--border);
   }
-
-  /* Priority chip select */
-  .priority-select-inline {
+  .lr-assignee-select {
+    width: 100%;
     border: none;
     background: transparent;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.3px;
-    text-transform: uppercase;
-    padding: 3px 8px;
-    border-radius: 12px;
-    cursor: pointer;
+    font-size: 13px;
     font-family: inherit;
-    -webkit-appearance: none;
-    -moz-appearance: none;
+    color: var(--text);
+    cursor: pointer;
+    padding: 4px;
     appearance: none;
-    text-align: center;
-    width: 80px;
-    transition: all 0.15s ease;
+    -webkit-appearance: none;
   }
-  .priority-select-inline.critical { color: var(--p-critical); background: rgba(224,90,90,0.12); }
-  .priority-select-inline.high     { color: var(--p-high);     background: rgba(232,154,61,0.14); }
-  .priority-select-inline.medium   { color: var(--p-medium);   background: rgba(91,141,239,0.14); }
-  .priority-select-inline.low      { color: var(--p-low);      background: rgba(139,148,167,0.16); }
-  .priority-select-inline:focus {
+  .lr-assignee-select:hover {
+    background: rgba(0,0,0,0.04);
+  }
+  .lr-assignee-select:focus {
+    background: white;
     outline: none;
-    box-shadow: 0 0 0 2px var(--accent);
+    box-shadow: 0 0 0 1px #72825b;
+    border-radius: 4px;
   }
 
-  /* Assignee avatar select */
-  .lr-assignees {
+  .lr-cadence-cell {
     display: flex;
     align-items: center;
-  }
-  .lr-assignees .avatar-inline-container {
-    border: 2px solid var(--panel);
-  }
-  .lr-assignees .avatar-inline-container:nth-child(2) {
-    margin-left: -8px;
-  }
-  .avatar-inline-container {
-    position: relative;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    cursor: pointer;
-  }
-  .avatar-inline-container select {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    opacity: 0;
-    cursor: pointer;
-    z-index: 2;
-  }
-  .avatar-inline-placeholder {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    border: 1px dashed var(--muted);
-    display: inline-flex;
-    align-items: center;
     justify-content: center;
-    font-size: 8px;
-    color: var(--muted);
-    font-weight: 700;
-    background: transparent;
-    transition: all 0.15s;
+    padding: 2px 6px;
+    border-right: 1px solid var(--border);
   }
-  .avatar-inline-placeholder:hover {
-    border-color: var(--accent);
-    color: var(--accent);
-    background: rgba(124,156,255,0.05);
-  }
-
-  /* Inline cadence date chip */
   .inline-cadence-wrapper {
-    width: 120px;
+    width: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-shrink: 0;
   }
   .inline-cadence-label {
     cursor: pointer;
@@ -942,36 +889,128 @@
     overflow: hidden;
     max-width: 100%;
     display: inline-block;
+    text-align: center;
+    padding: 4px;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .inline-cadence-label:hover {
+    background: rgba(0,0,0,0.04);
+    border-radius: 4px;
   }
   .inline-cadence-input {
     width: 100%;
-    background: var(--panel-2);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    color: var(--text);
-    padding: 3px 8px;
-    font-size: 11px;
-    font-family: inherit;
+    background: white;
+    border: 1px solid #72825b;
+    border-radius: 4px;
+    padding: 4px;
+    font-size: 13px;
     text-align: center;
+    color: var(--text);
   }
   .inline-cadence-input:focus {
-    border-color: var(--accent);
     outline: none;
   }
 
-  .lr-progress-col {
-    width: 44px;
+  .lr-status-cell {
     display: flex;
-    justify-content: flex-end;
+    align-items: center;
+    padding: 2px 6px;
+    border-right: 1px solid var(--border);
   }
-  .lr-delete-col {
-    width: 24px;
+  .status-select-inline {
+    border: none;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: inherit;
+    width: 100%;
+    text-align: center;
+    text-align-last: center;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+  .status-select-inline.todo {
+    background: #f8f9fa;
+    color: #6c757d;
+    border: 1px solid #dee2e6;
+  }
+  .status-select-inline.active {
+    background: #eed8f6;
+    color: #7b1fa2;
+  }
+  .status-select-inline.progress {
+    background: #d2ebf9;
+    color: #0d47a1;
+  }
+  .status-select-inline.done {
+    background: #ffebad;
+    color: #856404;
+  }
+  .status-select-inline:focus {
+    background: white;
+    outline: none;
+    box-shadow: 0 0 0 1px #72825b;
+  }
+
+  .lr-priority-cell {
     display: flex;
-    justify-content: flex-end;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 6px;
+    border-right: 1px solid var(--border);
+  }
+  .priority-select-inline {
+    border: none;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    padding: 3px 8px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-family: inherit;
+    appearance: none;
+    -webkit-appearance: none;
+    text-align: center;
+    text-align-last: center;
+    width: 90px;
+    margin: 0 auto;
+    transition: all 0.15s ease;
+  }
+  .priority-select-inline.critical { color: var(--p-critical); background: rgba(224,90,90,0.12); }
+  .priority-select-inline.high     { color: var(--p-high);     background: rgba(232,154,61,0.14); }
+  .priority-select-inline.medium   { color: var(--p-medium);   background: rgba(91,141,239,0.14); }
+  .priority-select-inline.low      { color: var(--p-low);      background: rgba(139,148,167,0.16); }
+  .priority-select-inline:focus {
+    background: white;
+    outline: none;
+    box-shadow: 0 0 0 1px #72825b;
+  }
+
+  .lr-delete-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .lr-delete-cell .icon-btn.danger {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 18px;
+    cursor: pointer;
+    padding: 4px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
     opacity: 0;
     transition: opacity 0.15s;
   }
-  .list-row:hover .lr-delete-col {
+  .list-row:hover .lr-delete-cell .icon-btn.danger {
     opacity: 1;
   }
 
@@ -2059,104 +2098,78 @@ function renderList() {
     return;
   }
 
-  // Group by project (app)
-  const groups = {};
-  items.forEach(t => {
-    const key = t.app || '';
-    if (!groups[key]) groups[key] = [];
-    groups[key].push(t);
-  });
-
-  // Sort tasks within each group
   const STATUS_RANK = { todo: 0, progress: 1, active: 2, done: 3 };
   const PRIORITY_RANK = { critical: 0, high: 1, medium: 2, low: 3 };
-  
-  Object.keys(groups).forEach(key => {
-    groups[key].sort((a, b) => {
-      let valA, valB;
-      if (listSortField === 'title') {
-        valA = (a.title || '').toLowerCase();
-        valB = (b.title || '').toLowerCase();
-      } else if (listSortField === 'lead') {
-        const emailA = Array.isArray(a.assignees) && a.assignees[0] ? a.assignees[0] : '';
-        const emailB = Array.isArray(b.assignees) && b.assignees[0] ? b.assignees[0] : '';
-        valA = getDisplayShort(emailA).toLowerCase();
-        valB = getDisplayShort(emailB).toLowerCase();
-      } else if (listSortField === 'support') {
-        const emailA = Array.isArray(a.assignees) && a.assignees[1] ? a.assignees[1] : '';
-        const emailB = Array.isArray(b.assignees) && b.assignees[1] ? b.assignees[1] : '';
-        valA = getDisplayShort(emailA).toLowerCase();
-        valB = getDisplayShort(emailB).toLowerCase();
-      } else if (listSortField === 'cadence') {
-        const cadA = a.cadence || a.startDate || '';
-        const cadB = b.cadence || b.startDate || '';
-        valA = cadA.toLowerCase();
-        valB = cadB.toLowerCase();
-      } else if (listSortField === 'status') {
-        valA = STATUS_RANK[a.status] ?? 99;
-        valB = STATUS_RANK[b.status] ?? 99;
-      } else if (listSortField === 'priority') {
-        valA = PRIORITY_RANK[a.priority] ?? 99;
-        valB = PRIORITY_RANK[b.priority] ?? 99;
-      } else {
-        valA = a.order ?? 0;
-        valB = b.order ?? 0;
-      }
 
-      if (valA < valB) return listSortAsc ? -1 : 1;
-      if (valA > valB) return listSortAsc ? 1 : -1;
-      
-      const orderA = a.order ?? 0;
-      const orderB = b.order ?? 0;
-      if (orderA !== orderB) return orderA - orderB;
-      return (a.createdAt ?? 0) - (b.createdAt ?? 0);
-    });
-  });
+  // Sort tasks globally (no project grouping in table)
+  items.sort((a, b) => {
+    let valA, valB;
+    if (listSortField === 'title') {
+      valA = (a.title || '').toLowerCase();
+      valB = (b.title || '').toLowerCase();
+    } else if (listSortField === 'lead') {
+      const emailA = Array.isArray(a.assignees) && a.assignees[0] ? a.assignees[0] : '';
+      const emailB = Array.isArray(b.assignees) && b.assignees[0] ? b.assignees[0] : '';
+      valA = getDisplayShort(emailA).toLowerCase();
+      valB = getDisplayShort(emailB).toLowerCase();
+    } else if (listSortField === 'support') {
+      const emailA = Array.isArray(a.assignees) && a.assignees[1] ? a.assignees[1] : '';
+      const emailB = Array.isArray(b.assignees) && b.assignees[1] ? b.assignees[1] : '';
+      valA = getDisplayShort(emailA).toLowerCase();
+      valB = getDisplayShort(emailB).toLowerCase();
+    } else if (listSortField === 'cadence') {
+      const cadA = a.cadence || a.startDate || '';
+      const cadB = b.cadence || b.startDate || '';
+      valA = cadA.toLowerCase();
+      valB = cadB.toLowerCase();
+    } else if (listSortField === 'status') {
+      valA = STATUS_RANK[a.status] ?? 99;
+      valB = STATUS_RANK[b.status] ?? 99;
+    } else if (listSortField === 'priority') {
+      valA = PRIORITY_RANK[a.priority] ?? 99;
+      valB = PRIORITY_RANK[b.priority] ?? 99;
+    } else if (listSortField === 'project') {
+      valA = (a.app || '').toLowerCase();
+      valB = (b.app || '').toLowerCase();
+    } else {
+      valA = a.order ?? 0;
+      valB = b.order ?? 0;
+    }
 
-  const sortedProjKeys = Object.keys(groups).sort((a, b) => {
-    if (!a) return 1; // Put unassigned at the bottom
-    if (!b) return -1;
-    return a.localeCompare(b);
+    if (valA < valB) return listSortAsc ? -1 : 1;
+    if (valA > valB) return listSortAsc ? 1 : -1;
+
+    const orderA = a.order ?? 0;
+    const orderB = b.order ?? 0;
+    if (orderA !== orderB) return orderA - orderB;
+    return (a.createdAt ?? 0) - (b.createdAt ?? 0);
   });
 
   const team = getTeam();
-  const isEditor = role === 'editor';
-  const disabledAttr = isEditor ? '' : 'disabled';
+  const rows = items.map(t => renderListItem(t, team)).join('');
+
+  const renderSortIndicator = (field) => {
+    if (listSortField !== field) return '';
+    return listSortAsc ? ' ▴' : ' ▾';
+  };
 
   container.innerHTML = `
-    <div class="list-sorting-header" style="display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin-bottom: 12px; padding: 0 4px; font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.3px;">
-      <span>Sort by:</span>
-      <span class="view-toggle ${listSortField === 'title' ? 'active' : ''}" style="cursor: pointer; padding: 2px 6px; border-radius: 4px;" data-sort-btn="title">Deliverable</span>
-      <span class="view-toggle ${listSortField === 'lead' ? 'active' : ''}" style="cursor: pointer; padding: 2px 6px; border-radius: 4px;" data-sort-btn="lead">Lead</span>
-      <span class="view-toggle ${listSortField === 'cadence' ? 'active' : ''}" style="cursor: pointer; padding: 2px 6px; border-radius: 4px;" data-sort-btn="cadence">Launch Sequence</span>
-      <span class="view-toggle ${listSortField === 'status' ? 'active' : ''}" style="cursor: pointer; padding: 2px 6px; border-radius: 4px;" data-sort-btn="status">Status</span>
-      <span class="view-toggle ${listSortField === 'priority' ? 'active' : ''}" style="cursor: pointer; padding: 2px 6px; border-radius: 4px;" data-sort-btn="priority">Priority</span>
+    <div class="list-table-container">
+      <div class="list-table-header">
+        <div class="lth-expand-col"></div>
+        <div class="lth-project-col clickable" data-sort="project">Project Area${renderSortIndicator('project')}</div>
+        <div class="lth-title-col clickable" data-sort="title">Deliverable${renderSortIndicator('title')}</div>
+        <div class="lth-lead-col clickable" data-sort="lead">Lead${renderSortIndicator('lead')}</div>
+        <div class="lth-support-col clickable" data-sort="support">Support${renderSortIndicator('support')}</div>
+        <div class="lth-cadence-col clickable" data-sort="cadence">Start / End${renderSortIndicator('cadence')}</div>
+        <div class="lth-status-col clickable" data-sort="status">Status${renderSortIndicator('status')}</div>
+        <div class="lth-priority-col clickable" data-sort="priority">Priority${renderSortIndicator('priority')}</div>
+        <div class="lth-delete-col"></div>
+      </div>
+      <div class="list-rows">
+        ${rows}
+      </div>
     </div>
-    ${sortedProjKeys.map(proj => {
-      const projTasks = groups[proj];
-      const rows = projTasks.map(t => renderListItem(t, team)).join('');
-      const projNameDisplay = proj || '(No project)';
-      return `
-        <div class="list-project" data-project-name="${escapeHtml(proj)}">
-          <div class="list-project-header">
-            <div class="lp-name-container">
-              ${isEditor && proj
-                ? `<input type="text" class="lp-name-input" value="${escapeHtml(projNameDisplay)}" data-old-name="${escapeHtml(proj)}">`
-                : `<span class="lp-name-static" style="font-size: 14px; font-weight: 700; padding: 2px 6px;">${escapeHtml(projNameDisplay)}</span>`
-              }
-              <span class="lp-count">${projTasks.length} ${projTasks.length === 1 ? 'task' : 'tasks'}</span>
-            </div>
-            ${isEditor && proj
-              ? `<div class="lp-actions">
-                  <button class="icon-btn danger" data-project-action="delete" title="Delete project and reassign tasks" style="background:none; border:none; color:var(--muted); font-size:16px; cursor:pointer;">×</button>
-                 </div>`
-              : ''
-            }
-          </div>
-          <div class="list-rows">${rows}</div>
-        </div>
-      `;
-    }).join('')}
   `;
 
   bindListEvents();
@@ -2166,13 +2179,6 @@ function renderListItem(t, team) {
   const p = t.priority || 'medium';
   const lead = Array.isArray(t.assignees) && t.assignees[0] ? t.assignees[0] : '';
   const support = Array.isArray(t.assignees) && t.assignees[1] ? t.assignees[1] : '';
-  const subtaskAssignees = (t.subtasks || [])
-    .map(s => s.assignee)
-    .filter(Boolean);
-  const allAssignees = [...new Set([lead, support, ...subtaskAssignees].filter(Boolean))];
-  const assigneesHtml = allAssignees.length
-    ? `<span class="task-assignees" style="margin-left: 0;">${allAssignees.map(avatarHtml).join('')}</span>`
-    : `<span class="avatar-inline-placeholder" title="No Lead" style="border: 1px dashed var(--border); background: transparent; color: var(--muted); display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; font-size: 11px; font-weight: 600;">+L</span>`;
   
   const cadenceValue = t.cadence || (t.startDate && t.endDate ? formatDateChip(t.startDate, t.endDate) : '');
   
@@ -2185,60 +2191,74 @@ function renderListItem(t, team) {
     ? `<span class="details-indicator" title="Has notes">📝</span>`
     : '';
 
-  const prog = progressOf(t);
-  const progressBadge = `<span class="progress-badge ${prog === 100 ? 'complete' : ''}" data-action="progress" title="Click to update progress">${prog}%</span>`;
-
   const isExpanded = expandedIds.has(t.id);
   const expanded = isExpanded ? renderExpanded(t, updates) : '';
   const isEditor = role === 'editor';
   const disabledAttr = isEditor ? '' : 'disabled';
 
-  const statusLabel = t.status === 'todo' ? 'To do'
-                   : t.status === 'progress' ? 'In progress'
-                   : t.status === 'active' ? 'Active'
-                   : 'Done';
-
   return `
     <div class="list-item ${isExpanded ? 'expanded' : ''} ${t.status === 'done' ? 'done' : ''}" data-id="${t.id}" ${isEditor ? 'draggable="true"' : ''}>
       <div class="list-row">
-        <div class="lr-expand-col">
+        <!-- 1. Expand -->
+        <div class="lr-expand-cell">
           <button class="icon-btn expand-btn" data-action="expand" title="${isExpanded ? 'Collapse' : 'Expand'}">${isExpanded ? '▾' : '▸'}</button>
         </div>
-        <div class="lr-status-col">
-          <span class="lr-status ${t.status}" data-action="toggle-status" title="${statusLabel} (Click to toggle completion)"></span>
+        <!-- 2. Project Area -->
+        <div class="lr-project-cell">
+          <input type="text" class="lr-project-input" data-field="app" value="${escapeHtml(t.app || '')}" placeholder="Project Area..." list="appList" ${disabledAttr}>
         </div>
-        <input type="text" class="lr-title-input ${t.status === 'done' ? 'slashed' : ''}" data-field="title" value="${escapeHtml(t.title || '')}" placeholder="Deliverable..." ${disabledAttr}>
-        <div class="lr-chips">
-          <!-- Priority select -->
-          <div class="lr-priority-col">
-            <select class="priority-select-inline priority-select ${p}" data-field="priority" ${disabledAttr}>
-              <option value="critical" ${t.priority === 'critical' ? 'selected' : ''}>Critical</option>
-              <option value="high" ${t.priority === 'high' ? 'selected' : ''}>High</option>
-              <option value="medium" ${t.priority === 'medium' || !t.priority ? 'selected' : ''}>Medium</option>
-              <option value="low" ${t.priority === 'low' ? 'selected' : ''}>Low</option>
-            </select>
-          </div>
-          <!-- Lead Avatar Display -->
-          <div class="lr-lead-display" style="flex-shrink: 0; display: inline-flex; align-items: center;">
-            ${assigneesHtml}
-          </div>
-          <!-- Cadence input -->
-          <div class="inline-cadence-wrapper">
-            <span class="date-chip ${dateChipClass(t.endDate, t.status)} inline-cadence-label" data-action="edit-cadence">
-              📅 ${escapeHtml(cadenceValue || 'Set dates')}
-            </span>
-            <input type="text" class="inline-cadence-input" data-field="cadence" value="${escapeHtml(cadenceValue)}" placeholder="Pre, W1..." style="display:none;" ${disabledAttr}>
-          </div>
-          <div class="lr-progress-col">
-            ${progressBadge}
-          </div>
-          <div class="lr-comments-col">
+        <!-- 3. Deliverable -->
+        <div class="lr-title-cell">
+          <input type="text" class="lr-title-input ${t.status === 'done' ? 'slashed' : ''}" data-field="title" value="${escapeHtml(t.title || '')}" placeholder="Deliverable..." ${disabledAttr}>
+          <div class="lr-badges" style="display: flex; gap: 4px; align-items: center; padding-right: 4px; flex-shrink: 0;">
             ${detailsBadge}
             ${updateBadge}
           </div>
-          <div class="lr-delete-col">
-            ${isEditor ? `<button class="icon-btn danger" data-action="delete" title="Delete task">×</button>` : ''}
+        </div>
+        <!-- 4. Lead -->
+        <div class="lr-lead-cell">
+          <select class="lr-assignee-select lr-lead-select" ${disabledAttr}>
+            <option value="">Unassigned</option>
+            ${team.map(email => `<option value="${escapeHtml(email)}" ${lead === email ? 'selected' : ''}>${escapeHtml(getDisplayShort(email))}</option>`).join('')}
+          </select>
+        </div>
+        <!-- 5. Support -->
+        <div class="lr-support-cell">
+          <select class="lr-assignee-select lr-support-select" ${disabledAttr}>
+            <option value="">Unassigned</option>
+            ${team.map(email => `<option value="${escapeHtml(email)}" ${support === email ? 'selected' : ''}>${escapeHtml(getDisplayShort(email))}</option>`).join('')}
+          </select>
+        </div>
+        <!-- 6. Start / End -->
+        <div class="lr-cadence-cell">
+          <div class="inline-cadence-wrapper">
+            <span class="inline-cadence-label" data-action="edit-cadence">
+              ${escapeHtml(cadenceValue || 'Set dates')}
+            </span>
+            <input type="text" class="inline-cadence-input" data-field="cadence" value="${escapeHtml(cadenceValue)}" placeholder="Pre, W1..." style="display:none;" ${disabledAttr}>
           </div>
+        </div>
+        <!-- 7. Status -->
+        <div class="lr-status-cell">
+          <select class="status-select-inline ${t.status}" data-field="status" ${disabledAttr}>
+            <option value="todo" ${t.status === 'todo' ? 'selected' : ''}>Backlog</option>
+            <option value="active" ${t.status === 'active' ? 'selected' : ''}>Ready to Start</option>
+            <option value="progress" ${t.status === 'progress' ? 'selected' : ''}>In Progress</option>
+            <option value="done" ${t.status === 'done' ? 'selected' : ''}>Review</option>
+          </select>
+        </div>
+        <!-- 8. Priority -->
+        <div class="lr-priority-cell">
+          <select class="priority-select-inline ${p}" data-field="priority" ${disabledAttr}>
+            <option value="critical" ${t.priority === 'critical' ? 'selected' : ''}>Critical</option>
+            <option value="high" ${t.priority === 'high' ? 'selected' : ''}>High</option>
+            <option value="medium" ${t.priority === 'medium' || !t.priority ? 'selected' : ''}>Medium</option>
+            <option value="low" ${t.priority === 'low' ? 'selected' : ''}>Low</option>
+          </select>
+        </div>
+        <!-- 9. Delete -->
+        <div class="lr-delete-cell">
+          ${isEditor ? `<button class="icon-btn danger" data-action="delete" title="Delete task">×</button>` : ''}
         </div>
       </div>
       ${expanded}
@@ -2249,10 +2269,10 @@ function renderListItem(t, team) {
 function bindListEvents() {
   const container = document.getElementById('listView');
 
-  // Handle Project Sorting Header
-  container.querySelectorAll('[data-sort-btn]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const field = btn.dataset.sortBtn;
+  // Handle Table Header Clicking for sorting
+  container.querySelectorAll('.list-table-header [data-sort]').forEach(header => {
+    header.addEventListener('click', () => {
+      const field = header.dataset.sort;
       if (listSortField === field) {
         listSortAsc = !listSortAsc;
       } else {
@@ -2260,62 +2280,6 @@ function bindListEvents() {
         listSortAsc = true;
       }
       renderList();
-    });
-  });
-
-  // Handle Project Header renaming and deleting, and drag/drop reassigning
-  container.querySelectorAll('.list-project').forEach(projEl => {
-    const projName = projEl.dataset.projectName;
-    
-    // Rename
-    const nameInput = projEl.querySelector('.lp-name-input');
-    if (nameInput) {
-      nameInput.addEventListener('change', () => {
-        const newName = nameInput.value.trim();
-        renameProject(projName, newName);
-      });
-      nameInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') nameInput.blur();
-        if (e.key === 'Escape') {
-          nameInput.value = projName;
-          nameInput.blur();
-        }
-      });
-    }
-
-    // Delete project
-    const delProjBtn = projEl.querySelector('[data-project-action="delete"]');
-    if (delProjBtn) {
-      delProjBtn.addEventListener('click', () => {
-        deleteProject(projName);
-      });
-    }
-
-    // Drag and drop target to reassign project
-    projEl.addEventListener('dragover', (e) => {
-      if (!dragId) return;
-      e.preventDefault();
-      projEl.classList.add('drag-over');
-    });
-    
-    projEl.addEventListener('dragleave', (e) => {
-      if (!projEl.contains(e.relatedTarget)) {
-        projEl.classList.remove('drag-over');
-      }
-    });
-    
-    projEl.addEventListener('drop', async (e) => {
-      if (!dragId) return;
-      e.preventDefault();
-      projEl.classList.remove('drag-over');
-      const taskId = dragId;
-      try {
-        await updateDoc(doc(db, 'tasks', taskId), { app: projName });
-      } catch (err) {
-        toast('Failed to move task: ' + err.message);
-      }
-      clearDropHints();
-      dragId = null;
     });
   });
 
@@ -2355,17 +2319,22 @@ function bindListEvents() {
       });
     }
 
-    // Toggle Status Circle
-    const statusBtn = item.querySelector('[data-action="toggle-status"]');
-    if (statusBtn) {
-      statusBtn.addEventListener('click', async () => {
-        if (role !== 'editor') return;
-        const nextStatus = task.status === 'done' ? 'todo' : 'done';
-        const progress = nextStatus === 'done' ? 100 : (task.progress === 100 ? 0 : (task.progress || 0));
+    // Project Area Input Change
+    const projectInput = item.querySelector('.lr-project-input');
+    if (projectInput) {
+      projectInput.addEventListener('change', async () => {
+        const val = projectInput.value.trim();
         try {
-          await updateDoc(doc(db, 'tasks', id), { status: nextStatus, progress });
+          await updateDoc(doc(db, 'tasks', id), { app: val });
         } catch (err) {
-          toast('Failed to toggle status: ' + err.message);
+          toast('Failed to update project: ' + err.message);
+        }
+      });
+      projectInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') projectInput.blur();
+        if (e.key === 'Escape') {
+          projectInput.value = task.app || '';
+          projectInput.blur();
         }
       });
     }
@@ -2394,26 +2363,6 @@ function bindListEvents() {
       });
     }
 
-    // Inline Details Change
-    const detailsInput = item.querySelector('.lr-details-input');
-    if (detailsInput) {
-      detailsInput.addEventListener('change', async () => {
-        const val = detailsInput.value.trim();
-        try {
-          await updateDoc(doc(db, 'tasks', id), { details: val });
-        } catch (err) {
-          toast('Failed to update details: ' + err.message);
-        }
-      });
-      detailsInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') detailsInput.blur();
-        if (e.key === 'Escape') {
-          detailsInput.value = task.details || '';
-          detailsInput.blur();
-        }
-      });
-    }
-
     // Priority Change
     const prioritySelect = item.querySelector('.priority-select-inline');
     if (prioritySelect) {
@@ -2427,14 +2376,37 @@ function bindListEvents() {
       });
     }
 
-    // Lead & Support expanded select changes
-    const leadSelect = item.querySelector('.expanded-lead-select');
-    const supportSelect = item.querySelector('.expanded-support-select');
+    // Status Change Dropdown
+    const statusSelect = item.querySelector('.status-select-inline');
+    if (statusSelect) {
+      statusSelect.addEventListener('change', async () => {
+        const val = statusSelect.value;
+        const progress = val === 'done' ? 100 : (task.progress === 100 ? 0 : (task.progress || 0));
+        try {
+          await updateDoc(doc(db, 'tasks', id), { status: val, progress });
+        } catch (err) {
+          toast('Failed to update status: ' + err.message);
+        }
+      });
+    }
+
+    // Lead & Support select changes (both inline and expanded)
+    const rowLeadSelect = item.querySelector('.lr-lead-select');
+    const rowSupportSelect = item.querySelector('.lr-support-select');
+    const expLeadSelect = item.querySelector('.expanded-lead-select');
+    const expSupportSelect = item.querySelector('.expanded-support-select');
     
-    const handleAssigneeChange = async () => {
-      if (!leadSelect || !supportSelect) return;
-      const leadVal = leadSelect.value;
-      const supportVal = supportSelect.value;
+    const handleAssigneeChange = async (e) => {
+      let leadVal = rowLeadSelect ? rowLeadSelect.value : (expLeadSelect ? expLeadSelect.value : '');
+      let supportVal = rowSupportSelect ? rowSupportSelect.value : (expSupportSelect ? expSupportSelect.value : '');
+      
+      if (e && (e.target === rowLeadSelect || e.target === expLeadSelect)) {
+        leadVal = e.target.value;
+      }
+      if (e && (e.target === rowSupportSelect || e.target === expSupportSelect)) {
+        supportVal = e.target.value;
+      }
+      
       const assignees = [];
       if (leadVal) assignees.push(leadVal);
       if (supportVal) assignees.push(supportVal);
@@ -2446,8 +2418,10 @@ function bindListEvents() {
       }
     };
     
-    if (leadSelect) leadSelect.addEventListener('change', handleAssigneeChange);
-    if (supportSelect) supportSelect.addEventListener('change', handleAssigneeChange);
+    if (rowLeadSelect) rowLeadSelect.addEventListener('change', handleAssigneeChange);
+    if (rowSupportSelect) rowSupportSelect.addEventListener('change', handleAssigneeChange);
+    if (expLeadSelect) expLeadSelect.addEventListener('change', handleAssigneeChange);
+    if (expSupportSelect) expSupportSelect.addEventListener('change', handleAssigneeChange);
 
     // Cadence Click-to-Edit
     const cadenceLabel = item.querySelector('.inline-cadence-label');
