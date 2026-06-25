@@ -747,8 +747,8 @@
     gap: 8px;
   }
   .lp-name-input {
-    background: var(--panel-2);
-    border: 1px solid var(--border);
+    background: transparent;
+    border: 1px solid transparent;
     color: var(--text);
     font-weight: 700;
     font-size: 13px;
@@ -756,13 +756,14 @@
     border-radius: 6px;
     font-family: inherit;
     width: 250px;
-    transition: all 0.1s ease;
+    transition: all 0.15s ease;
     margin-left: -6px;
+    cursor: text;
   }
   .lp-name-static {
     display: inline-block;
-    background: var(--panel-2);
-    border: 1px solid var(--border);
+    background: transparent;
+    border: 1px solid transparent;
     color: var(--text);
     font-weight: 700;
     font-size: 13px;
@@ -772,7 +773,7 @@
     margin-left: -6px;
   }
   .lp-name-input:hover {
-    background: var(--accent-bg-05);
+    background: var(--panel-2);
     border-color: var(--border);
   }
   .lp-name-input:focus {
