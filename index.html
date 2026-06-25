@@ -316,6 +316,27 @@
     width: min(480px, 90vw);
     box-shadow: var(--shadow);
   }
+  #modal .modal {
+    width: 100vw;
+    height: 100vh;
+    max-width: 100vw;
+    max-height: 100vh;
+    border-radius: 0;
+    border: none;
+    padding: 24px 40px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+  }
+  .modal-body { display: grid; grid-template-columns: 1.2fr 1fr; gap: 28px; overflow-y: auto; padding-right: 8px; margin-bottom: 16px; }
+  #modal .modal-body {
+    flex: 1;
+    overflow-y: auto;
+  }
+  .modal-col-left, .modal-col-right { display: flex; flex-direction: column; gap: 16px; }
+  @media (max-width: 768px) {
+    .modal-body { grid-template-columns: 1fr; gap: 16px; }
+  }
   .modal h2 { margin: 0 0 14px; font-size: 15px; }
   .field { margin-bottom: 12px; }
   .field label {
@@ -421,32 +442,38 @@
 
 <div class="modal-backdrop" id="modal">
   <div class="modal">
-    <h2 id="modalTitle">New task</h2>
-    <div class="field">
-      <label for="taskApp">Project</label>
-      <input type="text" id="taskApp" placeholder="e.g. Accounting app, CRM, Internal portal" autocomplete="off" list="appList">
-      <datalist id="appList"></datalist>
-    </div>
-    <div class="field">
-      <label for="taskTitle">Deliverable</label>
-      <input type="text" id="taskTitle" placeholder="What needs to happen?" autocomplete="off">
-    </div>
-    <div class="field">
-      <label for="taskStatus">Status</label>
-      <select id="taskStatus">
-        <option value="todo">To do</option>
-        <option value="progress">In progress</option>
-        <option value="done">Done</option>
-      </select>
-    </div>
-    <div class="field">
-      <label for="taskPriority">Importance</label>
-      <select id="taskPriority">
-        <option value="critical">Critical</option>
-        <option value="high">High</option>
-        <option value="medium" selected>Medium</option>
-        <option value="low">Low</option>
-      </select>
+    <h2 id="modalTitle" style="margin-top: 0; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--border);">New task</h2>
+    <div class="modal-body">
+      <div class="modal-col-left">
+        <div class="field">
+          <label for="taskApp">Project</label>
+          <input type="text" id="taskApp" placeholder="e.g. Accounting app, CRM, Internal portal" autocomplete="off" list="appList">
+          <datalist id="appList"></datalist>
+        </div>
+        <div class="field">
+          <label for="taskTitle">Deliverable</label>
+          <input type="text" id="taskTitle" placeholder="What needs to happen?" autocomplete="off">
+        </div>
+      </div>
+      <div class="modal-col-right">
+        <div class="field">
+          <label for="taskStatus">Status</label>
+          <select id="taskStatus">
+            <option value="todo">To do</option>
+            <option value="progress">In progress</option>
+            <option value="done">Done</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="taskPriority">Importance</label>
+          <select id="taskPriority">
+            <option value="critical">Critical</option>
+            <option value="high">High</option>
+            <option value="medium" selected>Medium</option>
+            <option value="low">Low</option>
+          </select>
+        </div>
+      </div>
     </div>
     <div class="modal-actions">
       <button id="cancelBtn" class="ghost">Cancel</button>

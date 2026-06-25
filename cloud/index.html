@@ -376,8 +376,61 @@
     display: none; align-items: center; justify-content: center; z-index: 100; }
   .modal-backdrop.open { display: flex; }
   .modal { background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
-    padding: 20px; width: min(480px, 90vw); max-height: 90vh; overflow-y: auto;
-    box-shadow: var(--shadow); }
+    padding: 24px; width: min(1000px, 95vw); max-height: 95vh; overflow-y: auto;
+    box-shadow: var(--shadow); display: flex; flex-direction: column; }
+  #modal .modal {
+    width: 100vw;
+    height: 100vh;
+    max-width: 100vw;
+    max-height: 100vh;
+    border-radius: 0;
+    border: none;
+    padding: 24px 40px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+  }
+  .modal-body { display: grid; grid-template-columns: 1.2fr 1fr; gap: 28px; overflow-y: auto; padding-right: 8px; margin-bottom: 16px; }
+  #modal .modal-body {
+    flex: 1;
+    overflow-y: auto;
+  }
+  .modal-col-left, .modal-col-right { display: flex; flex-direction: column; gap: 16px; }
+  @media (max-width: 768px) {
+    .modal-body { grid-template-columns: 1fr; gap: 16px; }
+  }
+
+  /* Expanded card styles */
+  .expanded-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+  .expanded-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 8px;
+  }
+  .expanded-card-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .subtask-notes-input-inline:hover, .subtask-notes-input-modal:hover {
+    border-bottom-color: rgba(124,156,255,0.2) !important;
+  }
+  .subtask-notes-input-inline:focus, .subtask-notes-input-modal:focus {
+    border-bottom-color: var(--accent) !important;
+    outline: none;
+  }
+
   .modal h2 { margin: 0 0 14px; font-size: 15px; }
   .field { margin-bottom: 12px; }
   .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
@@ -1198,68 +1251,74 @@
 <!-- Task modal -->
 <div class="modal-backdrop" id="modal">
   <div class="modal">
-    <h2 id="modalTitle">New task</h2>
-    <div class="field">
-      <label for="taskApp">Project</label>
-      <input type="text" id="taskApp" placeholder="e.g. Custom Apparel, Ink Theory, Clockwork" autocomplete="off" list="appList">
-      <datalist id="appList"></datalist>
-    </div>
-    <div class="field">
-      <label for="taskTitle">Deliverable</label>
-      <input type="text" id="taskTitle" placeholder="What needs to happen?" autocomplete="off">
-    </div>
-    <div class="field">
-      <label style="display:flex; justify-content:space-between; align-items:center;">
-        <span>Subtasks</span>
-        <span class="subtask-progress-pct" id="modalSubtaskProgress" style="font-size:11px; font-weight:600; color:var(--accent);">0%</span>
-      </label>
-      <div id="subtasksListContainer" style="display:flex; flex-direction:column; gap:8px; margin-bottom:8px;"></div>
-      <div style="display:flex; gap:8px;">
-        <input type="text" id="newSubtaskInput" placeholder="+ Add a subtask" style="flex:1;" autocomplete="off">
-        <button type="button" id="addSubtaskBtn" class="ghost" style="padding:6px 12px; font-size:12px;">Add</button>
-      </div>
-    </div>
-    <div class="field">
-      <label for="taskDetails">Details <span style="color:var(--muted);font-weight:400;font-size:11px;">(optional)</span></label>
-      <textarea id="taskDetails" placeholder="Notes, requirements, links, context..." rows="4"></textarea>
-    </div>
-    <div class="field">
-      <label for="taskStatus">Status</label>
-      <select id="taskStatus">
-        <option value="todo">To do</option>
-        <option value="progress">In progress</option>
-        <option value="active">Active</option>
-        <option value="done">Done</option>
-      </select>
-    </div>
-    <div class="field">
-      <label for="taskPriority">Importance</label>
-      <select id="taskPriority">
-        <option value="critical">Critical</option>
-        <option value="high">High</option>
-        <option value="medium" selected>Medium</option>
-        <option value="low">Low</option>
-      </select>
-    </div>
-    <div class="field">
-      <label>Dates <span style="color:var(--muted);font-weight:400;font-size:11px;">(optional)</span></label>
-      <div class="daterange-display">
-        <div class="dr-pair">
-          <span class="dr-label">Start</span>
-          <span id="drStartDisplay" class="dr-value empty">— pick a date —</span>
+    <h2 id="modalTitle" style="margin-top: 0; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--border);">New task</h2>
+    <div class="modal-body">
+      <div class="modal-col-left">
+        <div class="field">
+          <label for="taskApp">Project</label>
+          <input type="text" id="taskApp" placeholder="e.g. Custom Apparel, Ink Theory, Clockwork" autocomplete="off" list="appList">
+          <datalist id="appList"></datalist>
         </div>
-        <div class="dr-pair">
-          <span class="dr-label">End</span>
-          <span id="drEndDisplay" class="dr-value empty">— pick a date —</span>
+        <div class="field">
+          <label for="taskTitle">Deliverable</label>
+          <input type="text" id="taskTitle" placeholder="What needs to happen?" autocomplete="off">
         </div>
-        <button type="button" class="dr-clear" id="drClearBtn">Clear</button>
+        <div class="field">
+          <label style="display:flex; justify-content:space-between; align-items:center;">
+            <span>Subtasks</span>
+            <span class="subtask-progress-pct" id="modalSubtaskProgress" style="font-size:11px; font-weight:600; color:var(--accent);">0%</span>
+          </label>
+          <div id="subtasksListContainer" style="display:flex; flex-direction:column; gap:8px; margin-bottom:8px;"></div>
+          <div style="display:flex; gap:8px;">
+            <input type="text" id="newSubtaskInput" placeholder="+ Add a subtask" style="flex:1;" autocomplete="off">
+            <button type="button" id="addSubtaskBtn" class="ghost" style="padding:6px 12px; font-size:12px;">Add</button>
+          </div>
+        </div>
+        <div class="field">
+          <label for="taskDetails">Details <span style="color:var(--muted);font-weight:400;font-size:11px;">(optional)</span></label>
+          <textarea id="taskDetails" placeholder="Notes, requirements, links, context..." rows="4"></textarea>
+        </div>
       </div>
-      <div class="daterange-cal" id="drCalendar"></div>
-    </div>
-    <div class="field">
-      <label>Assignees</label>
-      <div class="assignee-picker" id="assigneePicker"></div>
-      <small class="hint">Click a teammate to toggle. Multiple people can own the same task.</small>
+      <div class="modal-col-right">
+        <div class="field">
+          <label for="taskStatus">Status</label>
+          <select id="taskStatus">
+            <option value="todo">To do</option>
+            <option value="progress">In progress</option>
+            <option value="active">Active</option>
+            <option value="done">Done</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="taskPriority">Importance</label>
+          <select id="taskPriority">
+            <option value="critical">Critical</option>
+            <option value="high">High</option>
+            <option value="medium" selected>Medium</option>
+            <option value="low">Low</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Dates <span style="color:var(--muted);font-weight:400;font-size:11px;">(optional)</span></label>
+          <div class="daterange-display">
+            <div class="dr-pair">
+              <span class="dr-label">Start</span>
+              <span id="drStartDisplay" class="dr-value empty">— pick a date —</span>
+            </div>
+            <div class="dr-pair">
+              <span class="dr-label">End</span>
+              <span id="drEndDisplay" class="dr-value empty">— pick a date —</span>
+            </div>
+            <button type="button" class="dr-clear" id="drClearBtn">Clear</button>
+          </div>
+          <div class="daterange-cal" id="drCalendar"></div>
+        </div>
+        <div class="field">
+          <label>Assignees</label>
+          <div class="assignee-picker" id="assigneePicker"></div>
+          <small class="hint">Click a teammate to toggle. Multiple people can own the same task.</small>
+        </div>
+      </div>
     </div>
     <div class="modal-actions">
       <button id="cancelBtn" class="ghost">Cancel</button>
@@ -1658,7 +1717,9 @@ function isUIBusy() {
         a.classList.contains('new-subtask-input-inline') ||
         a.classList.contains('expanded-lead-select') ||
         a.classList.contains('expanded-support-select') ||
-        a.classList.contains('subtask-assignee-select-inline')) {
+        a.classList.contains('subtask-assignee-select-inline') ||
+        a.classList.contains('subtask-notes-input-inline') ||
+        a.classList.contains('expanded-project-input')) {
       return true;
     }
   }
@@ -2038,7 +2099,7 @@ function renderListItem(t, team) {
                    : 'Done';
 
   return `
-    <div class="list-item ${isExpanded ? 'expanded' : ''} ${t.status === 'done' ? 'done' : ''}" data-id="${t.id}">
+    <div class="list-item ${isExpanded ? 'expanded' : ''} ${t.status === 'done' ? 'done' : ''}" data-id="${t.id}" ${isEditor ? 'draggable="true"' : ''}>
       <div class="list-row">
         <div class="lr-expand-col">
           <button class="icon-btn expand-btn" data-action="expand" title="${isExpanded ? 'Collapse' : 'Expand'}">${isExpanded ? '▾' : '▸'}</button>
@@ -2103,7 +2164,7 @@ function bindListEvents() {
     });
   });
 
-  // Handle Project Header renaming and deleting
+  // Handle Project Header renaming and deleting, and drag/drop reassigning
   container.querySelectorAll('.list-project').forEach(projEl => {
     const projName = projEl.dataset.projectName;
     
@@ -2130,6 +2191,33 @@ function bindListEvents() {
         deleteProject(projName);
       });
     }
+
+    // Drag and drop target to reassign project
+    projEl.addEventListener('dragover', (e) => {
+      if (!dragId) return;
+      e.preventDefault();
+      projEl.classList.add('drag-over');
+    });
+    
+    projEl.addEventListener('dragleave', (e) => {
+      if (!projEl.contains(e.relatedTarget)) {
+        projEl.classList.remove('drag-over');
+      }
+    });
+    
+    projEl.addEventListener('drop', async (e) => {
+      if (!dragId) return;
+      e.preventDefault();
+      projEl.classList.remove('drag-over');
+      const taskId = dragId;
+      try {
+        await updateDoc(doc(db, 'tasks', taskId), { app: projName });
+      } catch (err) {
+        toast('Failed to move task: ' + err.message);
+      }
+      clearDropHints();
+      dragId = null;
+    });
   });
 
   // Handle Task row events
@@ -2137,6 +2225,10 @@ function bindListEvents() {
     const id = item.dataset.id;
     const task = tasks.find(t => t.id === id);
     if (!task) return;
+
+    // Drag events for list item
+    item.addEventListener('dragstart', onDragStart);
+    item.addEventListener('dragend', onDragEnd);
 
     // Expand
     const expandBtn = item.querySelector('[data-action="expand"]');
@@ -2367,6 +2459,29 @@ function bindListEvents() {
       });
     });
 
+    // Inline Subtasks notes edits
+    item.querySelectorAll('.subtask-notes-input-inline').forEach(input => {
+      input.addEventListener('change', async () => {
+        const index = parseInt(input.dataset.index);
+        const subtasksCopy = JSON.parse(JSON.stringify(task.subtasks || []));
+        if (subtasksCopy[index]) {
+          subtasksCopy[index].notes = input.value.trim();
+          try {
+            await updateDoc(doc(db, 'tasks', id), { subtasks: subtasksCopy });
+          } catch (err) {
+            toast('Failed to update subtask notes: ' + err.message);
+          }
+        }
+      });
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') input.blur();
+        if (e.key === 'Escape') {
+          input.value = (task.subtasks[parseInt(input.dataset.index)] || {}).notes || '';
+          input.blur();
+        }
+      });
+    });
+
     // Inline Subtasks delete
     item.querySelectorAll('.delete-subtask-inline').forEach(btn => {
       btn.addEventListener('click', async () => {
@@ -2398,7 +2513,8 @@ function bindListEvents() {
         subtasksCopy.push({
           id: Math.random().toString(36).substring(2, 9),
           title: val,
-          completed: false
+          completed: false,
+          notes: ''
         });
         const progress = Math.round((subtasksCopy.filter(s => s.completed).length / subtasksCopy.length) * 100);
         try {
@@ -2416,6 +2532,26 @@ function bindListEvents() {
         if (e.key === 'Enter') {
           e.preventDefault();
           addInlineAction();
+        }
+      });
+    }
+
+    // Inline Project input edits
+    const projectInput = item.querySelector('.expanded-project-input');
+    if (projectInput) {
+      projectInput.addEventListener('change', async () => {
+        const val = projectInput.value.trim();
+        try {
+          await updateDoc(doc(db, 'tasks', id), { app: val });
+        } catch (err) {
+          toast('Failed to update project: ' + err.message);
+        }
+      });
+      projectInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') projectInput.blur();
+        if (e.key === 'Escape') {
+          projectInput.value = task.app || '';
+          projectInput.blur();
         }
       });
     }
@@ -2730,7 +2866,7 @@ function renderExpanded(t, updates) {
   const team = getTeam();
 
   const listHtml = sorted.length === 0
-    ? `<div class="update-empty">No updates yet — start the thread below.</div>`
+    ? `<div class="update-empty" style="font-size:12px; color:var(--muted); font-style:italic; padding:10px 0;">No updates yet — start the thread below.</div>`
     : sorted.map(u => {
         const isMine = String(u.author || '').toLowerCase() === meEmail;
         const canDelete = isMine || role === 'editor';
@@ -2756,77 +2892,111 @@ function renderExpanded(t, updates) {
   const disabledAttr = isEditor ? '' : 'disabled';
 
   return `
-    <div class="task-expanded" data-task-id="${t.id}">
-      <div class="expanded-split">
-        <!-- Details and Resource Link column -->
-        <div class="expanded-col">
-          <div class="expanded-field">
-            <label>Assignees</label>
-            <div style="display:flex; gap:16px;">
-              <div style="flex:1; display:flex; flex-direction:column; gap:4px;">
-                <span style="font-size:11px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:0.3px;">Lead</span>
-                <select class="expanded-lead-select" style="width:100%; font-size:13px; padding:6px 8px; border-radius:4px; border:1px solid var(--border); background:var(--panel); color:var(--text);" ${disabledAttr}>
-                  <option value="">Unassigned</option>
-                  ${team.map(email => `<option value="${escapeHtml(email)}" ${lead === email ? 'selected' : ''}>${escapeHtml(emailShort(email))}</option>`).join('')}
-                </select>
+    <div class="task-expanded" data-task-id="${t.id}" style="padding: 16px 8px 8px; border-top: 1px solid var(--border); margin-top: 8px;">
+      <div class="expanded-split" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+        
+        <!-- Left Column: Project, Assignees, Subtasks -->
+        <div class="expanded-col" style="display: flex; flex-direction: column; gap: 16px;">
+          
+          <!-- Card 1: Project & Assignees -->
+          <div class="expanded-card">
+            <div class="expanded-card-header">
+              <span class="expanded-card-title">Project & Assignees</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+              <div class="expanded-field">
+                <span style="font-size:11px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:0.3px; display:block; margin-bottom:4px;">Project</span>
+                <input type="text" class="expanded-project-input" data-task-id="${t.id}" value="${escapeHtml(t.app || '')}" placeholder="e.g. Custom Apparel, Ink Theory" autocomplete="off" list="appList" ${disabledAttr} style="width:100%; font-size:13px; padding:6px 8px; border-radius:4px; border:1px solid var(--border); background:var(--panel); color:var(--text);">
               </div>
-              <div style="flex:1; display:flex; flex-direction:column; gap:4px;">
-                <span style="font-size:11px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:0.3px;">Support</span>
-                <select class="expanded-support-select" style="width:100%; font-size:13px; padding:6px 8px; border-radius:4px; border:1px solid var(--border); background:var(--panel); color:var(--text);" ${disabledAttr}>
-                  <option value="">Unassigned</option>
-                  ${team.map(email => `<option value="${escapeHtml(email)}" ${support === email ? 'selected' : ''}>${escapeHtml(emailShort(email))}</option>`).join('')}
-                </select>
+              <div style="display:flex; gap:16px;">
+                <div style="flex:1; display:flex; flex-direction:column; gap:4px;">
+                  <span style="font-size:11px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:0.3px;">Lead</span>
+                  <select class="expanded-lead-select" style="width:100%; font-size:13px; padding:6px 8px; border-radius:4px; border:1px solid var(--border); background:var(--panel); color:var(--text);" ${disabledAttr}>
+                    <option value="">Unassigned</option>
+                    ${team.map(email => `<option value="${escapeHtml(email)}" ${lead === email ? 'selected' : ''}>${escapeHtml(emailShort(email))}</option>`).join('')}
+                  </select>
+                </div>
+                <div style="flex:1; display:flex; flex-direction:column; gap:4px;">
+                  <span style="font-size:11px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:0.3px;">Support</span>
+                  <select class="expanded-support-select" style="width:100%; font-size:13px; padding:6px 8px; border-radius:4px; border:1px solid var(--border); background:var(--panel); color:var(--text);" ${disabledAttr}>
+                    <option value="">Unassigned</option>
+                    ${team.map(email => `<option value="${escapeHtml(email)}" ${support === email ? 'selected' : ''}>${escapeHtml(emailShort(email))}</option>`).join('')}
+                  </select>
+                </div>
               </div>
             </div>
           </div>
-          <div class="expanded-field">
-            <label style="display:flex; justify-content:space-between; align-items:center;">
-              <span>Subtasks</span>
-              <span style="font-size:11px; font-weight:600; color:var(--accent);">${progressOf(t)}%</span>
-            </label>
-            <div class="expanded-subtasks-list" style="display:flex; flex-direction:column; gap:6px; margin-bottom:8px;">
+          
+          <!-- Card 2: Subtasks -->
+          <div class="expanded-card">
+            <div class="expanded-card-header">
+              <span class="expanded-card-title">Subtasks</span>
+              <span style="font-size:11px; font-weight:700; color:var(--accent);">${progressOf(t)}%</span>
+            </div>
+            <div class="expanded-subtasks-list" style="display:flex; flex-direction:column; gap:10px; margin-bottom:12px;">
               ${(t.subtasks || []).map((s, idx) => `
-                <div class="subtask-row" style="display:flex; align-items:center; gap:8px;">
-                  <input type="checkbox" class="subtask-checkbox-inline" data-task-id="${t.id}" data-index="${idx}" ${s.completed ? 'checked' : ''} ${disabledAttr}>
-                  <input type="text" class="subtask-text-input-inline ${s.completed ? 'completed' : ''}" data-task-id="${t.id}" data-index="${idx}" value="${escapeHtml(s.title)}" placeholder="Subtask name..." ${disabledAttr} style="flex:1; border:none; background:transparent; border-bottom:1px solid transparent; padding:2px; font-size:12px; color: ${s.completed ? 'var(--muted)' : 'var(--text)'};">
-                  <select class="subtask-assignee-select-inline" data-task-id="${t.id}" data-index="${idx}" ${disabledAttr} style="font-size:11px; padding:2px 4px; border-radius:4px; border:1px solid var(--border); background:var(--panel); color:var(--text); max-width:110px;">
-                    <option value="">Assign...</option>
-                    ${team.map(email => `<option value="${escapeHtml(email)}" ${s.assignee === email ? 'selected' : ''}>${escapeHtml(emailShort(email))}</option>`).join('')}
-                  </select>
-                  ${isEditor ? `<button type="button" class="delete-subtask-inline" data-task-id="${t.id}" data-index="${idx}" style="background:none; border:none; font-size:14px; color:var(--muted); cursor:pointer;">×</button>` : ''}
+                <div class="subtask-container" style="display:flex; flex-direction:column; gap:4px; border-bottom:1px solid var(--border); padding-bottom:6px;">
+                  <div class="subtask-row" style="display:flex; align-items:center; gap:8px;">
+                    <input type="checkbox" class="subtask-checkbox-inline" data-task-id="${t.id}" data-index="${idx}" ${s.completed ? 'checked' : ''} ${disabledAttr}>
+                    <input type="text" class="subtask-text-input-inline ${s.completed ? 'completed' : ''}" data-task-id="${t.id}" data-index="${idx}" value="${escapeHtml(s.title)}" placeholder="Subtask name..." ${disabledAttr} style="flex:1; border:none; background:transparent; border-bottom:1px solid transparent; padding:2px; font-size:12px; color: ${s.completed ? 'var(--muted)' : 'var(--text)'};">
+                    <select class="subtask-assignee-select-inline" data-task-id="${t.id}" data-index="${idx}" ${disabledAttr} style="font-size:11px; padding:2px 4px; border-radius:4px; border:1px solid var(--border); background:var(--panel); color:var(--text); max-width:110px;">
+                      <option value="">Assign...</option>
+                      ${team.map(email => `<option value="${escapeHtml(email)}" ${s.assignee === email ? 'selected' : ''}>${escapeHtml(emailShort(email))}</option>`).join('')}
+                    </select>
+                    ${isEditor ? `<button type="button" class="delete-subtask-inline" data-task-id="${t.id}" data-index="${idx}" style="background:none; border:none; font-size:14px; color:var(--muted); cursor:pointer;">×</button>` : ''}
+                  </div>
+                  <div style="padding-left: 24px; display:flex;">
+                    <input type="text" class="subtask-notes-input-inline" data-task-id="${t.id}" data-index="${idx}" placeholder="Add notes to this subtask..." value="${escapeHtml(s.notes || '')}" ${disabledAttr} style="flex:1; font-size:11px; padding:2px 4px; border:none; background:transparent; border-bottom:1px dashed var(--border); color:var(--text-muted);">
+                  </div>
                 </div>
               `).join('')}
               ${(t.subtasks || []).length === 0 ? `<div style="font-size:12px; color:var(--muted); font-style:italic;">No subtasks</div>` : ''}
             </div>
             ${isEditor ? `
               <div style="display:flex; gap:8px;">
-                <input type="text" class="new-subtask-input-inline" data-task-id="${t.id}" placeholder="+ Add subtask" style="flex:1; font-size:12px; padding:4px 8px; border-radius:4px; border:1px solid var(--border); background:var(--panel); color:var(--text);" autocomplete="off">
-                <button type="button" class="update-send add-subtask-btn-inline" data-task-id="${t.id}" style="padding:4px 8px; font-size:12px;">Add</button>
+                <input type="text" class="new-subtask-input-inline" data-task-id="${t.id}" placeholder="+ Add subtask" style="flex:1; font-size:12px; padding:6px 8px; border-radius:4px; border:1px solid var(--border); background:var(--panel); color:var(--text);" autocomplete="off">
+                <button type="button" class="update-send add-subtask-btn-inline" data-task-id="${t.id}" style="padding:6px 12px; font-size:12px;">Add</button>
               </div>
             ` : ''}
           </div>
-          <div class="expanded-field">
-            <label>Notes / Dependencies</label>
-            <textarea class="expanded-textarea" data-field="details" placeholder="Add notes, context, or requirements..." ${disabledAttr}>${escapeHtml(t.details || '')}</textarea>
-          </div>
-          <div class="expanded-field">
-            <label>Resource Link</label>
-            <div class="expanded-input-row">
-              <input type="text" class="expanded-input url-input" data-field="link" value="${escapeHtml(t.link || '')}" placeholder="Paste URL (e.g. Figma, Doc)..." ${disabledAttr}>
-              ${t.link ? `<a class="cell-link-btn" href="${escapeHtml(t.link)}" target="_blank" title="Open Link">open link</a>` : ''}
-            </div>
-          </div>
+          
         </div>
-        <!-- Updates / Thread column -->
-        <div class="expanded-col">
-          <div class="expanded-field">
-            <label>Discussion Thread</label>
-            <div class="update-list" style="max-height: 160px; overflow-y: auto; margin-bottom: 8px;">${listHtml}</div>
-            <div class="update-input-row">
-              <input class="update-input" data-task-id="${t.id}" placeholder="Type message to post..." autocomplete="off">
-              <button class="update-send" data-action="send" data-task-id="${t.id}">Post</button>
+        
+        <!-- Right Column: Notes & Discussion -->
+        <div class="expanded-col" style="display: flex; flex-direction: column; gap: 16px;">
+          
+          <!-- Card 3: Notes & Resources -->
+          <div class="expanded-card">
+            <div class="expanded-card-header">
+              <span class="expanded-card-title">Notes & Resources</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+              <div class="expanded-field">
+                <span style="font-size:11px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:0.3px; display:block; margin-bottom:4px;">Notes / Dependencies</span>
+                <textarea class="expanded-textarea" data-field="details" placeholder="Add notes, context, or requirements..." ${disabledAttr} style="width:100%; min-height:80px; font-size:13px; padding:8px; border-radius:4px; border:1px solid var(--border); background:var(--panel); color:var(--text); resize:vertical;">${escapeHtml(t.details || '')}</textarea>
+              </div>
+              <div class="expanded-field">
+                <span style="font-size:11px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:0.3px; display:block; margin-bottom:4px;">Resource Link</span>
+                <div class="expanded-input-row" style="display:flex; gap:8px;">
+                  <input type="text" class="expanded-input url-input" data-field="link" value="${escapeHtml(t.link || '')}" placeholder="Paste URL (e.g. Figma, Doc)..." ${disabledAttr} style="flex:1; font-size:13px; padding:6px 8px; border-radius:4px; border:1px solid var(--border); background:var(--panel); color:var(--text);">
+                  ${t.link ? `<a class="cell-link-btn" href="${escapeHtml(t.link)}" target="_blank" title="Open Link" style="align-self:center; font-size:11px; font-weight:600; color:var(--accent); text-transform:uppercase; text-decoration:none; padding:4px 8px; border:1px solid var(--border); border-radius:4px; background:var(--panel);">Open</a>` : ''}
+                </div>
+              </div>
             </div>
           </div>
+          
+          <!-- Card 4: Discussion Thread -->
+          <div class="expanded-card">
+            <div class="expanded-card-header">
+              <span class="expanded-card-title">Discussion Thread</span>
+            </div>
+            <div class="update-list" style="max-height: 180px; overflow-y: auto; margin-bottom: 12px; display:flex; flex-direction:column; gap:8px;">${listHtml}</div>
+            <div class="update-input-row" style="display:flex; gap:8px;">
+              <input class="update-input" data-task-id="${t.id}" placeholder="Type message to post..." autocomplete="off" style="flex:1; font-size:13px; padding:6px 8px; border-radius:4px; border:1px solid var(--border); background:var(--panel); color:var(--text);">
+              <button class="update-send" data-action="send" data-task-id="${t.id}" style="padding:6px 12px; font-size:12px;">Post</button>
+            </div>
+          </div>
+          
         </div>
       </div>
     </div>`;
@@ -2965,7 +3135,7 @@ function onDragStart(e) {
 function onDragEnd(e) { e.currentTarget.classList.remove('dragging'); clearDropHints(); dragId = null; }
 function clearDropHints() {
   document.querySelectorAll('.drop-before, .drop-after').forEach(el => el.classList.remove('drop-before', 'drop-after'));
-  document.querySelectorAll('.task-list.drag-over').forEach(el => el.classList.remove('drag-over'));
+  document.querySelectorAll('.task-list.drag-over, .list-project.drag-over').forEach(el => el.classList.remove('drag-over'));
 }
 function onTaskDragOver(e) {
   if (!dragId) return;
@@ -3036,14 +3206,19 @@ function renderModalSubtasks() {
   const team = getTeam();
 
   container.innerHTML = modalSubtasks.map((s, index) => `
-    <div class="subtask-row" style="display:flex; align-items:center; gap:8px;">
-      <input type="checkbox" class="subtask-checkbox" ${s.completed ? 'checked' : ''} data-index="${index}">
-      <input type="text" class="subtask-text-input ${s.completed ? 'completed' : ''}" value="${escapeHtml(s.title)}" data-index="${index}" placeholder="Subtask name...">
-      <select class="subtask-assignee-select" data-index="${index}" style="font-size:11px; padding:2px 4px; border-radius:4px; border:1px solid var(--border); background:var(--panel); color:var(--text); max-width:110px;">
-        <option value="">Assign...</option>
-        ${team.map(email => `<option value="${escapeHtml(email)}" ${s.assignee === email ? 'selected' : ''}>${escapeHtml(emailShort(email))}</option>`).join('')}
-      </select>
-      <button type="button" class="delete-subtask-btn" data-index="${index}" title="Delete subtask">×</button>
+    <div class="subtask-container" style="display:flex; flex-direction:column; gap:4px; margin-bottom:8px; border-bottom:1px solid var(--border); padding-bottom:8px;">
+      <div class="subtask-row" style="display:flex; align-items:center; gap:8px;">
+        <input type="checkbox" class="subtask-checkbox" ${s.completed ? 'checked' : ''} data-index="${index}">
+        <input type="text" class="subtask-text-input ${s.completed ? 'completed' : ''}" value="${escapeHtml(s.title)}" data-index="${index}" placeholder="Subtask name..." style="flex:1;">
+        <select class="subtask-assignee-select" data-index="${index}" style="font-size:11px; padding:2px 4px; border-radius:4px; border:1px solid var(--border); background:var(--panel); color:var(--text); max-width:110px;">
+          <option value="">Assign...</option>
+          ${team.map(email => `<option value="${escapeHtml(email)}" ${s.assignee === email ? 'selected' : ''}>${escapeHtml(emailShort(email))}</option>`).join('')}
+        </select>
+        <button type="button" class="delete-subtask-btn" data-index="${index}" title="Delete subtask">×</button>
+      </div>
+      <div style="padding-left: 24px; display:flex;">
+        <input type="text" class="subtask-notes-input-modal" data-index="${index}" placeholder="Add notes to this subtask..." value="${escapeHtml(s.notes || '')}" style="flex:1; font-size:11px; padding:2px 4px; border:none; background:transparent; border-bottom:1px dashed var(--border); color:var(--text-muted);">
+      </div>
     </div>
   `).join('');
   
@@ -3092,6 +3267,19 @@ function renderModalSubtasks() {
     });
   });
 
+  // Bind notes edits
+  container.querySelectorAll('.subtask-notes-input-modal').forEach(input => {
+    input.addEventListener('change', () => {
+      const index = parseInt(input.dataset.index);
+      if (modalSubtasks[index]) {
+        modalSubtasks[index].notes = input.value.trim();
+      }
+    });
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') input.blur();
+    });
+  });
+
   // Bind delete subtask buttons
   container.querySelectorAll('.delete-subtask-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -3113,7 +3301,8 @@ function initSubtaskModalHandlers() {
     modalSubtasks.push({
       id: Math.random().toString(36).substring(2, 9),
       title: val,
-      completed: false
+      completed: false,
+      notes: ''
     });
     input.value = '';
     renderModalSubtasks();
