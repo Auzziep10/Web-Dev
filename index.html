@@ -423,13 +423,13 @@
   <div class="modal">
     <h2 id="modalTitle">New task</h2>
     <div class="field">
-      <label for="taskTitle">Title</label>
-      <input type="text" id="taskTitle" placeholder="What needs to happen?" autocomplete="off">
-    </div>
-    <div class="field">
-      <label for="taskApp">App / project</label>
+      <label for="taskApp">Project</label>
       <input type="text" id="taskApp" placeholder="e.g. Accounting app, CRM, Internal portal" autocomplete="off" list="appList">
       <datalist id="appList"></datalist>
+    </div>
+    <div class="field">
+      <label for="taskTitle">Deliverable</label>
+      <input type="text" id="taskTitle" placeholder="What needs to happen?" autocomplete="off">
     </div>
     <div class="field">
       <label for="taskStatus">Status</label>
@@ -744,7 +744,7 @@
     const status = document.getElementById('taskStatus').value;
     const priority = document.getElementById('taskPriority').value;
     if (!title) {
-      toast('Title required');
+      toast('Deliverable required');
       return;
     }
     if (editingId) {

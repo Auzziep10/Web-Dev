@@ -12,7 +12,8 @@ const PORT = Number(process.env.PORT) || 3030;
 const ROOT = __dirname;
 const DATA_FILE = path.join(ROOT, 'data.json');
 const TOKEN_FILE = path.join(ROOT, '.tokens.json');
-const INDEX_FILE = path.join(ROOT, 'index.html');
+const INDEX_FILE = path.join(ROOT, 'cloud', 'index.html');
+const CONFIG_FILE = path.join(ROOT, 'cloud', 'firebase-config.js');
 
 // --- Tokens (auto-generated on first run) ---
 let tokens;
@@ -94,7 +95,7 @@ const server = http.createServer(async (req, res) => {
   const token = getToken(req, url);
   const role = authLevel(token);
 
-  // Serve index.html at root (no auth needed — the page will prompt for token)
+  // Serve index.html at root (no auth needed)
   if (req.method === 'GET' && (p === '/' || p === '/index.html')) {
     try {
       const html = fs.readFileSync(INDEX_FILE, 'utf8');
@@ -102,6 +103,18 @@ const server = http.createServer(async (req, res) => {
       res.end(html);
     } catch (e) {
       res.writeHead(500); res.end('index.html missing');
+    }
+    return;
+  }
+
+  // Serve firebase-config.js
+  if (req.method === 'GET' && p === '/firebase-config.js') {
+    try {
+      const js = fs.readFileSync(CONFIG_FILE, 'utf8');
+      res.writeHead(200, { 'Content-Type': 'application/javascript; charset=utf-8' });
+      res.end(js);
+    } catch (e) {
+      res.writeHead(500); res.end('firebase-config.js missing');
     }
     return;
   }
