@@ -6,30 +6,56 @@
 <title>App Design Tasks</title>
 <style>
   :root {
-    --bg: #0f1115;
-    --panel: #161a22;
-    --panel-2: #1c2230;
-    --border: #262d3d;
-    --text: #e6e9ef;
-    --muted: #8b94a7;
-    --accent: #7c9cff;
-    --accent-2: #5b7cf5;
+    --bg: #09090b;
+    --panel: #18181b;
+    --panel-2: #27272a;
+    --border: #3f3f46;
+    --text: #fafafa;
+    --muted: #a1a1aa;
+    --accent: #e4e4e7;
+    --accent-2: #ffffff;
     --todo: #6b7a99;
     --progress: #d4a017;
     --active: #14b8a6;
     --done: #2faa6b;
-    --danger: #e05a5a;
-    --p-critical: #e05a5a;
-    --p-high: #e89a3d;
-    --p-medium: #5b8def;
-    --p-low: #8b94a7;
-    --shadow: 0 8px 24px rgba(0,0,0,0.35);
+    --danger: #ef4444;
+    --p-critical: #ef4444;
+    --p-high: #f97316;
+    --p-medium: #71717a;
+    --p-low: #a1a1aa;
+    --shadow: 0 8px 24px rgba(0,0,0,0.5);
+
+    --accent-bg-04: rgba(255, 255, 255, 0.04);
+    --accent-bg-05: rgba(255, 255, 255, 0.05);
+    --accent-bg-06: rgba(255, 255, 255, 0.06);
+    --accent-bg-10: rgba(255, 255, 255, 0.10);
+    --accent-bg-12: rgba(255, 255, 255, 0.12);
+    --accent-bg-18: rgba(255, 255, 255, 0.18);
+    --accent-bg-30: rgba(255, 255, 255, 0.30);
+    --accent-shadow: rgba(255, 255, 255, 0.2);
+    --accent-glow: rgba(255, 255, 255, 0.15);
   }
   @media (prefers-color-scheme: light) {
     :root {
-      --bg: #f6f7fb; --panel: #ffffff; --panel-2: #f0f2f7;
-      --border: #dfe3ec; --text: #1a1d24; --muted: #687184;
-      --shadow: 0 4px 16px rgba(20,30,60,0.08);
+      --bg: #f4f4f5;
+      --panel: #ffffff;
+      --panel-2: #eaeaea;
+      --border: #d4d4d8;
+      --text: #09090b;
+      --muted: #71717a;
+      --accent: #27272a;
+      --accent-2: #09090b;
+      --shadow: 0 4px 16px rgba(0,0,0,0.06);
+
+      --accent-bg-04: rgba(0, 0, 0, 0.03);
+      --accent-bg-05: rgba(0, 0, 0, 0.04);
+      --accent-bg-06: rgba(0, 0, 0, 0.05);
+      --accent-bg-10: rgba(0, 0, 0, 0.08);
+      --accent-bg-12: rgba(0, 0, 0, 0.09);
+      --accent-bg-18: rgba(0, 0, 0, 0.14);
+      --accent-bg-30: rgba(0, 0, 0, 0.22);
+      --accent-shadow: rgba(0, 0, 0, 0.15);
+      --accent-glow: rgba(0, 0, 0, 0.1);
     }
   }
   * { box-sizing: border-box; }
@@ -43,10 +69,41 @@
   header h1 { margin: 0; font-size: 16px; font-weight: 600; }
   .mode-badge { font-size: 11px; padding: 3px 8px; border-radius: 10px;
     background: var(--panel-2); color: var(--muted); border: 1px solid var(--border); }
-  .mode-badge.view { background: rgba(124,156,255,0.12); color: var(--accent); border-color: rgba(124,156,255,0.3); }
+  .mode-badge.view { background: var(--accent-bg-12); color: var(--accent); border-color: var(--accent-bg-30); }
   .user-chip { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); cursor: pointer; padding: 4px 8px; border-radius: 20px; transition: background 0.15s, color 0.15s; }
   .user-chip img { width: 20px; height: 20px; border-radius: 50%; }
   .spacer { flex: 1; }
+  .search-wrapper {
+    position: relative;
+    margin-right: 16px;
+    width: 200px;
+    transition: width 0.2s ease;
+  }
+  .search-wrapper input {
+    width: 100%;
+    padding: 6px 12px 6px 30px;
+    font-size: 13px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--panel-2);
+    color: var(--text);
+    transition: width 0.2s ease, border-color 0.2s, box-shadow 0.2s;
+  }
+  .search-wrapper input:focus {
+    width: 260px;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-shadow);
+    background: var(--panel);
+  }
+  .search-icon {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    font-size: 12px;
+    pointer-events: none;
+  }
   .filter-group { display: flex; align-items: center; gap: 8px; }
   .filter-group label { font-size: 12px; color: var(--muted); }
 
@@ -62,7 +119,7 @@
   button.danger:hover { border-color: var(--danger); }
   button.ghost { background: transparent; }
 
-  main { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+  main { flex: 1; display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px;
     padding: 16px 20px 20px; overflow: hidden; }
   .column { background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
     display: flex; flex-direction: column; min-height: 200px; overflow: hidden; }
@@ -70,14 +127,15 @@
     padding: 12px 14px; border-bottom: 1px solid var(--border); background: var(--panel-2); }
   .col-title { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 13px; }
   .status-dot { width: 8px; height: 8px; border-radius: 50%; }
-  .status-dot.todo { background: var(--todo); }
-  .status-dot.progress { background: var(--progress); }
-  .status-dot.active { background: var(--active); }
-  .status-dot.done { background: var(--done); }
+  .status-dot.backlog { background: #6c757d; }
+  .status-dot.ready { background: #7b1fa2; }
+  .status-dot.active { background: #14b8a6; }
+  .status-dot.review { background: #b78103; }
+  .status-dot.complete { background: #2faa6b; }
   .col-count { font-size: 12px; color: var(--muted); background: var(--panel);
     padding: 2px 8px; border-radius: 10px; border: 1px solid var(--border); }
   .task-list { list-style: none; margin: 0; padding: 10px; flex: 1; overflow-y: auto; min-height: 100px; }
-  .task-list.drag-over { background: rgba(124,156,255,0.06); }
+  .task-list.drag-over { background: var(--accent-bg-06); }
 
   .task { background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px;
     padding: 10px 12px; margin-bottom: 8px; cursor: grab; position: relative;
@@ -180,7 +238,7 @@
     font-weight: 700;
   }
   .dr-cell.in-range {
-    background: rgba(124,156,255,0.18);
+    background: var(--accent-bg-18);
     color: var(--text);
   }
   .dr-cell.range-start, .dr-cell.range-end {
@@ -199,8 +257,22 @@
   .priority-chip::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
   .priority-chip.critical { color: var(--p-critical); background: rgba(224,90,90,.12); }
   .priority-chip.high     { color: var(--p-high);     background: rgba(232,154,61,.14); }
-  .priority-chip.medium   { color: var(--p-medium);   background: rgba(91,141,239,.14); }
+  .priority-chip.medium   { color: var(--p-medium);   background: rgba(113,113,122,.14); }
   .priority-chip.low      { color: var(--p-low);      background: rgba(139,148,167,.16); }
+
+  .task-lead-badge, .task-support-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 500;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+
   .task.priority-critical { border-left: 3px solid var(--p-critical); }
   .task.priority-high     { border-left: 3px solid var(--p-high); }
   .task.priority-medium   { border-left: 3px solid var(--p-medium); }
@@ -235,7 +307,7 @@
   }
   .assignee-pill:hover { border-color: var(--accent); }
   .assignee-pill.selected {
-    background: rgba(124,156,255,0.12);
+    background: var(--accent-bg-12);
     border-color: var(--accent);
     color: var(--accent);
   }
@@ -256,11 +328,11 @@
   .expand-btn { font-size: 13px; line-height: 1; transition: transform .15s; }
   .task.expanded .expand-btn { transform: rotate(180deg); }
   .update-count {
-    background: rgba(124,156,255,0.10); color: var(--accent);
+    background: var(--accent-bg-10); color: var(--accent);
     padding: 1px 7px; border-radius: 10px; font-size: 11px; font-weight: 600;
   }
   .details-indicator {
-    background: rgba(124,156,255,0.10); color: var(--accent);
+    background: var(--accent-bg-10); color: var(--accent);
     padding: 1px 7px; border-radius: 10px; font-size: 11px; font-weight: 600;
     line-height: 1;
   }
@@ -450,7 +522,7 @@
   .expanded-project-input:focus, .expanded-lead-select:focus, .expanded-support-select:focus,
   .expanded-textarea:focus, .expanded-input:focus, .update-input:focus {
     border-color: var(--accent) !important;
-    box-shadow: 0 0 0 2px rgba(124,156,255,0.2) !important;
+    box-shadow: 0 0 0 2px var(--accent-shadow) !important;
     outline: none;
   }
 
@@ -562,16 +634,16 @@
   }
   .t-day-cell:last-child { border-right: none; }
   .t-day-cell.weekend { background: rgba(139,148,167,0.07); }
-  .t-day-cell.today { background: rgba(124,156,255,0.18); }
+  .t-day-cell.today { background: var(--accent-bg-18); }
   .t-day-name { color: var(--muted); }
   .t-day-num { font-weight: 600; color: var(--text); }
   .t-day-cell.today .t-day-num { color: var(--accent); }
 
-  .t-project-row { background: rgba(124,156,255,0.04); }
+  .t-project-row { background: var(--accent-bg-04); }
   .t-project-row .t-name {
     font-weight: 700; font-size: 11px; color: var(--accent);
     text-transform: uppercase; letter-spacing: .4px;
-    background: rgba(124,156,255,0.04);
+    background: var(--accent-bg-04);
   }
   .t-task-row .t-track {
     background-image:
@@ -637,7 +709,7 @@
     position: absolute; top: 0; bottom: 0;
     width: 2px; background: var(--accent);
     pointer-events: none; z-index: 5;
-    box-shadow: 0 0 8px rgba(124,156,255,0.5);
+    box-shadow: 0 0 8px var(--accent-glow);
   }
   .t-empty {
     padding: 40px 20px; text-align: center;
@@ -675,20 +747,32 @@
     gap: 8px;
   }
   .lp-name-input {
-    background: transparent;
-    border: 1px solid transparent;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
     color: var(--text);
     font-weight: 700;
-    font-size: 14px;
-    padding: 2px 6px;
-    border-radius: 4px;
+    font-size: 13px;
+    padding: 5px 12px;
+    border-radius: 6px;
     font-family: inherit;
     width: 250px;
     transition: all 0.1s ease;
     margin-left: -6px;
   }
+  .lp-name-static {
+    display: inline-block;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-weight: 700;
+    font-size: 13px;
+    padding: 5px 12px;
+    border-radius: 6px;
+    font-family: inherit;
+    margin-left: -6px;
+  }
   .lp-name-input:hover {
-    background: rgba(124,156,255,0.05);
+    background: var(--accent-bg-05);
     border-color: var(--border);
   }
   .lp-name-input:focus {
@@ -717,6 +801,7 @@
 
   .list-table-container {
     border: 1px solid var(--border);
+    border-top: 3px solid var(--accent-2);
     border-radius: 8px;
     box-shadow: var(--shadow);
     overflow: hidden;
@@ -724,22 +809,22 @@
   }
   .list-table-header {
     display: grid;
-    grid-template-columns: 35px 160px 1fr 110px 110px 140px 130px 100px 35px;
+    grid-template-columns: 25px 35px 1fr 110px 110px 140px 130px 100px 55px 35px;
     align-items: stretch;
-    background: #72825b; /* dark olive/green background */
-    color: white;
-    font-size: 12px;
+    background: var(--panel-2);
+    color: var(--text);
+    font-size: 11px;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     user-select: none;
+    border-bottom: 1px solid var(--border);
   }
   .list-table-header > div {
     display: flex;
     align-items: center;
     padding: 8px 10px;
-    border-right: 1px solid rgba(255, 255, 255, 0.15);
-    color: white;
+    color: var(--muted);
     font-size: 11px;
     font-weight: 600;
   }
@@ -747,7 +832,7 @@
     cursor: pointer;
   }
   .list-table-header > div.clickable:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.03);
   }
   .list-table-header > div:last-child {
     border-right: none;
@@ -760,36 +845,71 @@
   }
   .list-item {
     border-bottom: 1px solid var(--border);
-    transition: background 0.1s;
+    transition: background 0.1s, box-shadow 0.15s;
   }
   .list-item:last-child {
     border-bottom: none;
   }
   .list-item.expanded {
-    background: rgba(129, 140, 248, 0.01);
+    background: var(--accent-bg-04);
   }
+  .list-item.drop-before { box-shadow: 0 -2px 0 var(--accent); }
+  .list-item.drop-after { box-shadow: 0 2px 0 var(--accent); }
   .list-row {
     display: grid;
-    grid-template-columns: 35px 160px 1fr 110px 110px 140px 130px 100px 35px;
+    grid-template-columns: 25px 35px 1fr 110px 110px 140px 130px 100px 55px 35px;
     align-items: stretch;
     min-height: 38px;
     font-size: 13px;
     position: relative;
   }
   .list-row:hover {
-    background: rgba(124, 156, 255, 0.02);
+    background: var(--accent-bg-04);
   }
 
   /* Inline cell columns & inputs */
+  .lr-drag-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: grab;
+    color: var(--muted);
+    font-size: 14px;
+    user-select: none;
+  }
+  .lr-drag-cell:active {
+    cursor: grabbing;
+  }
+  .lth-drag-col {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 25px;
+  }
+  .lr-progress-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent);
+    cursor: pointer;
+    user-select: none;
+    padding: 2px 6px;
+  }
+  .lth-progress-col {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 55px;
+  }
   .lr-expand-cell {
     display: flex;
     align-items: center;
     justify-content: center;
-    border-right: 1px solid var(--border);
   }
   .lr-project-cell {
     background: #f1f3eb; /* light olive/green background matching screenshot */
-    border-right: 1px solid var(--border);
     display: flex;
     align-items: center;
     padding: 2px 6px;
@@ -808,14 +928,13 @@
   .lr-project-input:focus {
     background: white;
     outline: none;
-    box-shadow: 0 0 0 1px #72825b;
+    box-shadow: 0 0 0 1px var(--accent);
   }
 
   .lr-title-cell {
     display: flex;
     align-items: center;
     padding: 2px 8px;
-    border-right: 1px solid var(--border);
   }
   .lr-title-input {
     width: 100%;
@@ -834,7 +953,7 @@
   .lr-title-input:focus {
     background: white;
     outline: none;
-    box-shadow: 0 0 0 1px #72825b;
+    box-shadow: 0 0 0 1px var(--accent);
   }
   .lr-title-input.slashed {
     text-decoration: line-through;
@@ -845,7 +964,6 @@
     display: flex;
     align-items: center;
     padding: 2px 6px;
-    border-right: 1px solid var(--border);
   }
   .lr-assignee-select {
     width: 100%;
@@ -865,7 +983,7 @@
   .lr-assignee-select:focus {
     background: white;
     outline: none;
-    box-shadow: 0 0 0 1px #72825b;
+    box-shadow: 0 0 0 1px var(--accent);
     border-radius: 4px;
   }
 
@@ -874,7 +992,6 @@
     align-items: center;
     justify-content: center;
     padding: 2px 6px;
-    border-right: 1px solid var(--border);
   }
   .inline-cadence-wrapper {
     width: 100%;
@@ -901,7 +1018,7 @@
   .inline-cadence-input {
     width: 100%;
     background: white;
-    border: 1px solid #72825b;
+    border: 1px solid var(--accent);
     border-radius: 4px;
     padding: 4px;
     font-size: 13px;
@@ -916,7 +1033,6 @@
     display: flex;
     align-items: center;
     padding: 2px 6px;
-    border-right: 1px solid var(--border);
   }
   .status-select-inline {
     border: none;
@@ -932,27 +1048,31 @@
     appearance: none;
     -webkit-appearance: none;
   }
-  .status-select-inline.todo {
+  .status-select-inline.backlog {
     background: #f8f9fa;
     color: #6c757d;
     border: 1px solid #dee2e6;
   }
-  .status-select-inline.active {
+  .status-select-inline.ready {
     background: #eed8f6;
     color: #7b1fa2;
   }
-  .status-select-inline.progress {
-    background: #d2ebf9;
-    color: #0d47a1;
+  .status-select-inline.active {
+    background: #e2fbf8;
+    color: #0f766e;
   }
-  .status-select-inline.done {
+  .status-select-inline.review {
     background: #ffebad;
     color: #856404;
+  }
+  .status-select-inline.complete {
+    background: #d1fae5;
+    color: #065f46;
   }
   .status-select-inline:focus {
     background: white;
     outline: none;
-    box-shadow: 0 0 0 1px #72825b;
+    box-shadow: 0 0 0 1px var(--accent);
   }
 
   .lr-priority-cell {
@@ -960,7 +1080,6 @@
     align-items: center;
     justify-content: center;
     padding: 2px 6px;
-    border-right: 1px solid var(--border);
   }
   .priority-select-inline {
     border: none;
@@ -982,12 +1101,12 @@
   }
   .priority-select-inline.critical { color: var(--p-critical); background: rgba(224,90,90,0.12); }
   .priority-select-inline.high     { color: var(--p-high);     background: rgba(232,154,61,0.14); }
-  .priority-select-inline.medium   { color: var(--p-medium);   background: rgba(91,141,239,0.14); }
+  .priority-select-inline.medium   { color: var(--p-medium);   background: rgba(113,113,122,0.14); }
   .priority-select-inline.low      { color: var(--p-low);      background: rgba(139,148,167,0.16); }
   .priority-select-inline:focus {
     background: white;
     outline: none;
-    box-shadow: 0 0 0 1px #72825b;
+    box-shadow: 0 0 0 1px var(--accent);
   }
 
   .lr-delete-cell {
@@ -1016,7 +1135,7 @@
 
   /* Expanded Split Panel */
   .list-item .task-expanded {
-    padding: 12px 14px 16px 48px;
+    padding: 12px 14px 16px 68px;
     border-top: 1px solid var(--border);
     background: var(--panel-2);
   }
@@ -1026,12 +1145,18 @@
     gap: 20px;
     margin-bottom: 14px;
   }
+
   @media (max-width: 768px) {
     .expanded-split {
       grid-template-columns: 1fr;
       gap: 14px;
     }
   }
+  .task .expanded-split {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
   .expanded-col {
     display: flex;
     flex-direction: column;
@@ -1154,6 +1279,14 @@
     /* Timeline nav: make sure it fits and wraps cleanly */
     .timeline-nav { flex-wrap: wrap; }
     #timelineRange { min-width: 0; }
+    .search-wrapper {
+      width: 130px;
+      margin-right: 0;
+      margin-left: 4px;
+    }
+    .search-wrapper input:focus {
+      width: 140px;
+    }
   }
 
   /* Subtasks styles */
@@ -1178,7 +1311,7 @@
     transition: all 0.2s ease;
   }
   .subtask-text-input:hover {
-    background: rgba(124,156,255,0.04);
+    background: var(--accent-bg-04);
     border-color: var(--border);
   }
   .subtask-text-input:focus {
@@ -1209,6 +1342,11 @@
 <header>
   <h1>App Design Tasks</h1>
   <span id="modeBadge" class="mode-badge">Editor</span>
+
+  <div class="search-wrapper">
+    <span class="search-icon">🔍</span>
+    <input type="text" id="taskSearch" placeholder="Search tasks..." autocomplete="off">
+  </div>
 
   <div class="spacer"></div>
 
@@ -1269,20 +1407,20 @@
 </header>
 
 <main>
-  <section class="column" data-status="todo">
+  <section class="column" data-status="backlog">
     <div class="col-header">
-      <div class="col-title"><span class="status-dot todo"></span>To do</div>
-      <span class="col-count" data-count="todo">0</span>
+      <div class="col-title"><span class="status-dot backlog"></span>Backlog</div>
+      <span class="col-count" data-count="backlog">0</span>
     </div>
-    <ul class="task-list" data-status="todo"></ul>
+    <ul class="task-list" data-status="backlog"></ul>
   </section>
 
-  <section class="column" data-status="progress">
+  <section class="column" data-status="ready">
     <div class="col-header">
-      <div class="col-title"><span class="status-dot progress"></span>In progress</div>
-      <span class="col-count" data-count="progress">0</span>
+      <div class="col-title"><span class="status-dot ready"></span>Ready to Start</div>
+      <span class="col-count" data-count="ready">0</span>
     </div>
-    <ul class="task-list" data-status="progress"></ul>
+    <ul class="task-list" data-status="ready"></ul>
   </section>
 
   <section class="column" data-status="active">
@@ -1293,12 +1431,20 @@
     <ul class="task-list" data-status="active"></ul>
   </section>
 
-  <section class="column" data-status="done">
+  <section class="column" data-status="review">
     <div class="col-header">
-      <div class="col-title"><span class="status-dot done"></span>Done</div>
-      <span class="col-count" data-count="done">0</span>
+      <div class="col-title"><span class="status-dot review"></span>Review</div>
+      <span class="col-count" data-count="review">0</span>
     </div>
-    <ul class="task-list" data-status="done"></ul>
+    <ul class="task-list" data-status="review"></ul>
+  </section>
+
+  <section class="column" data-status="complete">
+    <div class="col-header">
+      <div class="col-title"><span class="status-dot complete"></span>Complete</div>
+      <span class="col-count" data-count="complete">0</span>
+    </div>
+    <ul class="task-list" data-status="complete"></ul>
   </section>
 </main>
 
@@ -1345,10 +1491,11 @@
         <div class="field">
           <label for="taskStatus">Status</label>
           <select id="taskStatus">
-            <option value="todo">To do</option>
-            <option value="progress">In progress</option>
+            <option value="backlog">Backlog</option>
+            <option value="ready">Ready to Start</option>
             <option value="active">Active</option>
-            <option value="done">Done</option>
+            <option value="review">Review</option>
+            <option value="complete">Complete</option>
           </select>
         </div>
         <div class="field">
@@ -1478,7 +1625,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 import { firebaseConfig } from "./firebase-config.js";
 
-const STATUSES = ['todo', 'progress', 'active', 'done'];
+const STATUSES = ['backlog', 'ready', 'active', 'review', 'complete'];
 const PRIORITY_RANK = { critical: 0, high: 1, medium: 2, low: 3 };
 const PRIORITY_LABEL = { critical: 'Critical', high: 'High', medium: 'Medium', low: 'Low' };
 const AVATAR_PALETTE = ['#e05a5a', '#e89a3d', '#d4a017', '#5b8def', '#7c9cff', '#2faa6b', '#34a0a4', '#9b59b6', '#c77dff'];
@@ -1591,7 +1738,7 @@ function formatDateChip(start, end) {
   return null;
 }
 function dateChipClass(end, taskStatus) {
-  if (!end || taskStatus === 'done') return '';
+  if (!end || taskStatus === 'complete') return '';
   const e = dateStrToDate(end);
   if (!e) return '';
   const diffDays = Math.floor((e - todayLocal()) / 86400000);
@@ -1604,7 +1751,7 @@ function displayDate(s) {
   return d ? d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '';
 }
 function progressOf(t) {
-  if (t.status === 'done') return 100;
+  if (t.status === 'complete') return 100;
   if (t.subtasks && t.subtasks.length > 0) {
     const completed = t.subtasks.filter(s => s.completed).length;
     return Math.round((completed / t.subtasks.length) * 100);
@@ -2098,91 +2245,118 @@ function renderList() {
     return;
   }
 
-  const STATUS_RANK = { todo: 0, progress: 1, active: 2, done: 3 };
+  const STATUS_RANK = { backlog: 0, ready: 1, active: 2, review: 3, complete: 4 };
   const PRIORITY_RANK = { critical: 0, high: 1, medium: 2, low: 3 };
 
-  // Sort tasks globally (primarily by project, secondarily by the active sort field)
-  items.sort((a, b) => {
-    // 1. Primary sort: Project Area (app) alphabetically, unassigned at the bottom
-    const projA = a.app || '';
-    const projB = b.app || '';
-    
-    if (projA !== projB) {
-      if (!projA) return 1;  // Put unassigned at the bottom
-      if (!projB) return -1;
-      const cmp = projA.localeCompare(projB);
-      if (listSortField === 'project') {
-        return listSortAsc ? cmp : -cmp;
+  // Group by project (app)
+  const groups = {};
+  items.forEach(t => {
+    const key = t.app || '';
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(t);
+  });
+
+  // Sort tasks within each group
+  Object.keys(groups).forEach(proj => {
+    groups[proj].sort((a, b) => {
+      let valA, valB;
+      if (listSortField === 'title') {
+        valA = (a.title || '').toLowerCase();
+        valB = (b.title || '').toLowerCase();
+      } else if (listSortField === 'lead') {
+        const emailA = Array.isArray(a.assignees) && a.assignees[0] ? a.assignees[0] : '';
+        const emailB = Array.isArray(b.assignees) && b.assignees[0] ? b.assignees[0] : '';
+        valA = getDisplayShort(emailA).toLowerCase();
+        valB = getDisplayShort(emailB).toLowerCase();
+      } else if (listSortField === 'support') {
+        const emailA = Array.isArray(a.assignees) && a.assignees[1] ? a.assignees[1] : '';
+        const emailB = Array.isArray(b.assignees) && b.assignees[1] ? b.assignees[1] : '';
+        valA = getDisplayShort(emailA).toLowerCase();
+        valB = getDisplayShort(emailB).toLowerCase();
+      } else if (listSortField === 'cadence') {
+        const cadA = a.cadence || a.startDate || '';
+        const cadB = b.cadence || b.startDate || '';
+        valA = cadA.toLowerCase();
+        valB = cadB.toLowerCase();
+      } else if (listSortField === 'status') {
+        valA = STATUS_RANK[a.status] ?? 99;
+        valB = STATUS_RANK[b.status] ?? 99;
+      } else if (listSortField === 'priority') {
+        valA = PRIORITY_RANK[a.priority] ?? 99;
+        valB = PRIORITY_RANK[b.priority] ?? 99;
+      } else if (listSortField === 'progress') {
+        valA = progressOf(a);
+        valB = progressOf(b);
+      } else {
+        valA = a.order ?? 0;
+        valB = b.order ?? 0;
       }
-      return cmp; // default is always ascending order of projects
-    }
 
-    // 2. Secondary sort: active sort field
-    let valA, valB;
-    if (listSortField === 'title') {
-      valA = (a.title || '').toLowerCase();
-      valB = (b.title || '').toLowerCase();
-    } else if (listSortField === 'lead') {
-      const emailA = Array.isArray(a.assignees) && a.assignees[0] ? a.assignees[0] : '';
-      const emailB = Array.isArray(b.assignees) && b.assignees[0] ? b.assignees[0] : '';
-      valA = getDisplayShort(emailA).toLowerCase();
-      valB = getDisplayShort(emailB).toLowerCase();
-    } else if (listSortField === 'support') {
-      const emailA = Array.isArray(a.assignees) && a.assignees[1] ? a.assignees[1] : '';
-      const emailB = Array.isArray(b.assignees) && b.assignees[1] ? b.assignees[1] : '';
-      valA = getDisplayShort(emailA).toLowerCase();
-      valB = getDisplayShort(emailB).toLowerCase();
-    } else if (listSortField === 'cadence') {
-      const cadA = a.cadence || a.startDate || '';
-      const cadB = b.cadence || b.startDate || '';
-      valA = cadA.toLowerCase();
-      valB = cadB.toLowerCase();
-    } else if (listSortField === 'status') {
-      valA = STATUS_RANK[a.status] ?? 99;
-      valB = STATUS_RANK[b.status] ?? 99;
-    } else if (listSortField === 'priority') {
-      valA = PRIORITY_RANK[a.priority] ?? 99;
-      valB = PRIORITY_RANK[b.priority] ?? 99;
-    } else {
-      valA = a.order ?? 0;
-      valB = b.order ?? 0;
-    }
+      if (valA < valB) return listSortAsc ? -1 : 1;
+      if (valA > valB) return listSortAsc ? 1 : -1;
 
-    if (valA < valB) return listSortAsc ? -1 : 1;
-    if (valA > valB) return listSortAsc ? 1 : -1;
+      const orderA = a.order ?? 0;
+      const orderB = b.order ?? 0;
+      if (orderA !== orderB) return orderA - orderB;
+      return (a.createdAt ?? 0) - (b.createdAt ?? 0);
+    });
+  });
 
-    const orderA = a.order ?? 0;
-    const orderB = b.order ?? 0;
-    if (orderA !== orderB) return orderA - orderB;
-    return (a.createdAt ?? 0) - (b.createdAt ?? 0);
+  const sortedProjKeys = Object.keys(groups).sort((a, b) => {
+    if (!a) return 1; // Put unassigned at the bottom
+    if (!b) return -1;
+    return a.localeCompare(b);
   });
 
   const team = getTeam();
-  const rows = items.map(t => renderListItem(t, team)).join('');
+  const isEditor = role === 'editor';
 
   const renderSortIndicator = (field) => {
     if (listSortField !== field) return '';
     return listSortAsc ? ' ▴' : ' ▾';
   };
 
-  container.innerHTML = `
-    <div class="list-table-container">
-      <div class="list-table-header">
-        <div class="lth-expand-col"></div>
-        <div class="lth-project-col clickable" data-sort="project">Project Area${renderSortIndicator('project')}</div>
-        <div class="lth-title-col clickable" data-sort="title">Deliverable${renderSortIndicator('title')}</div>
-        <div class="lth-lead-col clickable" data-sort="lead">Lead${renderSortIndicator('lead')}</div>
-        <div class="lth-support-col clickable" data-sort="support">Support${renderSortIndicator('support')}</div>
-        <div class="lth-cadence-col clickable" data-sort="cadence">Start / End${renderSortIndicator('cadence')}</div>
-        <div class="lth-status-col clickable" data-sort="status">Status${renderSortIndicator('status')}</div>
-        <div class="lth-priority-col clickable" data-sort="priority">Priority${renderSortIndicator('priority')}</div>
-        <div class="lth-delete-col"></div>
+  container.innerHTML = sortedProjKeys.map(proj => {
+    const projTasks = groups[proj];
+    const rows = projTasks.map(t => renderListItem(t, team)).join('');
+    const projNameDisplay = proj || '(No project)';
+    return `
+      <div class="list-project" data-project-name="${escapeHtml(proj)}">
+        <div class="list-project-header">
+          <div class="lp-name-container">
+            ${isEditor && proj
+              ? `<input type="text" class="lp-name-input" value="${escapeHtml(projNameDisplay)}" data-old-name="${escapeHtml(proj)}">`
+              : `<span class="lp-name-static">${escapeHtml(projNameDisplay)}</span>`
+            }
+            <span class="lp-count">${projTasks.length} ${projTasks.length === 1 ? 'task' : 'tasks'}</span>
+          </div>
+          ${isEditor && proj
+            ? `<div class="lp-actions">
+                <button class="icon-btn danger" data-project-action="delete" title="Delete project and reassign tasks" style="background:none; border:none; color:var(--muted); font-size:16px; cursor:pointer;">×</button>
+               </div>`
+            : ''
+          }
+        </div>
+        <div class="list-table-container">
+          <div class="list-table-header">
+            <div class="lth-drag-col"></div>
+            <div class="lth-expand-col"></div>
+            <div class="lth-title-col clickable" data-sort="title">Deliverable${renderSortIndicator('title')}</div>
+            <div class="lth-lead-col clickable" data-sort="lead">Lead${renderSortIndicator('lead')}</div>
+            <div class="lth-support-col clickable" data-sort="support">Support${renderSortIndicator('support')}</div>
+            <div class="lth-cadence-col clickable" data-sort="cadence">Start / End${renderSortIndicator('cadence')}</div>
+            <div class="lth-status-col clickable" data-sort="status">Status${renderSortIndicator('status')}</div>
+            <div class="lth-priority-col clickable" data-sort="priority">Priority${renderSortIndicator('priority')}</div>
+            <div class="lth-progress-col clickable" data-sort="progress">%${renderSortIndicator('progress')}</div>
+            <div class="lth-delete-col"></div>
+          </div>
+          <div class="list-rows">
+            ${rows}
+          </div>
+        </div>
       </div>
-      <div class="list-rows">
-        ${rows}
-      </div>
-    </div>
-  `;
+    `;
+  }).join('');
 
   bindListEvents();
 }
@@ -2207,41 +2381,44 @@ function renderListItem(t, team) {
   const expanded = isExpanded ? renderExpanded(t, updates) : '';
   const isEditor = role === 'editor';
   const disabledAttr = isEditor ? '' : 'disabled';
+  
+  const prog = progressOf(t);
+  const progressBadge = `<div class="lr-progress-cell" data-action="progress" title="Progress: ${prog}% — click to update">${prog}%</div>`;
 
   return `
-    <div class="list-item ${isExpanded ? 'expanded' : ''} ${t.status === 'done' ? 'done' : ''}" data-id="${t.id}" ${isEditor ? 'draggable="true"' : ''}>
+    <div class="list-item ${isExpanded ? 'expanded' : ''} ${t.status === 'complete' ? 'done' : ''}" data-id="${t.id}">
       <div class="list-row">
+        <!-- Drag handle -->
+        <div class="lr-drag-cell" title="Drag to reorder or move project">
+          ${isEditor ? '☰' : ''}
+        </div>
         <!-- 1. Expand -->
         <div class="lr-expand-cell">
           <button class="icon-btn expand-btn" data-action="expand" title="${isExpanded ? 'Collapse' : 'Expand'}">${isExpanded ? '▾' : '▸'}</button>
         </div>
-        <!-- 2. Project Area -->
-        <div class="lr-project-cell">
-          <input type="text" class="lr-project-input" data-field="app" value="${escapeHtml(t.app || '')}" placeholder="Project Area..." list="appList" ${disabledAttr}>
-        </div>
-        <!-- 3. Deliverable -->
+        <!-- 2. Deliverable -->
         <div class="lr-title-cell">
-          <input type="text" class="lr-title-input ${t.status === 'done' ? 'slashed' : ''}" data-field="title" value="${escapeHtml(t.title || '')}" placeholder="Deliverable..." ${disabledAttr}>
+          <input type="text" class="lr-title-input ${t.status === 'complete' ? 'slashed' : ''}" data-field="title" value="${escapeHtml(t.title || '')}" placeholder="Deliverable..." ${disabledAttr}>
           <div class="lr-badges" style="display: flex; gap: 4px; align-items: center; padding-right: 4px; flex-shrink: 0;">
             ${detailsBadge}
             ${updateBadge}
           </div>
         </div>
-        <!-- 4. Lead -->
+        <!-- 3. Lead -->
         <div class="lr-lead-cell">
           <select class="lr-assignee-select lr-lead-select" ${disabledAttr}>
             <option value="">Unassigned</option>
             ${team.map(email => `<option value="${escapeHtml(email)}" ${lead === email ? 'selected' : ''}>${escapeHtml(getDisplayShort(email))}</option>`).join('')}
           </select>
         </div>
-        <!-- 5. Support -->
+        <!-- 4. Support -->
         <div class="lr-support-cell">
           <select class="lr-assignee-select lr-support-select" ${disabledAttr}>
             <option value="">Unassigned</option>
             ${team.map(email => `<option value="${escapeHtml(email)}" ${support === email ? 'selected' : ''}>${escapeHtml(getDisplayShort(email))}</option>`).join('')}
           </select>
         </div>
-        <!-- 6. Start / End -->
+        <!-- 5. Start / End -->
         <div class="lr-cadence-cell">
           <div class="inline-cadence-wrapper">
             <span class="inline-cadence-label" data-action="edit-cadence">
@@ -2250,16 +2427,17 @@ function renderListItem(t, team) {
             <input type="text" class="inline-cadence-input" data-field="cadence" value="${escapeHtml(cadenceValue)}" placeholder="Pre, W1..." style="display:none;" ${disabledAttr}>
           </div>
         </div>
-        <!-- 7. Status -->
+        <!-- 6. Status -->
         <div class="lr-status-cell">
           <select class="status-select-inline ${t.status}" data-field="status" ${disabledAttr}>
-            <option value="todo" ${t.status === 'todo' ? 'selected' : ''}>Backlog</option>
-            <option value="active" ${t.status === 'active' ? 'selected' : ''}>Ready to Start</option>
-            <option value="progress" ${t.status === 'progress' ? 'selected' : ''}>In Progress</option>
-            <option value="done" ${t.status === 'done' ? 'selected' : ''}>Review</option>
+            <option value="backlog" ${t.status === 'backlog' ? 'selected' : ''}>Backlog</option>
+            <option value="ready" ${t.status === 'ready' ? 'selected' : ''}>Ready to Start</option>
+            <option value="active" ${t.status === 'active' ? 'selected' : ''}>Active</option>
+            <option value="review" ${t.status === 'review' ? 'selected' : ''}>Review</option>
+            <option value="complete" ${t.status === 'complete' ? 'selected' : ''}>Complete</option>
           </select>
         </div>
-        <!-- 8. Priority -->
+        <!-- 7. Priority -->
         <div class="lr-priority-cell">
           <select class="priority-select-inline ${p}" data-field="priority" ${disabledAttr}>
             <option value="critical" ${t.priority === 'critical' ? 'selected' : ''}>Critical</option>
@@ -2268,7 +2446,9 @@ function renderListItem(t, team) {
             <option value="low" ${t.priority === 'low' ? 'selected' : ''}>Low</option>
           </select>
         </div>
-        <!-- 9. Delete -->
+        <!-- Progress -->
+        ${progressBadge}
+        <!-- 8. Delete -->
         <div class="lr-delete-cell">
           ${isEditor ? `<button class="icon-btn danger" data-action="delete" title="Delete task">×</button>` : ''}
         </div>
@@ -2276,9 +2456,7 @@ function renderListItem(t, team) {
       ${expanded}
     </div>
   `;
-}
-
-function bindListEvents() {
+}function bindListEvents() {
   const container = document.getElementById('listView');
 
   // Handle Table Header Clicking for sorting
@@ -2295,6 +2473,63 @@ function bindListEvents() {
     });
   });
 
+  // Handle Project Header renaming and deleting, and drag/drop reassigning
+  container.querySelectorAll('.list-project').forEach(projEl => {
+    const projName = projEl.dataset.projectName;
+    
+    // Rename
+    const nameInput = projEl.querySelector('.lp-name-input');
+    if (nameInput) {
+      nameInput.addEventListener('change', () => {
+        const newName = nameInput.value.trim();
+        renameProject(projName, newName);
+      });
+      nameInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') nameInput.blur();
+        if (e.key === 'Escape') {
+          nameInput.value = projName;
+          nameInput.blur();
+        }
+      });
+    }
+
+    // Delete project
+    const delProjBtn = projEl.querySelector('[data-project-action="delete"]');
+    if (delProjBtn) {
+      delProjBtn.addEventListener('click', () => {
+        deleteProject(projName);
+      });
+    }
+
+    // Drag and drop target to reassign project
+    projEl.addEventListener('dragover', (e) => {
+      if (!dragId) return;
+      e.preventDefault();
+      projEl.classList.add('drag-over');
+    });
+    
+    projEl.addEventListener('dragleave', (e) => {
+      if (!projEl.contains(e.relatedTarget)) {
+        projEl.classList.remove('drag-over');
+      }
+    });
+    
+    projEl.addEventListener('drop', async (e) => {
+      if (!dragId) return;
+      if (e.target.closest('.list-item')) return; // let list-item drop handle it
+      e.preventDefault();
+      projEl.classList.remove('drag-over');
+      const taskId = dragId;
+      dragId = null;
+      try {
+        await moveTaskList(taskId, null, false, projName);
+      } catch (err) {
+        toast('Failed to move task: ' + err.message);
+      }
+      clearDropHints();
+    });
+  });
+
   // Handle Task row events
   container.querySelectorAll('.list-item').forEach(item => {
     const id = item.dataset.id;
@@ -2302,8 +2537,29 @@ function bindListEvents() {
     if (!task) return;
 
     // Drag events for list item
+    const dragHandle = item.querySelector('.lr-drag-cell');
+    if (dragHandle && role === 'editor') {
+      dragHandle.addEventListener('mousedown', () => {
+        item.setAttribute('draggable', 'true');
+      });
+      dragHandle.addEventListener('mouseup', () => {
+        item.removeAttribute('draggable');
+      });
+      dragHandle.addEventListener('mouseleave', () => {
+        if (!item.classList.contains('dragging')) {
+          item.removeAttribute('draggable');
+        }
+      });
+    }
+
     item.addEventListener('dragstart', onDragStart);
-    item.addEventListener('dragend', onDragEnd);
+    item.addEventListener('dragend', (e) => {
+      item.removeAttribute('draggable');
+      onDragEnd(e);
+    });
+    item.addEventListener('dragover', onListTaskDragOver);
+    item.addEventListener('dragleave', onListTaskDragLeave);
+    item.addEventListener('drop', onListTaskDrop);
 
     // Expand
     const expandBtn = item.querySelector('[data-action="expand"]');
@@ -2328,26 +2584,6 @@ function bindListEvents() {
           return;
         }
         toggleExpand(id);
-      });
-    }
-
-    // Project Area Input Change
-    const projectInput = item.querySelector('.lr-project-input');
-    if (projectInput) {
-      projectInput.addEventListener('change', async () => {
-        const val = projectInput.value.trim();
-        try {
-          await updateDoc(doc(db, 'tasks', id), { app: val });
-        } catch (err) {
-          toast('Failed to update project: ' + err.message);
-        }
-      });
-      projectInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') projectInput.blur();
-        if (e.key === 'Escape') {
-          projectInput.value = task.app || '';
-          projectInput.blur();
-        }
       });
     }
 
@@ -2393,7 +2629,7 @@ function bindListEvents() {
     if (statusSelect) {
       statusSelect.addEventListener('change', async () => {
         const val = statusSelect.value;
-        const progress = val === 'done' ? 100 : (task.progress === 100 ? 0 : (task.progress || 0));
+        const progress = val === 'complete' ? 100 : (task.progress === 100 ? 0 : (task.progress || 0));
         try {
           await updateDoc(doc(db, 'tasks', id), { status: val, progress });
         } catch (err) {
@@ -2803,7 +3039,7 @@ function renderTimelineRow(t, rangeStart) {
     <div class="t-row t-task-row">
       <div class="t-name" title="${escapeHtml(t.title)}">${escapeHtml(t.title)}</div>
       <div class="t-track">
-        <div class="t-bar priority-${p} ${t.status === 'done' ? 'done' : ''}"
+        <div class="t-bar priority-${p} ${t.status === 'complete' ? 'done' : ''}"
              style="left: ${leftPct}%; width: ${widthPct}%;"
              data-id="${t.id}"
              title="${escapeHtml(t.title)} — ${escapeHtml(dateText)} (${prog}% complete)">
@@ -2821,7 +3057,20 @@ function subscribe() {
   cleanupSubs();
   // Tasks
   unsubTasks = onSnapshot(collection(db, 'tasks'), (snap) => {
-    tasks = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    tasks = snap.docs.map(d => {
+      const t = { id: d.id, ...d.data() };
+      // Map legacy status strings to the new 5-status schema
+      if (t.status === 'todo') {
+        t.status = 'backlog';
+      } else if (t.status === 'active') {
+        t.status = 'ready';
+      } else if (t.status === 'progress') {
+        t.status = 'active';
+      } else if (t.status === 'done') {
+        t.status = (t.progress === 100) ? 'complete' : 'review';
+      }
+      return t;
+    });
     maybeRender();
   }, (err) => toast('Sync error: ' + err.message));
 
@@ -2848,6 +3097,7 @@ function getApps() {
 function visibleTasks() {
   const appF = document.getElementById('appFilter').value;
   const assF = document.getElementById('assigneeFilter').value;
+  const searchVal = (document.getElementById('taskSearch')?.value || '').trim().toLowerCase();
   const me = (currentUser?.email || '').toLowerCase();
   return tasks.filter(t => {
     if (appF !== '__all__' && t.app !== appF) return false;
@@ -2858,10 +3108,24 @@ function visibleTasks() {
       .filter(Boolean);
     const allAssignees = [...new Set([...parentAssignees, ...subtaskAssignees])];
 
-    if (assF === '__all__') return true;
-    if (assF === '__me__') return allAssignees.includes(me);
-    if (assF === '__none__') return allAssignees.length === 0;
-    return allAssignees.includes(assF.toLowerCase());
+    if (assF !== '__all__') {
+      let matchAss = false;
+      if (assF === '__me__') matchAss = allAssignees.includes(me);
+      else if (assF === '__none__') matchAss = (allAssignees.length === 0);
+      else matchAss = allAssignees.includes(assF.toLowerCase());
+      if (!matchAss) return false;
+    }
+
+    if (searchVal) {
+      const matchTitle = (t.title || '').toLowerCase().includes(searchVal);
+      const matchDetails = (t.details || '').toLowerCase().includes(searchVal);
+      const matchProject = (t.app || '').toLowerCase().includes(searchVal);
+      const matchAssignees = allAssignees.some(email => getDisplayShort(email).toLowerCase().includes(searchVal) || email.includes(searchVal));
+      const matchSubtasks = (t.subtasks || []).some(s => (s.title || '').toLowerCase().includes(searchVal) || (s.notes || '').toLowerCase().includes(searchVal));
+      if (!matchTitle && !matchDetails && !matchProject && !matchAssignees && !matchSubtasks) return false;
+    }
+
+    return true;
   });
 }
 
@@ -2913,13 +3177,17 @@ function render() {
 function renderTask(t) {
   const p = t.priority || 'medium';
   const parentAssignees = Array.isArray(t.assignees) ? t.assignees : [];
-  const subtaskAssignees = (t.subtasks || [])
-    .map(s => s.assignee)
-    .filter(Boolean);
-  const allAssignees = [...new Set([...parentAssignees, ...subtaskAssignees])];
-  const avatars = allAssignees.length
-    ? `<span class="task-assignees">${allAssignees.map(avatarHtml).join('')}</span>`
+  
+  const leadEmail = parentAssignees[0] || '';
+  const supportEmail = parentAssignees[1] || '';
+  
+  const leadLabel = leadEmail 
+    ? `<span class="task-lead-badge" title="Lead: ${escapeHtml(leadEmail)}">👤 Lead: ${escapeHtml(getDisplayShort(leadEmail))}</span>` 
     : '';
+  const supportLabel = supportEmail 
+    ? `<span class="task-support-badge" title="Support: ${escapeHtml(supportEmail)}">👥 Support: ${escapeHtml(getDisplayShort(supportEmail))}</span>` 
+    : '';
+
   const updates = Array.isArray(t.updates) ? t.updates : [];
   const updateBadge = updates.length
     ? `<span class="update-count" title="${updates.length} update${updates.length === 1 ? '' : 's'}">💬 ${updates.length}</span>`
@@ -2937,13 +3205,14 @@ function renderTask(t) {
   const prog = progressOf(t);
   const progressBar = `<div class="task-progress" data-action="progress" title="${prog}% complete — click to update"><div class="task-progress-fill" style="width: ${prog}%"></div></div>`;
   return `
-    <li class="task priority-${p} ${t.status === 'done' ? 'done' : ''} ${isExpanded ? 'expanded' : ''}" draggable="true" data-id="${t.id}">
+    <li class="task priority-${p} ${t.status === 'complete' ? 'done' : ''} ${isExpanded ? 'expanded' : ''}" draggable="true" data-id="${t.id}">
       <div class="task-title">${escapeHtml(t.title)}</div>
       <div class="task-meta">
         <span class="task-tags">
           <span class="priority-chip ${p}">${PRIORITY_LABEL[p]}</span>
           ${t.app ? `<span class="task-app">${escapeHtml(t.app)}</span>` : ''}
-          ${avatars}
+          ${leadLabel}
+          ${supportLabel}
           ${dateBadge}
           ${detailsBadge}
           ${updateBadge}
@@ -3226,8 +3495,17 @@ async function deleteUpdate(taskId, timestamp) {
 // --- Drag & drop ---
 function onDragStart(e) {
   if (role !== 'editor') { e.preventDefault(); return; }
+  const targetEl = e.target.nodeType === Node.TEXT_NODE ? e.target.parentElement : e.target;
+  // If dragging in list view, check if we clicked on the drag handle
+  if (e.currentTarget.classList.contains('list-item')) {
+    const isDragHandle = targetEl.closest('.lr-drag-cell') || targetEl.querySelector('.lr-drag-cell');
+    if (!isDragHandle) {
+      e.preventDefault();
+      return;
+    }
+  }
   // Don't start a drag if the user is interacting with a control inside the card
-  if (e.target.closest('button, input, textarea, .task-expanded')) {
+  if (targetEl.closest('button, input, textarea, .task-expanded')) {
     e.preventDefault();
     return;
   }
@@ -3294,6 +3572,74 @@ async function moveTask(id, targetId, before, targetStatus) {
       const ref = doc(db, 'tasks', t.id);
       const data = { order: i };
       if (t.id === id) data.status = targetStatus;
+      batch.update(ref, data);
+    });
+    await batch.commit();
+  } catch (e) {
+    toast('Move failed: ' + e.message);
+  }
+}
+
+// --- List View Drag & Drop ---
+function onListTaskDragOver(e) {
+  if (!dragId) return;
+  e.preventDefault();
+  const target = e.currentTarget;
+  if (target.dataset.id === dragId) return;
+  const rect = target.getBoundingClientRect();
+  const before = (e.clientY - rect.top) < rect.height / 2;
+  clearDropHints();
+  target.classList.add(before ? 'drop-before' : 'drop-after');
+}
+
+function onListTaskDragLeave(e) {
+  e.currentTarget.classList.remove('drop-before', 'drop-after');
+}
+
+function onListTaskDrop(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  const target = e.currentTarget;
+  if (!dragId || target.dataset.id === dragId) return;
+  const before = target.classList.contains('drop-before');
+  const targetProjectEl = target.closest('.list-project');
+  const targetProject = targetProjectEl ? targetProjectEl.dataset.projectName : '';
+  moveTaskList(dragId, target.dataset.id, before, targetProject);
+  clearDropHints();
+}
+
+async function moveTaskList(id, targetId, before, targetProject) {
+  const task = tasks.find(t => t.id === id);
+  if (!task) return;
+
+  // Reset listSortField = null, so that the manual reordering becomes immediately visible.
+  listSortField = null;
+
+  // Build the new order list for the destination project
+  const projSorted = tasks.filter(t => (t.app || '') === targetProject && t.id !== id)
+    .sort((a, b) => {
+      const oa = a.order ?? 0;
+      const ob = b.order ?? 0;
+      if (oa !== ob) return oa - ob;
+      const ta = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+      const tb = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+      return ta - tb;
+    });
+
+  let insertAt = projSorted.length;
+  if (targetId) {
+    const idx = projSorted.findIndex(t => t.id === targetId);
+    if (idx >= 0) insertAt = before ? idx : idx + 1;
+  }
+  const reordered = [...projSorted.slice(0, insertAt), { ...task, app: targetProject }, ...projSorted.slice(insertAt)];
+
+  // Batch write: app of moved + order of everyone in project
+  try {
+    const batch = writeBatch(db);
+    reordered.forEach((t, i) => {
+      const ref = doc(db, 'tasks', t.id);
+      const data = { order: i };
+      if (t.id === id) data.app = targetProject;
       batch.update(ref, data);
     });
     await batch.commit();
@@ -3431,7 +3777,7 @@ function openModal(id) {
   document.getElementById('taskTitle').value = t ? t.title : '';
   document.getElementById('taskDetails').value = t ? (t.details || '') : '';
   document.getElementById('taskApp').value = t ? (t.app || '') : '';
-  document.getElementById('taskStatus').value = t ? t.status : 'todo';
+  document.getElementById('taskStatus').value = t ? t.status : 'backlog';
   document.getElementById('taskPriority').value = t ? (t.priority || 'medium') : 'medium';
   // Date range picker state
   modalStartDate = t ? (t.startDate || '') : '';
@@ -3474,9 +3820,9 @@ async function saveTask() {
   // Preserve the existing value here; force 100 if status is Done.
   const existingTask = editingId ? tasks.find(x => x.id === editingId) : null;
   const existingProgress = existingTask ? Math.max(0, Math.min(100, Number(existingTask.progress) || 0)) : 0;
-  let progress = status === 'done' ? 100 : existingProgress;
+  let progress = status === 'complete' ? 100 : existingProgress;
   if (modalSubtasks.length > 0) {
-    if (status === 'done') {
+    if (status === 'complete') {
       modalSubtasks.forEach(s => s.completed = true);
       progress = 100;
     } else {
@@ -3676,12 +4022,12 @@ document.getElementById('addBtn').addEventListener('click', async () => {
   if (role !== 'editor') return;
   if (currentView === 'list') {
     try {
-      const colCount = tasks.filter(x => x.status === 'todo').length;
+      const colCount = tasks.filter(x => x.status === 'backlog').length;
       const defaultApp = document.getElementById('appFilter').value === '__all__' ? '' : document.getElementById('appFilter').value;
       const docRef = await addDoc(collection(db, 'tasks'), {
         title: '',
         app: defaultApp,
-        status: 'todo',
+        status: 'backlog',
         priority: 'medium',
         assignees: [],
         startDate: '',
@@ -3717,6 +4063,12 @@ document.getElementById('teamModal').addEventListener('click', e => {
 });
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
+    if (document.activeElement === document.getElementById('taskSearch')) {
+      document.getElementById('taskSearch').value = '';
+      document.getElementById('taskSearch').blur();
+      maybeRender();
+      return;
+    }
     closeModal();
     document.getElementById('teamModal').classList.remove('open');
   }
@@ -3725,6 +4077,7 @@ document.addEventListener('keydown', e => {
     saveTask();
   }
 });
+document.getElementById('taskSearch').addEventListener('input', () => maybeRender());
 document.getElementById('appFilter').addEventListener('change', () => maybeRender());
 document.getElementById('assigneeFilter').addEventListener('change', () => maybeRender());
 document.getElementById('drClearBtn').addEventListener('click', () => {
