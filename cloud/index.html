@@ -2101,8 +2101,23 @@ function renderList() {
   const STATUS_RANK = { todo: 0, progress: 1, active: 2, done: 3 };
   const PRIORITY_RANK = { critical: 0, high: 1, medium: 2, low: 3 };
 
-  // Sort tasks globally (no project grouping in table)
+  // Sort tasks globally (primarily by project, secondarily by the active sort field)
   items.sort((a, b) => {
+    // 1. Primary sort: Project Area (app) alphabetically, unassigned at the bottom
+    const projA = a.app || '';
+    const projB = b.app || '';
+    
+    if (projA !== projB) {
+      if (!projA) return 1;  // Put unassigned at the bottom
+      if (!projB) return -1;
+      const cmp = projA.localeCompare(projB);
+      if (listSortField === 'project') {
+        return listSortAsc ? cmp : -cmp;
+      }
+      return cmp; // default is always ascending order of projects
+    }
+
+    // 2. Secondary sort: active sort field
     let valA, valB;
     if (listSortField === 'title') {
       valA = (a.title || '').toLowerCase();
@@ -2128,9 +2143,6 @@ function renderList() {
     } else if (listSortField === 'priority') {
       valA = PRIORITY_RANK[a.priority] ?? 99;
       valB = PRIORITY_RANK[b.priority] ?? 99;
-    } else if (listSortField === 'project') {
-      valA = (a.app || '').toLowerCase();
-      valB = (b.app || '').toLowerCase();
     } else {
       valA = a.order ?? 0;
       valB = b.order ?? 0;
