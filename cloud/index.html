@@ -37,15 +37,15 @@
   }
   @media (prefers-color-scheme: light) {
     :root {
-      --bg: #f4f4f5;
-      --panel: #ffffff;
-      --panel-2: #eaeaea;
-      --border: #d4d4d8;
-      --text: #09090b;
-      --muted: #71717a;
-      --accent: #27272a;
-      --accent-2: #09090b;
-      --shadow: 0 4px 16px rgba(0,0,0,0.06);
+      --bg: #faf9f6;
+      --panel: #f7f4ef;
+      --panel-2: #ffffff;
+      --border: #e6dfd3;
+      --text: #1c1b19;
+      --muted: #8a8377;
+      --accent: #2a2926;
+      --accent-2: #141312;
+      --shadow: 0 4px 16px rgba(40,30,10,0.05);
 
       --accent-bg-04: rgba(0, 0, 0, 0.03);
       --accent-bg-05: rgba(0, 0, 0, 0.04);
@@ -130,11 +130,11 @@
     padding: 12px 14px; border-bottom: 1px solid var(--border); background: var(--panel-2); }
   .col-title { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 13px; }
   .status-dot { width: 8px; height: 8px; border-radius: 50%; }
-  .status-dot.backlog { background: #6c757d; }
-  .status-dot.ready { background: #7b1fa2; }
-  .status-dot.active { background: #14b8a6; }
-  .status-dot.review { background: #b78103; }
-  .status-dot.complete { background: #2faa6b; }
+  .status-dot.backlog { background: #9ca3af; }
+  .status-dot.ready { background: #eab308; }
+  .status-dot.active { background: #10b981; }
+  .status-dot.review { background: #ef4444; }
+  .status-dot.complete { background: #4b5563; }
   .col-count { font-size: 12px; color: var(--muted); background: var(--panel);
     padding: 2px 8px; border-radius: 10px; border: 1px solid var(--border); }
   .task-list { list-style: none; margin: 0; padding: 10px; flex: 1; overflow-y: auto; min-height: 100px; }
@@ -1053,25 +1053,25 @@
     -webkit-appearance: none;
   }
   .status-select-inline.backlog {
-    background: #f8f9fa;
-    color: #6c757d;
-    border: 1px solid #dee2e6;
+    background: #ffffff;
+    color: #4b5563;
+    border: 1px solid #d1d5db;
   }
   .status-select-inline.ready {
-    background: #eed8f6;
-    color: #7b1fa2;
+    background: #fef3c7;
+    color: #78350f;
   }
   .status-select-inline.active {
-    background: #e2fbf8;
-    color: #0f766e;
-  }
-  .status-select-inline.review {
-    background: #ffebad;
-    color: #856404;
-  }
-  .status-select-inline.complete {
     background: #d1fae5;
     color: #065f46;
+  }
+  .status-select-inline.review {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+  .status-select-inline.complete {
+    background: #4b5563;
+    color: #ffffff;
   }
   .status-select-inline:focus {
     background: white;
