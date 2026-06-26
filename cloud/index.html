@@ -4,6 +4,17 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>App Design Tasks</title>
+<script>
+  (function() {
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme) {
+      document.documentElement.setAttribute('data-theme', savedTheme);
+    } else {
+      const prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+      document.documentElement.setAttribute('data-theme', prefersLight ? 'light' : 'dark');
+    }
+  })();
+</script>
 <style>
   :root {
     --bg: #09090b;
@@ -35,28 +46,44 @@
     --accent-shadow: rgba(255, 255, 255, 0.2);
     --accent-glow: rgba(255, 255, 255, 0.15);
   }
-  @media (prefers-color-scheme: light) {
-    :root {
-      --bg: #faf9f6;
-      --panel: #f7f4ef;
-      --panel-2: #ffffff;
-      --border: #e6dfd3;
-      --text: #1c1b19;
-      --muted: #8a8377;
-      --accent: #2a2926;
-      --accent-2: #141312;
-      --shadow: 0 4px 16px rgba(40,30,10,0.05);
+  :root[data-theme="light"] {
+    --bg: #faf9f6;
+    --panel: #f7f4ef;
+    --panel-2: #ffffff;
+    --border: #e6dfd3;
+    --text: #1c1b19;
+    --muted: #8a8377;
+    --accent: #2a2926;
+    --accent-2: #141312;
+    --shadow: 0 4px 16px rgba(40,30,10,0.05);
 
-      --accent-bg-04: rgba(0, 0, 0, 0.03);
-      --accent-bg-05: rgba(0, 0, 0, 0.04);
-      --accent-bg-06: rgba(0, 0, 0, 0.05);
-      --accent-bg-10: rgba(0, 0, 0, 0.08);
-      --accent-bg-12: rgba(0, 0, 0, 0.09);
-      --accent-bg-18: rgba(0, 0, 0, 0.14);
-      --accent-bg-30: rgba(0, 0, 0, 0.22);
-      --accent-shadow: rgba(0, 0, 0, 0.15);
-      --accent-glow: rgba(0, 0, 0, 0.1);
-    }
+    --accent-bg-04: rgba(0, 0, 0, 0.03);
+    --accent-bg-05: rgba(0, 0, 0, 0.04);
+    --accent-bg-06: rgba(0, 0, 0, 0.05);
+    --accent-bg-10: rgba(0, 0, 0, 0.08);
+    --accent-bg-12: rgba(0, 0, 0, 0.09);
+    --accent-bg-18: rgba(0, 0, 0, 0.14);
+    --accent-bg-30: rgba(0, 0, 0, 0.22);
+    --accent-shadow: rgba(0, 0, 0, 0.15);
+    --accent-glow: rgba(0, 0, 0, 0.1);
+  }
+  #themeToggleBtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border-radius: 50%;
+    color: var(--muted);
+    border: 1px solid transparent;
+    background: transparent;
+    cursor: pointer;
+    transition: color 0.15s, background 0.15s;
+  }
+  #themeToggleBtn:hover {
+    color: var(--text);
+    background: var(--accent-bg-06);
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text);
@@ -1568,6 +1595,7 @@
   <button id="addBtn" class="primary editor-only">+ New task</button>
   <button id="teamBtn" class="ghost editor-only" title="Manage who can see/edit">Team</button>
   <span id="userChip" class="user-chip"></span>
+  <button id="themeToggleBtn" class="ghost" title="Toggle Light/Dark Mode" aria-label="Toggle Light/Dark Mode"></button>
   <button id="signOutBtn" class="ghost">Sign out</button>
 </header>
 
@@ -2071,6 +2099,40 @@ document.getElementById('gateSignIn').addEventListener('click', async () => {
   catch (e) { showGateError(e.message); }
 });
 document.getElementById('signOutBtn').addEventListener('click', () => signOut(auth));
+
+// --- Theme Toggle Logic ---
+const themeToggleBtn = document.getElementById('themeToggleBtn');
+
+function updateThemeIcon(theme) {
+  if (theme === 'light') {
+    themeToggleBtn.innerHTML = `
+      <svg class="theme-icon-svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+      </svg>
+    `;
+    themeToggleBtn.title = "Switch to Dark Mode";
+  } else {
+    themeToggleBtn.innerHTML = `
+      <svg class="theme-icon-svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="4"></circle>
+        <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>
+      </svg>
+    `;
+    themeToggleBtn.title = "Switch to Light Mode";
+  }
+}
+
+// Initial icon setup
+const initialTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+updateThemeIcon(initialTheme);
+
+themeToggleBtn.addEventListener('click', () => {
+  const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+  const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', newTheme);
+  localStorage.setItem('theme', newTheme);
+  updateThemeIcon(newTheme);
+});
 
 onAuthStateChanged(auth, async (user) => {
   currentUser = user;
