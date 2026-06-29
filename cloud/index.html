@@ -152,11 +152,18 @@
   main { flex: 1; display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px;
     padding: 16px 20px 20px; overflow: hidden; }
   @media (min-width: 901px) {
-    body.hide-review-column main {
+    body.hide-review-column main,
+    body.hide-backlog-column main {
       grid-template-columns: repeat(4, 1fr);
+    }
+    body.hide-review-column.hide-backlog-column main {
+      grid-template-columns: repeat(3, 1fr);
     }
   }
   body.hide-review-column main .column[data-status="review"] {
+    display: none !important;
+  }
+  body.hide-backlog-column main .column[data-status="backlog"] {
     display: none !important;
   }
   .column { background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
@@ -1850,6 +1857,11 @@
   </div>
 
   <div class="filter-group" style="display: flex; align-items: center; gap: 6px;">
+    <input type="checkbox" id="hideBacklogFilter" style="margin: 0; cursor: pointer; width: 14px; height: 14px;">
+    <label for="hideBacklogFilter" style="cursor: pointer; user-select: none;">Hide Backlog</label>
+  </div>
+
+  <div class="filter-group" style="display: flex; align-items: center; gap: 6px;">
     <input type="checkbox" id="hideReviewFilter" style="margin: 0; cursor: pointer; width: 14px; height: 14px;">
     <label for="hideReviewFilter" style="cursor: pointer; user-select: none;">Hide Review</label>
   </div>
@@ -2703,6 +2715,10 @@ function setView(view) {
   const hideReviewFilterContainer = document.getElementById('hideReviewFilter')?.closest('.filter-group');
   if (hideReviewFilterContainer) {
     hideReviewFilterContainer.style.display = (view === 'board') ? 'flex' : 'none';
+  }
+  const hideBacklogFilterContainer = document.getElementById('hideBacklogFilter')?.closest('.filter-group');
+  if (hideBacklogFilterContainer) {
+    hideBacklogFilterContainer.style.display = (view === 'board') ? 'flex' : 'none';
   }
 
   document.querySelectorAll('.view-toggle').forEach(b => {
@@ -5827,6 +5843,16 @@ document.getElementById('hideReviewFilter').addEventListener('change', (e) => {
   const checked = e.target.checked;
   localStorage.setItem('hideReview', checked);
   document.body.classList.toggle('hide-review-column', checked);
+});
+
+// Hide Backlog checkbox persistence & listener
+const hideBacklogChecked = localStorage.getItem('hideBacklog') === 'true';
+document.getElementById('hideBacklogFilter').checked = hideBacklogChecked;
+document.body.classList.toggle('hide-backlog-column', hideBacklogChecked);
+document.getElementById('hideBacklogFilter').addEventListener('change', (e) => {
+  const checked = e.target.checked;
+  localStorage.setItem('hideBacklog', checked);
+  document.body.classList.toggle('hide-backlog-column', checked);
 });
 document.getElementById('drClearBtn').addEventListener('click', () => {
   modalStartDate = '';
