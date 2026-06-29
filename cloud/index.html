@@ -3183,10 +3183,15 @@ function renderList() {
         valA = getDisplayShort(emailA).toLowerCase();
         valB = getDisplayShort(emailB).toLowerCase();
       } else if (listSortField === 'cadence') {
-        const cadA = a.cadence || a.startDate || '';
-        const cadB = b.cadence || b.startDate || '';
-        valA = cadA.toLowerCase();
-        valB = cadB.toLowerCase();
+        const startA = a.startDate || '';
+        const startB = b.startDate || '';
+        if (startA !== startB) {
+          valA = startA;
+          valB = startB;
+        } else {
+          valA = a.endDate || '';
+          valB = b.endDate || '';
+        }
       } else if (listSortField === 'status') {
         valA = STATUS_RANK[a.status] ?? 99;
         valB = STATUS_RANK[b.status] ?? 99;
