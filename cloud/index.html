@@ -2241,6 +2241,7 @@ async function updateTaskDoc(taskId, fieldsToUpdate, logActionText) {
   await updateDoc(doc(db, 'tasks', taskId), {
     ...fieldsToUpdate,
     activityLog
+  });
 }
 
 function canEditTask(task) {
