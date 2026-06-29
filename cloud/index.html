@@ -151,21 +151,6 @@
 
   main { flex: 1; display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px;
     padding: 16px 20px 20px; overflow: hidden; }
-  @media (min-width: 901px) {
-    body.hide-review-column main,
-    body.hide-backlog-column main {
-      grid-template-columns: repeat(4, 1fr);
-    }
-    body.hide-review-column.hide-backlog-column main {
-      grid-template-columns: repeat(3, 1fr);
-    }
-  }
-  body.hide-review-column main .column[data-status="review"] {
-    display: none !important;
-  }
-  body.hide-backlog-column main .column[data-status="backlog"] {
-    display: none !important;
-  }
   .column { background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
     display: flex; flex-direction: column; min-height: 200px; overflow: hidden; }
   .col-header { display: flex; align-items: center; justify-content: space-between;
@@ -1856,14 +1841,28 @@
     <label for="showArchivedFilter" style="cursor: pointer; user-select: none;">Show Archived</label>
   </div>
 
-  <div class="filter-group" style="display: flex; align-items: center; gap: 6px;">
-    <input type="checkbox" id="hideBacklogFilter" style="margin: 0; cursor: pointer; width: 14px; height: 14px;">
-    <label for="hideBacklogFilter" style="cursor: pointer; user-select: none;">Hide Backlog</label>
-  </div>
-
-  <div class="filter-group" style="display: flex; align-items: center; gap: 6px;">
-    <input type="checkbox" id="hideReviewFilter" style="margin: 0; cursor: pointer; width: 14px; height: 14px;">
-    <label for="hideReviewFilter" style="cursor: pointer; user-select: none;">Hide Review</label>
+  <div class="filter-group board-columns-toggle-container" style="position: relative;">
+    <button type="button" id="boardColsBtn" class="ghost" style="display: flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 500; padding: 6px 12px; border: 1px solid var(--border); border-radius: 6px; cursor: pointer; background: var(--panel-2); color: var(--text); height: 35px;">
+      <span>Columns</span>
+      <span style="font-size: 8px; margin-top: 1px;">▼</span>
+    </button>
+    <div id="boardColsDropdown" style="display: none; position: absolute; top: calc(100% + 6px); right: 0; background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; padding: 12px; width: 180px; box-shadow: var(--shadow); z-index: 100; flex-direction: column; gap: 10px;">
+      <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text); cursor: pointer; user-select: none; margin: 0;">
+        <input type="checkbox" class="col-visibility-chk" data-status="backlog" style="cursor: pointer;" checked> Backlog
+      </label>
+      <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text); cursor: pointer; user-select: none; margin: 0;">
+        <input type="checkbox" class="col-visibility-chk" data-status="ready" style="cursor: pointer;" checked> Ready to Start
+      </label>
+      <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text); cursor: pointer; user-select: none; margin: 0;">
+        <input type="checkbox" class="col-visibility-chk" data-status="active" style="cursor: pointer;" checked> Active
+      </label>
+      <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text); cursor: pointer; user-select: none; margin: 0;">
+        <input type="checkbox" class="col-visibility-chk" data-status="review" style="cursor: pointer;" checked> Review
+      </label>
+      <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text); cursor: pointer; user-select: none; margin: 0;">
+        <input type="checkbox" class="col-visibility-chk" data-status="complete" style="cursor: pointer;" checked> Complete
+      </label>
+    </div>
   </div>
 
   <div class="view-toggle-group" id="viewToggleGroup">
@@ -2712,13 +2711,12 @@ function setView(view) {
   document.getElementById('tackboardView').style.display = view === 'tackboard' ? 'flex' : 'none';
   document.getElementById('timelineNav').style.display = view === 'timeline' ? 'inline-flex' : 'none';
   
-  const hideReviewFilterContainer = document.getElementById('hideReviewFilter')?.closest('.filter-group');
-  if (hideReviewFilterContainer) {
-    hideReviewFilterContainer.style.display = (view === 'board') ? 'flex' : 'none';
+  const colsToggle = document.querySelector('.board-columns-toggle-container');
+  if (colsToggle) {
+    colsToggle.style.display = (view === 'board') ? 'block' : 'none';
   }
-  const hideBacklogFilterContainer = document.getElementById('hideBacklogFilter')?.closest('.filter-group');
-  if (hideBacklogFilterContainer) {
-    hideBacklogFilterContainer.style.display = (view === 'board') ? 'flex' : 'none';
+  if (view === 'board') {
+    updateBoardColumnsVisibility();
   }
 
   document.querySelectorAll('.view-toggle').forEach(b => {
@@ -4551,6 +4549,7 @@ function render() {
       : inCol.map(renderTask).join('');
   }
   bindTaskEvents();
+  updateBoardColumnsVisibility();
 }
 
 function renderTask(t) {
@@ -5835,25 +5834,73 @@ document.getElementById('appFilter').addEventListener('change', () => maybeRende
 document.getElementById('assigneeFilter').addEventListener('change', () => maybeRender());
 document.getElementById('showArchivedFilter').addEventListener('change', () => maybeRender());
 
-// Hide Review checkbox persistence & listener
-const hideReviewChecked = localStorage.getItem('hideReview') === 'true';
-document.getElementById('hideReviewFilter').checked = hideReviewChecked;
-document.body.classList.toggle('hide-review-column', hideReviewChecked);
-document.getElementById('hideReviewFilter').addEventListener('change', (e) => {
-  const checked = e.target.checked;
-  localStorage.setItem('hideReview', checked);
-  document.body.classList.toggle('hide-review-column', checked);
+// Board Columns Visibility management
+function updateBoardColumnsVisibility() {
+  const chks = document.querySelectorAll('.col-visibility-chk');
+  const states = {};
+  let visibleCount = 0;
+  
+  chks.forEach(chk => {
+    const status = chk.dataset.status;
+    const isVisible = chk.checked;
+    states[status] = isVisible;
+    
+    const col = document.querySelector(`main .column[data-status="${status}"]`);
+    if (col) {
+      col.style.display = isVisible ? 'flex' : 'none';
+    }
+    if (isVisible) {
+      visibleCount++;
+    }
+  });
+  
+  localStorage.setItem('boardColsVisibility', JSON.stringify(states));
+  
+  const mainGrid = document.querySelector('main');
+  if (mainGrid) {
+    if (window.innerWidth > 900) {
+      mainGrid.style.gridTemplateColumns = `repeat(${visibleCount}, 1fr)`;
+    } else {
+      mainGrid.style.gridTemplateColumns = '';
+    }
+  }
+}
+
+// Restore saved visibility states
+const savedStatesStr = localStorage.getItem('boardColsVisibility');
+let savedStates = {};
+try {
+  savedStates = savedStatesStr ? JSON.parse(savedStatesStr) : {};
+} catch(e) {}
+
+document.querySelectorAll('.col-visibility-chk').forEach(chk => {
+  const status = chk.dataset.status;
+  const isVisible = savedStates[status] !== false;
+  chk.checked = isVisible;
+  chk.addEventListener('change', updateBoardColumnsVisibility);
 });
 
-// Hide Backlog checkbox persistence & listener
-const hideBacklogChecked = localStorage.getItem('hideBacklog') === 'true';
-document.getElementById('hideBacklogFilter').checked = hideBacklogChecked;
-document.body.classList.toggle('hide-backlog-column', hideBacklogChecked);
-document.getElementById('hideBacklogFilter').addEventListener('change', (e) => {
-  const checked = e.target.checked;
-  localStorage.setItem('hideBacklog', checked);
-  document.body.classList.toggle('hide-backlog-column', checked);
-});
+updateBoardColumnsVisibility();
+
+window.addEventListener('resize', updateBoardColumnsVisibility);
+
+// Toggle dropdown popover visibility
+const boardColsBtn = document.getElementById('boardColsBtn');
+const boardColsDropdown = document.getElementById('boardColsDropdown');
+
+if (boardColsBtn && boardColsDropdown) {
+  boardColsBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isShowing = boardColsDropdown.style.display === 'flex';
+    boardColsDropdown.style.display = isShowing ? 'none' : 'flex';
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!boardColsDropdown.contains(e.target) && e.target !== boardColsBtn && !boardColsBtn.contains(e.target)) {
+      boardColsDropdown.style.display = 'none';
+    }
+  });
+}
 document.getElementById('drClearBtn').addEventListener('click', () => {
   modalStartDate = '';
   modalEndDate = '';
