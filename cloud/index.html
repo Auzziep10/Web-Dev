@@ -913,8 +913,9 @@
   }
   .tb-task-item {
     display: flex;
-    align-items: center;
-    gap: 8px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
     padding: 10px 12px;
     background: var(--panel-2);
     border: 1px solid var(--border);
@@ -938,12 +939,10 @@
   .tb-bullet.low { background-color: var(--success); }
   .tb-task-title {
     font-size: 13px;
-    font-weight: 500;
+    font-weight: 600;
     color: var(--text);
     flex-grow: 1;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    word-break: break-word;
   }
   .tb-task-project {
     font-size: 10px;
@@ -3016,50 +3015,140 @@ function renderTackboard() {
   const activeTasks = vTasks.filter(t => t.status === 'active' && !t.archived);
 
   // Group active tasks by person (including both parent and subtask assignees)
-  const membersWithTasks = team.map(email => {
+  const membersWithItems = team.map(email => {
     const emailLower = email.toLowerCase();
-    const tasksForMember = activeTasks.filter(t => {
-      const parentAssignees = (t.assignees || []).map(e => String(e).toLowerCase());
-      const subtaskAssignees = (t.subtasks || [])
-        .map(s => String(s.assignee || '').toLowerCase())
-        .filter(Boolean);
-      const allAssignees = [...new Set([...parentAssignees, ...subtaskAssignees])];
-      return allAssignees.includes(emailLower);
+    const items = [];
+    activeTasks.forEach(t => {
+      const parentAssignees = Array.isArray(t.assignees) ? t.assignees : [];
+      const lead = parentAssignees[0] || '';
+      const support = parentAssignees.slice(1);
+      const isLeadOrSupport = parentAssignees.map(x => x.toLowerCase()).includes(emailLower);
+      
+      // 1. Parent Task
+      if (isLeadOrSupport) {
+        items.push({
+          type: 'parent',
+          taskId: t.id,
+          title: t.title || 'Untitled',
+          app: t.app || '',
+          priority: t.priority || 'medium',
+          startDate: t.startDate || '',
+          endDate: t.endDate || '',
+          parentLead: lead,
+          parentSupport: support,
+          parentTitle: ''
+        });
+      }
+      
+      // 2. Subtasks assigned to this member
+      if (Array.isArray(t.subtasks)) {
+        t.subtasks.forEach(sub => {
+          if (String(sub.assignee || '').toLowerCase() === emailLower) {
+            items.push({
+              type: 'subtask',
+              taskId: t.id,
+              subtaskId: sub.id,
+              title: sub.title || 'Untitled Subtask',
+              app: t.app || '',
+              priority: t.priority || 'medium',
+              startDate: sub.startDate || t.startDate || '',
+              endDate: sub.endDate || t.endDate || '',
+              parentLead: lead,
+              parentSupport: support,
+              parentTitle: t.title || 'Untitled Parent'
+            });
+          }
+        });
+      }
     });
-    return { email, tasks: tasksForMember };
+    return { email, items };
   });
 
-  // Group unassigned active tasks
-  const unassignedTasks = activeTasks.filter(t => {
-    const parentAssignees = (t.assignees || []).map(e => String(e).toLowerCase());
+  // Group unassigned active tasks (neither parent nor subtasks have assignees)
+  const unassignedItems = [];
+  activeTasks.forEach(t => {
+    const parentAssignees = Array.isArray(t.assignees) ? t.assignees : [];
     const subtaskAssignees = (t.subtasks || [])
       .map(s => String(s.assignee || '').toLowerCase())
       .filter(Boolean);
-    return parentAssignees.length === 0 && subtaskAssignees.length === 0;
+      
+    if (parentAssignees.length === 0 && subtaskAssignees.length === 0) {
+      unassignedItems.push({
+        type: 'parent',
+        taskId: t.id,
+        title: t.title || 'Untitled',
+        app: t.app || '',
+        priority: t.priority || 'medium',
+        startDate: t.startDate || '',
+        endDate: t.endDate || '',
+        parentLead: '',
+        parentSupport: [],
+        parentTitle: ''
+      });
+    }
   });
 
   let html = '';
 
   // Render team member columns
-  membersWithTasks.forEach(member => {
+  membersWithItems.forEach(member => {
     const displayName = getDisplayName(member.email);
     
-    const taskItemsHtml = member.tasks.length === 0
+    const taskItemsHtml = member.items.length === 0
       ? `<div style="font-size: 12px; color: var(--muted); font-style: italic; text-align: center; padding: 20px 0;">No active tasks</div>`
-      : `<ul class="tb-task-list">` + member.tasks.map(t => `
-          <li class="tb-task-item" data-id="${t.id}" title="${escapeHtml(t.title || 'Untitled')}">
-            <span class="tb-bullet ${t.priority || 'medium'}"></span>
-            <span class="tb-task-title">${escapeHtml(t.title || 'Untitled')}</span>
-            ${t.app ? `<span class="tb-task-project">${escapeHtml(t.app)}</span>` : ''}
-          </li>
-        `).join('') + `</ul>`;
+      : `<ul class="tb-task-list">` + member.items.map(item => {
+          const dateText = formatDateChip(item.startDate, item.endDate) || '';
+          return `
+            <li class="tb-task-item" data-id="${item.taskId}">
+              <!-- Top Row: Type Badge + Project -->
+              <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+                <span class="tb-type-badge ${item.type}" style="font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 2px 6px; border-radius: 4px; background: ${item.type === 'parent' ? 'var(--accent-shadow)' : 'var(--border)'}; color: ${item.type === 'parent' ? 'var(--accent)' : 'var(--muted)'};">
+                  ${item.type === 'parent' ? 'Parent Task' : 'Subtask'}
+                </span>
+                ${item.app ? `<span class="tb-task-project" style="margin: 0; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(item.app)}</span>` : ''}
+              </div>
+
+              <!-- Title & Bullet -->
+              <div style="display: flex; align-items: flex-start; gap: 8px; margin-top: 2px;">
+                <span class="tb-bullet ${item.priority || 'medium'}" style="margin-top: 5px;"></span>
+                <div style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1;">
+                  <span class="tb-task-title" style="margin: 0;">${escapeHtml(item.title)}</span>
+                  ${item.type === 'subtask' ? `<span style="font-size: 11px; color: var(--muted); line-height: 1.2;">Part of: <strong style="color: var(--text);">${escapeHtml(item.parentTitle)}</strong></span>` : ''}
+                </div>
+              </div>
+
+              <!-- Divider line -->
+              <hr style="border: 0; border-top: 1px solid var(--border); margin: 4px 0;">
+
+              <!-- Bottom Row: Dates + Lead/Support -->
+              <div style="display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: var(--muted);">
+                <!-- Dates -->
+                ${dateText ? `
+                  <div style="display: flex; align-items: center; gap: 4px;">
+                    <span style="font-size: 11px;">📅</span>
+                    <span class="date-chip ${dateChipClass(item.endDate, 'active')}" style="padding: 1px 4px; border-radius: 3px;">${escapeHtml(dateText)}</span>
+                  </div>
+                ` : ''}
+                
+                <!-- Parent Lead / Support -->
+                <div style="display: flex; align-items: center; gap: 4px; flex-wrap: wrap;">
+                  <span style="font-size: 11px;">👥</span>
+                  <span>
+                    <strong>Lead:</strong> ${item.parentLead ? escapeHtml(getDisplayShort(item.parentLead)) : 'Unassigned'}
+                    ${item.parentSupport && item.parentSupport.length > 0 ? `| <strong>Support:</strong> ${item.parentSupport.map(s => escapeHtml(getDisplayShort(s))).join(', ')}` : ''}
+                  </span>
+                </div>
+              </div>
+            </li>
+          `;
+        }).join('') + `</ul>`;
 
     html += `
       <div class="tb-column">
         <div class="tb-col-header">
           ${avatarHtml(member.email)}
           <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;">${escapeHtml(displayName)}</span>
-          <span class="count">${member.tasks.length}</span>
+          <span class="count">${member.items.length}</span>
         </div>
         <div class="tb-col-body">
           ${taskItemsHtml}
@@ -3069,21 +3158,58 @@ function renderTackboard() {
   });
 
   // Render unassigned column if there are unassigned active tasks
-  if (unassignedTasks.length > 0) {
-    const taskItemsHtml = `<ul class="tb-task-list">` + unassignedTasks.map(t => `
-        <li class="tb-task-item" data-id="${t.id}" title="${escapeHtml(t.title || 'Untitled')}">
-          <span class="tb-bullet ${t.priority || 'medium'}"></span>
-          <span class="tb-task-title">${escapeHtml(t.title || 'Untitled')}</span>
-          ${t.app ? `<span class="tb-task-project">${escapeHtml(t.app)}</span>` : ''}
+  if (unassignedItems.length > 0) {
+    const taskItemsHtml = `<ul class="tb-task-list">` + unassignedItems.map(item => {
+      const dateText = formatDateChip(item.startDate, item.endDate) || '';
+      return `
+        <li class="tb-task-item" data-id="${item.taskId}">
+          <!-- Top Row: Type Badge + Project -->
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+            <span class="tb-type-badge ${item.type}" style="font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 2px 6px; border-radius: 4px; background: ${item.type === 'parent' ? 'var(--accent-shadow)' : 'var(--border)'}; color: ${item.type === 'parent' ? 'var(--accent)' : 'var(--muted)'};">
+              ${item.type === 'parent' ? 'Parent Task' : 'Subtask'}
+            </span>
+            ${item.app ? `<span class="tb-task-project" style="margin: 0; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(item.app)}</span>` : ''}
+          </div>
+
+          <!-- Title & Bullet -->
+          <div style="display: flex; align-items: flex-start; gap: 8px; margin-top: 2px;">
+            <span class="tb-bullet ${item.priority || 'medium'}" style="margin-top: 5px;"></span>
+            <div style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1;">
+              <span class="tb-task-title" style="margin: 0;">${escapeHtml(item.title)}</span>
+            </div>
+          </div>
+
+          <!-- Divider line -->
+          <hr style="border: 0; border-top: 1px solid var(--border); margin: 4px 0;">
+
+          <!-- Bottom Row: Dates + Lead/Support -->
+          <div style="display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: var(--muted);">
+            <!-- Dates -->
+            ${dateText ? `
+              <div style="display: flex; align-items: center; gap: 4px;">
+                <span style="font-size: 11px;">📅</span>
+                <span class="date-chip ${dateChipClass(item.endDate, 'active')}" style="padding: 1px 4px; border-radius: 3px;">${escapeHtml(dateText)}</span>
+              </div>
+            ` : ''}
+            
+            <!-- Parent Lead / Support -->
+            <div style="display: flex; align-items: center; gap: 4px; flex-wrap: wrap;">
+              <span style="font-size: 11px;">👥</span>
+              <span>
+                <strong>Lead:</strong> Unassigned
+              </span>
+            </div>
+          </div>
         </li>
-      `).join('') + `</ul>`;
+      `;
+    }).join('') + `</ul>`;
 
     html += `
       <div class="tb-column">
         <div class="tb-col-header">
           <span class="avatar" style="background: var(--muted);" title="Unassigned">?</span>
           <span>Unassigned</span>
-          <span class="count">${unassignedTasks.length}</span>
+          <span class="count">${unassignedItems.length}</span>
         </div>
         <div class="tb-col-body">
           ${taskItemsHtml}
