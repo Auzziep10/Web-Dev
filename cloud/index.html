@@ -3680,17 +3680,12 @@ function renderListItem(t, team) {
 
   if (inlineConvertBtn && inlineConvertContainer && inlineConvertCancel && inlineConvertConfirm && inlineConvertSelect) {
     inlineConvertBtn.addEventListener('click', () => {
-      const otherTasks = tasks.filter(x => x.id !== id)
-        .sort((a, b) => {
-          const projA = a.app || '';
-          const projB = b.app || '';
-          if (projA !== projB) return projA.localeCompare(projB);
-          return a.title.localeCompare(b.title);
-        });
+      const currentProj = task ? (task.app || '') : '';
+      const otherTasks = tasks.filter(x => x.id !== id && (x.app || '') === currentProj)
+        .sort((a, b) => a.title.localeCompare(b.title));
       inlineConvertSelect.innerHTML = '<option value="">-- Choose a parent task --</option>' +
         otherTasks.map(x => {
-          const projText = x.app ? `[${x.app}] ` : '';
-          return `<option value="${x.id}">${escapeHtml(projText + x.title)}</option>`;
+          return `<option value="${x.id}">${escapeHtml(x.title)}</option>`;
         }).join('');
       inlineConvertContainer.style.display = 'block';
     });
@@ -5070,17 +5065,13 @@ function initAssignToParentHandlers() {
   if (!convertBtn || !container || !cancelBtn || !confirmBtn || !select) return;
   
   convertBtn.addEventListener('click', () => {
-    const otherTasks = tasks.filter(x => x.id !== editingId)
-      .sort((a, b) => {
-        const projA = a.app || '';
-        const projB = b.app || '';
-        if (projA !== projB) return projA.localeCompare(projB);
-        return a.title.localeCompare(b.title);
-      });
+    const currentTask = tasks.find(x => x.id === editingId);
+    const currentProj = currentTask ? (currentTask.app || '') : '';
+    const otherTasks = tasks.filter(x => x.id !== editingId && (x.app || '') === currentProj)
+      .sort((a, b) => a.title.localeCompare(b.title));
     select.innerHTML = '<option value="">-- Choose a parent task --</option>' +
       otherTasks.map(x => {
-        const projText = x.app ? `[${x.app}] ` : '';
-        return `<option value="${x.id}">${escapeHtml(projText + x.title)}</option>`;
+        return `<option value="${x.id}">${escapeHtml(x.title)}</option>`;
       }).join('');
     container.style.display = 'block';
   });
