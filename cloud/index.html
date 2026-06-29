@@ -3680,7 +3680,8 @@ function renderListItem(t, team) {
 
   if (inlineConvertBtn && inlineConvertContainer && inlineConvertCancel && inlineConvertConfirm && inlineConvertSelect) {
     inlineConvertBtn.addEventListener('click', () => {
-      const currentProj = task ? (task.app || '') : '';
+      const projectInput = item.querySelector('.expanded-project-input');
+      const currentProj = projectInput ? projectInput.value.trim() : '';
       const otherTasks = tasks.filter(x => x.id !== id && (x.app || '') === currentProj)
         .sort((a, b) => a.title.localeCompare(b.title));
       inlineConvertSelect.innerHTML = '<option value="">-- Choose a parent task --</option>' +
@@ -5098,8 +5099,7 @@ function initAssignToParentHandlers() {
   if (!convertBtn || !container || !cancelBtn || !confirmBtn || !select) return;
   
   convertBtn.addEventListener('click', () => {
-    const currentTask = tasks.find(x => x.id === editingId);
-    const currentProj = currentTask ? (currentTask.app || '') : '';
+    const currentProj = document.getElementById('taskApp').value.trim();
     const otherTasks = tasks.filter(x => x.id !== editingId && (x.app || '') === currentProj)
       .sort((a, b) => a.title.localeCompare(b.title));
     select.innerHTML = '<option value="">-- Choose a parent task --</option>' +
