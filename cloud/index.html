@@ -151,6 +151,14 @@
 
   main { flex: 1; display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px;
     padding: 16px 20px 20px; overflow: hidden; }
+  @media (min-width: 901px) {
+    body.hide-review-column main {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
+  body.hide-review-column main .column[data-status="review"] {
+    display: none !important;
+  }
   .column { background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
     display: flex; flex-direction: column; min-height: 200px; overflow: hidden; }
   .col-header { display: flex; align-items: center; justify-content: space-between;
@@ -1842,6 +1850,11 @@
     <label for="showArchivedFilter" style="cursor: pointer; user-select: none;">Show Archived</label>
   </div>
 
+  <div class="filter-group" style="display: flex; align-items: center; gap: 6px;">
+    <input type="checkbox" id="hideReviewFilter" style="margin: 0; cursor: pointer; width: 14px; height: 14px;">
+    <label for="hideReviewFilter" style="cursor: pointer; user-select: none;">Hide Review</label>
+  </div>
+
   <div class="view-toggle-group" id="viewToggleGroup">
     <button class="view-toggle active" data-view="board" aria-label="Board view">
       <svg class="vt-icon" viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true">
@@ -1867,12 +1880,12 @@
       </svg>
       <span class="vt-label">Timeline</span>
     </button>
-    <button class="view-toggle" data-view="tackboard" aria-label="Tackboard view">
+    <button class="view-toggle" data-view="tackboard" aria-label="Tac-Bored™ view">
       <svg class="vt-icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="transform: scale(0.9); margin-top: 1px;">
         <path d="M12 2a5 5 0 0 0-5 5v3L3 14v2h18v-2l-4-4V7a5 5 0 0 0-5-5z"/>
         <line x1="12" y1="16" x2="12" y2="22"/>
       </svg>
-      <span class="vt-label">Tackboard</span>
+      <span class="vt-label">Tac-Bored™</span>
     </button>
   </div>
 
@@ -2682,6 +2695,12 @@ function setView(view) {
   document.getElementById('listView').style.display = view === 'list' ? 'block' : 'none';
   document.getElementById('tackboardView').style.display = view === 'tackboard' ? 'flex' : 'none';
   document.getElementById('timelineNav').style.display = view === 'timeline' ? 'inline-flex' : 'none';
+  
+  const hideReviewFilterContainer = document.getElementById('hideReviewFilter')?.closest('.filter-group');
+  if (hideReviewFilterContainer) {
+    hideReviewFilterContainer.style.display = (view === 'board') ? 'flex' : 'none';
+  }
+
   document.querySelectorAll('.view-toggle').forEach(b => {
     b.classList.toggle('active', b.dataset.view === view);
   });
@@ -5649,6 +5668,16 @@ document.getElementById('taskSearch').addEventListener('input', () => maybeRende
 document.getElementById('appFilter').addEventListener('change', () => maybeRender());
 document.getElementById('assigneeFilter').addEventListener('change', () => maybeRender());
 document.getElementById('showArchivedFilter').addEventListener('change', () => maybeRender());
+
+// Hide Review checkbox persistence & listener
+const hideReviewChecked = localStorage.getItem('hideReview') === 'true';
+document.getElementById('hideReviewFilter').checked = hideReviewChecked;
+document.body.classList.toggle('hide-review-column', hideReviewChecked);
+document.getElementById('hideReviewFilter').addEventListener('change', (e) => {
+  const checked = e.target.checked;
+  localStorage.setItem('hideReview', checked);
+  document.body.classList.toggle('hide-review-column', checked);
+});
 document.getElementById('drClearBtn').addEventListener('click', () => {
   modalStartDate = '';
   modalEndDate = '';
