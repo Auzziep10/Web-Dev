@@ -143,8 +143,8 @@
   select:focus, input:focus, textarea:focus { outline: none; border-color: var(--accent); }
   button { cursor: pointer; transition: background .15s, border-color .15s; }
   button:hover { border-color: var(--accent); }
-  button.primary { background: var(--accent-2); border-color: var(--accent-2); color: white; }
-  button.primary:hover { background: var(--accent); border-color: var(--accent); }
+  button.primary { background: var(--accent-2); border-color: var(--accent-2); color: var(--bg); font-weight: 600; }
+  button.primary:hover { background: var(--accent); border-color: var(--accent); color: var(--bg); }
   button.danger { color: var(--danger); }
   button.danger:hover { border-color: var(--danger); }
   button.ghost { background: transparent; }
@@ -273,7 +273,7 @@
   }
   .dr-cell.range-start, .dr-cell.range-end {
     background: var(--accent-2);
-    color: white !important;
+    color: var(--bg) !important;
     font-weight: 700;
     border-color: var(--accent-2);
   }
@@ -466,12 +466,12 @@
   }
   .update-input:focus { outline: none; border-color: var(--accent); }
   .update-send {
-    background: var(--accent-2); color: white; border: none;
+    background: var(--accent-2); color: var(--bg); border: none;
     border-radius: 6px; padding: 6px 12px;
-    font-size: 12px; cursor: pointer;
+    font-size: 12px; cursor: pointer; font-weight: 600;
   }
-  .update-send:hover { background: var(--accent); }
-  .update-send:disabled { background: var(--muted); cursor: not-allowed; }
+  .update-send:hover { background: var(--accent); color: var(--bg); }
+  .update-send:disabled { background: var(--muted); color: var(--text); cursor: not-allowed; }
   .empty { color: var(--muted); font-size: 12px; text-align: center; padding: 20px; font-style: italic; }
 
   .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.5);
@@ -543,7 +543,7 @@
     border: 1px solid var(--border);
     border-radius: 6px;
     padding: 8px 12px;
-    background: var(--panel);
+    background: var(--panel-2);
     color: var(--text);
     font-size: 13px;
     transition: border-color 0.2s, box-shadow 0.2s;
@@ -600,14 +600,85 @@
     display: inline-flex; align-items: center; gap: 6px;
   }
   .view-toggle:hover { color: var(--text); }
-  .view-toggle.active { background: var(--accent-2); color: white; }
-  .view-toggle.active:hover { background: var(--accent); }
+  .view-toggle.active { background: var(--accent-2); color: var(--bg); }
+  .view-toggle.active:hover { background: var(--accent); color: var(--bg); }
   /* Icons hidden on desktop — label only */
   .vt-icon { display: none; }
 
   .timeline-nav { display: inline-flex; align-items: center; gap: 4px; }
   .timeline-nav button { padding: 6px 10px; font-size: 12px; }
   #timelineRange { font-size: 12px; color: var(--muted); margin: 0 8px; min-width: 130px; text-align: center; }
+
+  .timeline-picker-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--panel-2);
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    user-select: none;
+    margin: 0 4px;
+  }
+  .timeline-picker-wrapper:hover {
+    border-color: var(--accent);
+  }
+  .timeline-picker-wrapper #timelineRange {
+    font-size: 12px;
+    color: var(--text);
+    margin: 0;
+    min-width: 120px;
+    text-align: center;
+    pointer-events: none;
+  }
+  .timeline-picker-wrapper .picker-icon {
+    color: var(--muted);
+    pointer-events: none;
+    transition: color 0.15s;
+  }
+  .timeline-picker-wrapper:hover .picker-icon {
+    color: var(--accent);
+  }
+  .timeline-picker-wrapper input[type="date"] {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: transparent;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  /* Archived projects/tasks styles */
+  .list-project.archived {
+    opacity: 0.7;
+  }
+  .list-project.archived .list-project-header {
+    background: var(--panel);
+  }
+  .list-item.archived {
+    opacity: 0.55;
+    background: var(--panel);
+  }
+  .task.archived {
+    opacity: 0.55;
+    background: var(--panel) !important;
+    border-style: dashed !important;
+  }
+  .t-bar.archived {
+    opacity: 0.5;
+    background-image: repeating-linear-gradient(45deg, rgba(0,0,0,0.1), rgba(0,0,0,0.1) 10px, transparent 10px, transparent 20px) !important;
+  }
 
   /* Timeline view */
   .timeline-view {
@@ -735,6 +806,25 @@
   .t-bar.priority-low      { background: var(--p-low); }
   .t-bar.done { opacity: 0.5; text-decoration: line-through; }
   .t-bar-label { overflow: hidden; text-overflow: ellipsis; }
+  .t-subtask-row {
+    min-height: 28px;
+    background: rgba(0,0,0,0.01);
+  }
+  .t-subtask-row .t-name {
+    background: var(--panel-2);
+    border-right: 1px solid var(--border);
+  }
+  .subtask-bar {
+    top: 5px; bottom: 5px;
+    opacity: 0.85;
+    font-size: 10px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+    cursor: pointer !important;
+  }
+  .t-name.parent-name:hover .t-edit-icon {
+    opacity: 1 !important;
+  }
+
   .t-today-line {
     position: absolute; top: 0; bottom: 0;
     width: 2px; background: var(--accent);
@@ -812,13 +902,39 @@
     outline: none;
   }
   .lp-actions {
-    opacity: 0;
+    opacity: 0.55;
     display: flex;
-    gap: 4px;
+    align-items: center;
+    gap: 6px;
     transition: opacity 0.15s;
   }
   .list-project-header:hover .lp-actions {
     opacity: 1;
+  }
+  .lp-actions .icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--muted);
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    padding: 0;
+  }
+  .lp-actions .icon-btn:hover {
+    background: var(--panel-2);
+    border-color: var(--border);
+    color: var(--text);
+  }
+  .lp-actions .icon-btn.danger:hover {
+    color: var(--danger);
+    background: rgba(220, 53, 69, 0.1);
+    border-color: rgba(220, 53, 69, 0.2);
   }
   .lp-count {
     background: var(--panel-2);
@@ -828,6 +944,11 @@
     padding: 2px 9px;
     border-radius: 10px;
     border: 1px solid var(--border);
+  }
+
+  .lp-toggle-completed:hover {
+    border-color: var(--accent) !important;
+    color: var(--text) !important;
   }
 
   .list-table-container {
@@ -1310,6 +1431,7 @@
     /* Timeline nav: make sure it fits and wraps cleanly */
     .timeline-nav { flex-wrap: wrap; }
     #timelineRange { min-width: 0; }
+    .timeline-picker-wrapper #timelineRange { min-width: 0; }
     .search-wrapper {
       width: 130px;
       margin-right: 0;
@@ -1327,27 +1449,29 @@
     gap: 8px;
   }
   .subtask-checkbox {
-    width: 14px;
-    height: 14px;
+    width: 14px !important;
+    height: 14px !important;
+    flex-shrink: 0;
     cursor: pointer;
   }
   .subtask-text-input {
     flex: 1;
+    min-width: 0;
     font-size: 13px;
-    padding: 4px 8px;
-    border: 1px solid transparent;
-    border-radius: 4px;
-    background: transparent;
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--panel-2);
     color: var(--text);
     transition: all 0.2s ease;
   }
   .subtask-text-input:hover {
-    background: var(--accent-bg-04);
-    border-color: var(--border);
+    border-color: var(--accent);
   }
   .subtask-text-input:focus {
-    background: var(--panel);
+    background: var(--panel-2);
     border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-shadow);
     outline: none;
   }
   .subtask-text-input.completed {
@@ -1369,7 +1493,8 @@
 
   /* Popovers */
   .progress-popover,
-  .support-popover {
+  .support-popover,
+  .date-range-popover {
     position: absolute;
     z-index: 1000;
     display: none;
@@ -1378,11 +1503,15 @@
     border: 1px solid var(--border);
     border-radius: 6px;
     box-shadow: 0 4px 12px var(--accent-shadow);
-    padding: 12px;
     width: 200px;
   }
+  .date-range-popover {
+    width: 280px;
+    padding: 0;
+  }
   .progress-popover.open,
-  .support-popover.open {
+  .support-popover.open,
+  .date-range-popover.open {
     display: flex;
   }
   .pp-header {
@@ -1558,6 +1687,11 @@
     </select>
   </div>
 
+  <div class="filter-group" style="display: flex; align-items: center; gap: 6px;">
+    <input type="checkbox" id="showArchivedFilter" style="margin: 0; cursor: pointer; width: 14px; height: 14px;">
+    <label for="showArchivedFilter" style="cursor: pointer; user-select: none;">Show Archived</label>
+  </div>
+
   <div class="view-toggle-group" id="viewToggleGroup">
     <button class="view-toggle active" data-view="board" aria-label="Board view">
       <svg class="vt-icon" viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true">
@@ -1589,7 +1723,16 @@
     <button class="ghost" id="tlPrev" title="Previous week">‹</button>
     <button class="ghost" id="tlToday" title="Jump to today">Today</button>
     <button class="ghost" id="tlNext" title="Next week">›</button>
-    <span id="timelineRange"></span>
+    <div class="timeline-picker-wrapper" title="Select a date to jump to">
+      <span id="timelineRange"></span>
+      <svg class="picker-icon" viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+        <line x1="16" y1="2" x2="16" y2="6"></line>
+        <line x1="8" y1="2" x2="8" y2="6"></line>
+        <line x1="3" y1="10" x2="21" y2="10"></line>
+      </svg>
+      <input type="date" id="timelineDatePicker" />
+    </div>
   </div>
 
   <button id="addBtn" class="primary editor-only">+ New task</button>
@@ -1722,6 +1865,11 @@
         </div>
       </div>
     </div>
+    <!-- Activity Log at the bottom of modal body -->
+    <div class="field" id="modalActivityLogField" style="margin-left: 24px; margin-right: 24px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); display: none;">
+      <label style="font-weight: 600; font-size: 13px; color: var(--text);">Activity Log</label>
+      <div id="modalActivityLogContainer" style="display:flex; flex-direction:column; gap:8px; max-height:120px; overflow-y:auto; font-size:11px; margin-top: 8px;"></div>
+    </div>
     <div class="modal-actions">
       <button id="cancelBtn" class="ghost">Cancel</button>
       <button id="saveBtn" class="primary">Save</button>
@@ -1800,6 +1948,27 @@
   <div class="sp-list" id="spList"></div>
 </div>
 
+<!-- Date Range Picker Popover -->
+<div class="date-range-popover" id="dateRangePopover">
+  <div class="daterange-display" style="padding: 10px; border-bottom: 1px solid var(--border);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+      <span style="font-size: 11px; font-weight: 700; color: var(--text);" id="drPopoverTitle">Dates</span>
+      <button type="button" class="dr-clear" id="drPopoverClearBtn" style="font-size: 10px; padding: 2px 6px;">Clear</button>
+    </div>
+    <div style="display: flex; gap: 8px;">
+      <div class="dr-pair" style="flex: 1;">
+        <span class="dr-label" style="font-size: 9px;">Start</span>
+        <span id="drPopoverStartDisplay" class="dr-value empty" style="font-size: 11px; padding: 4px;">— pick date —</span>
+      </div>
+      <div class="dr-pair" style="flex: 1;">
+        <span class="dr-label" style="font-size: 9px;">End</span>
+        <span id="drPopoverEndDisplay" class="dr-value empty" style="font-size: 11px; padding: 4px;">— pick date —</span>
+      </div>
+    </div>
+  </div>
+  <div class="daterange-cal" id="drPopoverCalendar" style="padding: 10px;"></div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <!-- Auth gate (shown until signed in + authorized) -->
@@ -1819,7 +1988,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
 import {
   getFirestore, collection, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc,
-  onSnapshot, query, serverTimestamp, writeBatch
+  onSnapshot, query, serverTimestamp, writeBatch, deleteField
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 import { firebaseConfig } from "./firebase-config.js";
 
@@ -2050,6 +2219,29 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
+async function updateTaskDoc(taskId, fieldsToUpdate, logActionText) {
+  const task = tasks.find(t => t.id === taskId);
+  if (!task) return;
+
+  const activityLog = Array.isArray(task.activityLog) ? [...task.activityLog] : [];
+  if (logActionText) {
+    activityLog.push({
+      user: currentUser?.email || 'Unknown User',
+      timestamp: new Date().toISOString(),
+      action: logActionText
+    });
+  }
+
+  if (activityLog.length > 100) {
+    activityLog.shift();
+  }
+
+  await updateDoc(doc(db, 'tasks', taskId), {
+    ...fieldsToUpdate,
+    activityLog
+  });
+}
+
 let currentUser = null;
 let role = null; // 'editor' | 'viewer' | null
 let access = { editors: [], viewers: [] };
@@ -2071,6 +2263,8 @@ let timelineStart = getMondayOf(new Date()); // first day of visible timeline wi
 let listSortField = 'cadence';
 let listSortAsc = true;
 let timelineDragState = null; // active drag/resize on a timeline bar
+let hideCompletedProjects = new Set(JSON.parse(localStorage.getItem('hideCompletedProjects') || '[]'));
+let timelineExpandedTaskIds = new Set();
 
 const TIMELINE_DAYS = 28; // 4 weeks visible at once
 
@@ -2272,6 +2466,11 @@ function renderTimeline() {
   document.getElementById('timelineRange').textContent =
     `${start.toLocaleDateString(undefined, {month: 'short', day: 'numeric'})} – ${end.toLocaleDateString(undefined, {month: 'short', day: 'numeric', year: 'numeric'})}`;
 
+  const datePicker = document.getElementById('timelineDatePicker');
+  if (datePicker) {
+    datePicker.value = dateToStr(start);
+  }
+
   // Week labels (one per 7-day chunk)
   const weeks = [];
   for (let w = 0; w < TIMELINE_DAYS / 7; w++) {
@@ -2294,11 +2493,24 @@ function renderTimeline() {
 
   // Tasks that overlap the visible range AND match current filters
   const filtered = visibleTasks().filter(t => {
-    if (!t.startDate && !t.endDate) return false;
-    const ts = t.startDate || t.endDate;
-    const te = t.endDate || t.startDate;
-    const startStr = dateToStr(start), endStr = dateToStr(end);
-    return ts <= endStr && te >= startStr;
+    const hasTaskDates = t.startDate || t.endDate;
+    if (hasTaskDates) {
+      const ts = t.startDate || t.endDate;
+      const te = t.endDate || t.startDate;
+      const startStr = dateToStr(start), endStr = dateToStr(end);
+      if (ts <= endStr && te >= startStr) return true;
+    }
+    if (t.subtasks && t.subtasks.length > 0) {
+      const anySubtaskHasDates = t.subtasks.some(s => {
+        if (!s.startDate && !s.endDate) return false;
+        const sts = s.startDate || s.endDate;
+        const ste = s.endDate || s.startDate;
+        const startStr = dateToStr(start), endStr = dateToStr(end);
+        return sts <= endStr && ste >= startStr;
+      });
+      if (anySubtaskHasDates) return true;
+    }
+    return false;
   });
 
   // Group by project (using existing `app` field internally)
@@ -2311,7 +2523,47 @@ function renderTimeline() {
 
   const groupHtml = Object.keys(groups).sort().map(proj => {
     const projTasks = groups[proj].sort((a,b) => (a.startDate || a.endDate || '').localeCompare(b.startDate || b.endDate || ''));
-    const rowsHtml = projTasks.map(t => renderTimelineRow(t, start)).join('');
+    
+    const rowsHtml = projTasks.map(t => {
+      const hasSubtasks = t.subtasks && t.subtasks.length > 0;
+      const isExpanded = timelineExpandedTaskIds.has(t.id);
+      
+      let rows = renderTimelineRowHtml({
+        id: t.id,
+        title: t.title,
+        startDate: t.startDate,
+        endDate: t.endDate,
+        priority: t.priority,
+        status: t.status,
+        archived: t.archived,
+        progress: progressOf(t),
+        isSubtask: false,
+        rangeStart: start,
+        hasSubtasks,
+        isExpanded
+      });
+      
+      if (hasSubtasks && isExpanded) {
+        t.subtasks.forEach((s, idx) => {
+          rows += renderTimelineRowHtml({
+            id: s.id,
+            title: s.title,
+            startDate: s.startDate,
+            endDate: s.endDate,
+            priority: t.priority,
+            status: s.completed ? 'complete' : '',
+            archived: t.archived,
+            progress: s.completed ? 100 : 0,
+            isSubtask: true,
+            parentTaskId: t.id,
+            subtaskIndex: idx,
+            rangeStart: start
+          });
+        });
+      }
+      return rows;
+    }).join('');
+
     return `
       <div class="t-row t-project-row">
         <div class="t-name">${escapeHtml(proj)}</div>
@@ -2345,8 +2597,38 @@ function renderTimeline() {
     </div>
   `;
 
+  // Bind pointerdown for dragging
   grid.querySelectorAll('.t-bar').forEach(bar => {
     bar.addEventListener('pointerdown', e => onBarPointerDown(e, bar));
+  });
+
+  // Bind click for parent task names (expand/collapse or edit)
+  grid.querySelectorAll('.t-name.parent-name').forEach(el => {
+    el.addEventListener('click', (e) => {
+      if (e.target.classList.contains('t-edit-icon')) {
+        openModal(el.dataset.id);
+        return;
+      }
+      const id = el.dataset.id;
+      const task = tasks.find(t => t.id === id);
+      if (task && task.subtasks && task.subtasks.length > 0) {
+        if (timelineExpandedTaskIds.has(id)) {
+          timelineExpandedTaskIds.delete(id);
+        } else {
+          timelineExpandedTaskIds.add(id);
+        }
+        renderTimeline();
+      } else {
+        openModal(id);
+      }
+    });
+  });
+
+  // Bind click for subtask names (open parent modal)
+  grid.querySelectorAll('.t-name.subtask-name').forEach(el => {
+    el.addEventListener('click', () => {
+      openModal(el.dataset.parentId);
+    });
   });
 }
 
@@ -2359,14 +2641,17 @@ function addDays(dateStr, days) {
 
 function onBarPointerDown(e, bar) {
   if (e.button !== 0) return; // primary button only
-  const taskId = bar.dataset.id;
+  const parentId = bar.dataset.parentId;
+  const taskId = bar.dataset.id || parentId;
   const task = tasks.find(t => t.id === taskId);
   if (!task) return;
+
+  const isSubtask = !!parentId;
 
   // Touch / mobile: tap-to-open only, no drag
   const isMobile = window.matchMedia('(max-width: 768px)').matches;
   const isTouch = e.pointerType !== 'mouse';
-  const canDrag = role === 'editor' && !isMobile && !isTouch;
+  const canDrag = role === 'editor' && !isMobile && !isTouch && !isSubtask;
 
   const handle = e.target.dataset && e.target.dataset.handle;
   const mode = !canDrag ? 'click'
@@ -2458,10 +2743,12 @@ async function onTimelinePointerUp(e) {
   }
 
   try {
-    await updateDoc(doc(db, 'tasks', s.taskId), {
+    const startStr = newStart ? displayDate(newStart) : 'None';
+    const endStr = newEnd ? displayDate(newEnd) : 'None';
+    await updateTaskDoc(s.taskId, {
       startDate: newStart,
       endDate: newEnd
-    });
+    }, `Rescheduled timeline to ${startStr} – ${endStr}`);
   } catch (err) {
     toast('Could not update dates: ' + err.message);
     renderTimeline();
@@ -2550,21 +2837,50 @@ function renderList() {
 
   container.innerHTML = sortedProjKeys.map(proj => {
     const projTasks = groups[proj];
-    const rows = projTasks.map(t => renderListItem(t, team)).join('');
+    const isProjectArchived = proj && projTasks.every(t => t.archived);
+    const isHidingCompleted = proj && hideCompletedProjects.has(proj);
+    const visibleProjTasks = isHidingCompleted
+      ? projTasks.filter(t => t.status !== 'complete')
+      : projTasks;
+    const rows = visibleProjTasks.map(t => renderListItem(t, team)).join('');
     const projNameDisplay = proj || '(No project)';
+
+    const completedCount = projTasks.filter(t => t.status === 'complete').length;
+    const hasCompleted = completedCount > 0;
+    const toggleBtn = hasCompleted && proj
+      ? `<button class="ghost lp-toggle-completed" data-project="${escapeHtml(proj)}" style="font-size: 11px; padding: 2px 8px; margin-left: 8px; cursor: pointer; display: inline-flex; align-items: center; height: 22px; border-radius: 4px; border: 1px solid var(--border); background: var(--panel-2); color: var(--muted); gap: 4px;">
+          ${isHidingCompleted
+            ? `<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>Show completed`
+            : `<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>Hide completed`
+          } (${completedCount})
+         </button>`
+      : '';
+
     return `
-      <div class="list-project" data-project-name="${escapeHtml(proj)}">
+      <div class="list-project ${isProjectArchived ? 'archived' : ''}" data-project-name="${escapeHtml(proj)}">
         <div class="list-project-header">
           <div class="lp-name-container">
             ${isEditor && proj
-              ? `<input type="text" class="lp-name-input" value="${escapeHtml(projNameDisplay)}" data-old-name="${escapeHtml(proj)}">`
+              ? `<input type="text" class="lp-name-input" value="${escapeHtml(projNameDisplay)}" data-old-name="${escapeHtml(proj)}" ${isProjectArchived ? 'disabled' : ''}>`
               : `<span class="lp-name-static">${escapeHtml(projNameDisplay)}</span>`
             }
             <span class="lp-count">${projTasks.length} ${projTasks.length === 1 ? 'task' : 'tasks'}</span>
+            ${toggleBtn}
+            ${isProjectArchived ? '<span class="archive-badge" style="font-size: 11px; padding: 2px 6px; background: var(--border); border-radius: 4px; color: var(--muted); margin-left: 8px;">Archived</span>' : ''}
           </div>
           ${isEditor && proj
             ? `<div class="lp-actions">
-                <button class="icon-btn danger" data-project-action="delete" title="Delete project and reassign tasks" style="background:none; border:none; color:var(--muted); font-size:16px; cursor:pointer;">×</button>
+                ${isProjectArchived
+                  ? `<button class="icon-btn" data-project-action="unarchive" title="Unarchive project and tasks">
+                      <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path><polyline points="12 17 12 11 9 14 12 11 15 14"></polyline></svg>
+                     </button>`
+                  : `<button class="icon-btn" data-project-action="archive" title="Archive project and tasks">
+                      <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path><polyline points="12 11 12 17 9 14 12 17 15 14"></polyline></svg>
+                     </button>`
+                }
+                <button class="icon-btn danger" data-project-action="delete" title="Delete project and reassign tasks">
+                  <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                </button>
                </div>`
             : ''
           }
@@ -2606,11 +2922,11 @@ function renderListItem(t, team) {
   
   const updates = Array.isArray(t.updates) ? t.updates : [];
   const updateBadge = updates.length
-    ? `<span class="update-count" title="${updates.length} update${updates.length === 1 ? '' : 's'}">💬 ${updates.length}</span>`
+    ? `<span class="update-count" title="${updates.length} update${updates.length === 1 ? '' : 's'}" style="display:inline-flex; align-items:center;"><svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="margin-right:3px;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>${updates.length}</span>`
     : '';
   const hasDetails = !!(t.details && t.details.trim());
   const detailsBadge = hasDetails
-    ? `<span class="details-indicator" title="Has notes">📝</span>`
+    ? `<span class="details-indicator" title="Has notes" style="display:inline-flex; align-items:center;"><svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color:var(--muted);"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg></span>`
     : '';
 
   const isExpanded = expandedIds.has(t.id);
@@ -2622,7 +2938,7 @@ function renderListItem(t, team) {
   const progressBadge = `<div class="lr-progress-cell" data-action="progress" title="Progress: ${prog}% — click to update">${prog}%</div>`;
 
   return `
-    <div class="list-item ${isExpanded ? 'expanded' : ''} ${t.status === 'complete' ? 'done' : ''}" data-id="${t.id}">
+    <div class="list-item ${isExpanded ? 'expanded' : ''} ${t.status === 'complete' ? 'done' : ''} ${t.archived ? 'archived' : ''}" data-id="${t.id}">
       <div class="list-row">
         <!-- Drag handle -->
         <div class="lr-drag-cell" title="Drag to reorder or move project">
@@ -2703,11 +3019,10 @@ function renderListItem(t, team) {
       const supportEmails = parentAssignees.slice(1);
       const newAssignees = [];
       if (val) newAssignees.push(val);
-      // Filter out the new lead from the support candidates
       const filteredSupport = supportEmails.filter(email => email.toLowerCase() !== val.toLowerCase());
       newAssignees.push(...filteredSupport);
       try {
-        await updateDoc(doc(db, 'tasks', id), { assignees: newAssignees });
+        await updateTaskDoc(id, { assignees: newAssignees }, val ? `Assigned task lead to ${getDisplayShort(val)}` : 'Removed task lead');
       } catch (err) {
         toast('Failed to update lead: ' + err.message);
       }
@@ -2730,7 +3045,7 @@ function renderListItem(t, team) {
       if (lead) newAssignees.push(lead);
       newAssignees.push(...supportEmails);
       try {
-        await updateDoc(doc(db, 'tasks', id), { assignees: newAssignees });
+        await updateTaskDoc(id, { assignees: newAssignees }, `Added support assignee ${getDisplayShort(val)}`);
       } catch (err) {
         toast('Failed to add support assignee: ' + err.message);
       }
@@ -2750,7 +3065,7 @@ function renderListItem(t, team) {
       if (lead) newAssignees.push(lead);
       newAssignees.push(...supportEmails);
       try {
-        await updateDoc(doc(db, 'tasks', id), { assignees: newAssignees });
+        await updateTaskDoc(id, { assignees: newAssignees }, `Removed support assignee ${getDisplayShort(email)}`);
       } catch (err) {
         toast('Failed to remove support assignee: ' + err.message);
       }
@@ -2763,7 +3078,7 @@ function renderListItem(t, team) {
     expProjectInput.addEventListener('change', async () => {
       const val = expProjectInput.value.trim();
       try {
-        await updateDoc(doc(db, 'tasks', id), { app: val });
+        await updateTaskDoc(id, { app: val }, val ? `Moved task to project '${val}'` : 'Removed project from task');
       } catch (err) {
         toast('Failed to update project: ' + err.message);
       }
@@ -2783,7 +3098,7 @@ function renderListItem(t, team) {
     expandedNotes.addEventListener('change', async () => {
       const val = expandedNotes.value;
       try {
-        await updateDoc(doc(db, 'tasks', id), { details: val });
+        await updateTaskDoc(id, { details: val }, 'Updated task notes');
       } catch (err) {
         toast('Failed to update notes: ' + err.message);
       }
@@ -2795,7 +3110,7 @@ function renderListItem(t, team) {
     expandedLink.addEventListener('change', async () => {
       const val = expandedLink.value.trim();
       try {
-        await updateDoc(doc(db, 'tasks', id), { link: val });
+        await updateTaskDoc(id, { link: val }, 'Updated links/attachments');
       } catch (err) {
         toast('Failed to update link: ' + err.message);
       }
@@ -2812,10 +3127,11 @@ function renderListItem(t, team) {
         const completed = subtasksCopy.filter(s => s.completed).length;
         const progress = Math.round((completed / subtasksCopy.length) * 100);
         try {
-          await updateDoc(doc(db, 'tasks', id), { 
+          const subtask = subtasksCopy[index];
+          await updateTaskDoc(id, { 
             subtasks: subtasksCopy,
             progress: progress
-          });
+          }, subtask.completed ? `Completed subtask '${subtask.title}'` : `Uncompleted subtask '${subtask.title}'`);
         } catch (err) {
           toast('Failed to update subtask: ' + err.message);
         }
@@ -2829,9 +3145,10 @@ function renderListItem(t, team) {
       const index = parseInt(input.dataset.index);
       const subtasksCopy = JSON.parse(JSON.stringify(task.subtasks || []));
       if (subtasksCopy[index]) {
+        const oldTitle = (task.subtasks[index] || {}).title || '';
         subtasksCopy[index].title = input.value.trim();
         try {
-          await updateDoc(doc(db, 'tasks', id), { subtasks: subtasksCopy });
+          await updateTaskDoc(id, { subtasks: subtasksCopy }, `Renamed subtask '${oldTitle}' to '${subtasksCopy[index].title}'`);
         } catch (err) {
           toast('Failed to update subtask text: ' + err.message);
         }
@@ -2854,7 +3171,8 @@ function renderListItem(t, team) {
       if (subtasksCopy[index]) {
         subtasksCopy[index].assignee = sel.value;
         try {
-          await updateDoc(doc(db, 'tasks', id), { subtasks: subtasksCopy });
+          const subtask = subtasksCopy[index];
+          await updateTaskDoc(id, { subtasks: subtasksCopy }, subtask.assignee ? `Assigned subtask '${subtask.title}' to ${getDisplayShort(subtask.assignee)}` : `Unassigned subtask '${subtask.title}'`);
         } catch (err) {
           toast('Failed to update subtask assignee: ' + err.message);
         }
@@ -2870,7 +3188,8 @@ function renderListItem(t, team) {
       if (subtasksCopy[index]) {
         subtasksCopy[index].notes = input.value.trim();
         try {
-          await updateDoc(doc(db, 'tasks', id), { subtasks: subtasksCopy });
+          const subtask = subtasksCopy[index];
+          await updateTaskDoc(id, { subtasks: subtasksCopy }, `Updated notes for subtask '${subtask.title}'`);
         } catch (err) {
           toast('Failed to update subtask notes: ' + err.message);
         }
@@ -2890,17 +3209,30 @@ function renderListItem(t, team) {
     btn.addEventListener('click', async () => {
       const index = parseInt(btn.dataset.index);
       const subtasksCopy = JSON.parse(JSON.stringify(task.subtasks || []));
+      const subtask = (task.subtasks || [])[index];
       subtasksCopy.splice(index, 1);
       const progress = subtasksCopy.length > 0
         ? Math.round((subtasksCopy.filter(s => s.completed).length / subtasksCopy.length) * 100)
         : task.progress || 0;
       try {
-        await updateDoc(doc(db, 'tasks', id), { 
+        await updateTaskDoc(id, { 
           subtasks: subtasksCopy,
           progress: progress
-        });
+        }, `Deleted subtask '${subtask ? subtask.title : ''}'`);
       } catch (err) {
         toast('Failed to delete subtask: ' + err.message);
+      }
+    });
+  });
+
+  // 10b. Inline Subtasks date range picker popover
+  item.querySelectorAll('.subtask-date-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const index = parseInt(btn.dataset.index);
+      const subtask = (task.subtasks || [])[index];
+      if (subtask) {
+        openDateRangePopover(task.id, index, btn, subtask.startDate, subtask.endDate);
       }
     });
   });
@@ -2917,14 +3249,16 @@ function renderListItem(t, team) {
         id: Math.random().toString(36).substring(2, 9),
         title: val,
         completed: false,
-        notes: ''
+        notes: '',
+        startDate: '',
+        endDate: ''
       });
       const progress = Math.round((subtasksCopy.filter(s => s.completed).length / subtasksCopy.length) * 100);
       try {
-        await updateDoc(doc(db, 'tasks', id), { 
+        await updateTaskDoc(id, { 
           subtasks: subtasksCopy,
           progress: progress
-        });
+        }, `Added subtask '${val}'`);
       } catch (err) {
         toast('Failed to add subtask: ' + err.message);
       }
@@ -2982,6 +3316,36 @@ function bindListEvents() {
     if (delProjBtn) {
       delProjBtn.addEventListener('click', () => {
         deleteProject(projName);
+      });
+    }
+
+    // Archive project
+    const archiveProjBtn = projEl.querySelector('[data-project-action="archive"]');
+    if (archiveProjBtn) {
+      archiveProjBtn.addEventListener('click', () => {
+        archiveProject(projName, true);
+      });
+    }
+
+    // Unarchive project
+    const unarchiveProjBtn = projEl.querySelector('[data-project-action="unarchive"]');
+    if (unarchiveProjBtn) {
+      unarchiveProjBtn.addEventListener('click', () => {
+        archiveProject(projName, false);
+      });
+    }
+
+    // Toggle completed tasks visibility
+    const toggleCompletedBtn = projEl.querySelector('.lp-toggle-completed');
+    if (toggleCompletedBtn) {
+      toggleCompletedBtn.addEventListener('click', () => {
+        if (hideCompletedProjects.has(projName)) {
+          hideCompletedProjects.delete(projName);
+        } else {
+          hideCompletedProjects.add(projName);
+        }
+        localStorage.setItem('hideCompletedProjects', JSON.stringify([...hideCompletedProjects]));
+        renderList();
       });
     }
 
@@ -3081,7 +3445,7 @@ function bindListEvents() {
           return toast('Deliverable is required');
         }
         try {
-          await updateDoc(doc(db, 'tasks', id), { title: val });
+          await updateTaskDoc(id, { title: val }, `Renamed task to '${val}'`);
         } catch (err) {
           toast('Failed to update deliverable: ' + err.message);
         }
@@ -3101,7 +3465,7 @@ function bindListEvents() {
       prioritySelect.addEventListener('change', async () => {
         const val = prioritySelect.value;
         try {
-          await updateDoc(doc(db, 'tasks', id), { priority: val });
+          await updateTaskDoc(id, { priority: val }, `Changed importance to '${val}'`);
         } catch (err) {
           toast('Failed to update priority: ' + err.message);
         }
@@ -3115,7 +3479,7 @@ function bindListEvents() {
         const val = statusSelect.value;
         const progress = val === 'complete' ? 100 : (task.progress === 100 ? 0 : (task.progress || 0));
         try {
-          await updateDoc(doc(db, 'tasks', id), { status: val, progress });
+          await updateTaskDoc(id, { status: val, progress }, `Changed status to '${val}'`);
         } catch (err) {
           toast('Failed to update status: ' + err.message);
         }
@@ -3131,11 +3495,10 @@ function bindListEvents() {
         const supportEmails = parentAssignees.slice(1);
         const newAssignees = [];
         if (val) newAssignees.push(val);
-        // Filter out the new lead from the support candidates
         const filteredSupport = supportEmails.filter(email => email.toLowerCase() !== val.toLowerCase());
         newAssignees.push(...filteredSupport);
         try {
-          await updateDoc(doc(db, 'tasks', id), { assignees: newAssignees });
+          await updateTaskDoc(id, { assignees: newAssignees }, val ? `Assigned task lead to ${getDisplayShort(val)}` : 'Removed task lead');
         } catch (err) {
           toast('Failed to update lead: ' + err.message);
         }
@@ -3148,6 +3511,16 @@ function bindListEvents() {
       supportLabel.addEventListener('click', (e) => {
         e.stopPropagation();
         openSupportPopover(id, supportLabel);
+      });
+    }
+
+    // Start / End click-to-edit (opens globalDateRangePopover for parent task)
+    const cadenceLabel = item.querySelector('[data-action="edit-cadence"]');
+    if (cadenceLabel) {
+      cadenceLabel.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (role !== 'editor') return;
+        openDateRangePopover(id, null, cadenceLabel, task.startDate, task.endDate);
       });
     }
 
@@ -3265,43 +3638,128 @@ async function deleteProject(projectName) {
   });
 }
 
-function renderTimelineRow(t, rangeStart) {
-  const startDateStr = t.startDate || t.endDate;
-  const endDateStr = t.endDate || t.startDate;
+async function archiveProject(projectName, archive = true) {
+  const projectTasks = tasks.filter(t => t.app === projectName);
+  if (projectTasks.length === 0) return;
+
+  const batch = writeBatch(db);
+  projectTasks.forEach(t => {
+    if (archive) {
+      batch.update(doc(db, 'tasks', t.id), { archived: true });
+    } else {
+      batch.update(doc(db, 'tasks', t.id), { archived: deleteField() });
+    }
+  });
+
+  try {
+    await batch.commit();
+    toast(`${archive ? 'Archived' : 'Unarchived'} project "${projectName}" and its ${projectTasks.length} task(s).`);
+  } catch (e) {
+    toast(`Operation failed: ` + e.message);
+  }
+}
+
+function renderTimelineRowHtml({
+  id,
+  title,
+  startDate,
+  endDate,
+  priority = 'medium',
+  status = '',
+  archived = false,
+  progress = 0,
+  isSubtask = false,
+  parentTaskId = null,
+  subtaskIndex = null,
+  rangeStart,
+  hasSubtasks = false,
+  isExpanded = false
+}) {
+  const startDateStr = startDate || endDate;
+  const endDateStr = endDate || startDate;
   const ts = dateStrToDate(startDateStr);
   const te = dateStrToDate(endDateStr);
-  if (!ts || !te) return '';
 
-  const dayMs = 86400000;
-  const rangeEnd = new Date(rangeStart); rangeEnd.setDate(rangeEnd.getDate() + TIMELINE_DAYS - 1);
-  const visStart = ts < rangeStart ? rangeStart : ts;
-  const visEnd = te > rangeEnd ? rangeEnd : te;
-  const startDay = Math.floor((visStart - rangeStart) / dayMs);
-  const endDay = Math.floor((visEnd - rangeStart) / dayMs);
-  const leftPct = (startDay / TIMELINE_DAYS) * 100;
-  const widthPct = ((endDay - startDay + 1) / TIMELINE_DAYS) * 100;
+  let barHtml = '';
+  let dateText = '';
 
-  const p = t.priority || 'medium';
-  const dateText = formatDateChip(t.startDate, t.endDate) || '';
-  const prog = progressOf(t);
-  const progressOverlay = prog > 0
-    ? `<span class="t-bar-progress" style="width: ${prog}%"></span>`
-    : '';
-  return `
-    <div class="t-row t-task-row">
-      <div class="t-name" title="${escapeHtml(t.title)}">${escapeHtml(t.title)}</div>
-      <div class="t-track">
-        <div class="t-bar priority-${p} ${t.status === 'complete' ? 'done' : ''}"
+  if (ts && te) {
+    const dayMs = 86400000;
+    const rangeEnd = new Date(rangeStart);
+    rangeEnd.setDate(rangeEnd.getDate() + TIMELINE_DAYS - 1);
+    
+    const visStart = ts < rangeStart ? rangeStart : ts;
+    const visEnd = te > rangeEnd ? rangeEnd : te;
+    
+    if (visStart <= visEnd) {
+      const startDay = Math.floor((visStart - rangeStart) / dayMs);
+      const endDay = Math.floor((visEnd - rangeStart) / dayMs);
+      
+      const leftPct = (startDay / TIMELINE_DAYS) * 100;
+      const widthPct = ((endDay - startDay + 1) / TIMELINE_DAYS) * 100;
+
+      dateText = formatDateChip(startDate, endDate) || '';
+      const progressOverlay = progress > 0
+        ? `<span class="t-bar-progress" style="width: ${progress}%"></span>`
+        : '';
+
+      const dragDataAttrs = isSubtask
+        ? `data-parent-id="${parentTaskId}" data-subtask-index="${subtaskIndex}"`
+        : `data-id="${id}"`;
+
+      const isEditor = role === 'editor';
+      const handlesHtml = (!isSubtask && isEditor)
+        ? `<span class="t-bar-handle left" data-handle="left"></span>
+           <span class="t-bar-label">${escapeHtml(title)}</span>
+           <span class="t-bar-handle right" data-handle="right"></span>`
+        : `<span class="t-bar-label">${escapeHtml(title)}</span>`;
+
+      barHtml = `
+        <div class="t-bar priority-${priority} ${status === 'complete' ? 'done' : ''} ${archived ? 'archived' : ''} ${isSubtask ? 'subtask-bar' : ''}"
              style="left: ${leftPct}%; width: ${widthPct}%;"
-             data-id="${t.id}"
-             title="${escapeHtml(t.title)} — ${escapeHtml(dateText)} (${prog}% complete)">
+             ${dragDataAttrs}
+             title="${escapeHtml(title)} — ${escapeHtml(dateText)} (${progress}% complete)">
           ${progressOverlay}
-          <span class="t-bar-handle left" data-handle="left"></span>
-          <span class="t-bar-label">${escapeHtml(t.title)}</span>
-          <span class="t-bar-handle right" data-handle="right"></span>
+          ${handlesHtml}
         </div>
+      `;
+    }
+  }
+
+  // Generate left-column label with expand/collapse and edit controls
+  let labelHtml = '';
+  if (isSubtask) {
+    labelHtml = `
+      <div class="t-name subtask-name" data-parent-id="${parentTaskId}" style="padding-left: 28px; font-size: 12px; color: var(--muted); cursor: pointer;" title="Click to edit parent task">
+        <span style="margin-right: 4px; color: var(--border);">└─</span> ${escapeHtml(title)}
       </div>
-    </div>`;
+    `;
+  } else {
+    const toggleIcon = hasSubtasks
+      ? `<span class="t-expand-toggle" style="margin-right: 6px; font-size: 9px; cursor: pointer; display: inline-block; width: 10px;">${isExpanded ? '▼' : '▶'}</span>`
+      : '<span style="margin-right: 6px; display: inline-block; width: 10px;"></span>';
+      
+    const editBtn = hasSubtasks
+      ? `<span class="t-edit-icon" data-id="${id}" style="margin-left: 6px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; opacity: 0.5; transition: opacity 0.15s;" title="Edit task"><svg viewBox="0 0 24 24" width="10" height="10" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg></span>`
+      : '';
+
+    labelHtml = `
+      <div class="t-name parent-name" data-id="${id}" style="display: flex; align-items: center; cursor: pointer;">
+        ${toggleIcon}
+        <span class="t-title-text" style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(title)}</span>
+        ${editBtn}
+      </div>
+    `;
+  }
+
+  return `
+    <div class="t-row t-task-row ${isSubtask ? 't-subtask-row' : ''}">
+      ${labelHtml}
+      <div class="t-track">
+        ${barHtml}
+      </div>
+    </div>
+  `;
 }
 
 // --- Live subscriptions ---
@@ -3343,15 +3801,19 @@ function subscribe() {
 
 // --- Rendering ---
 function getApps() {
-  return [...new Set(tasks.map(t => t.app).filter(Boolean))].sort();
+  const showArchived = document.getElementById('showArchivedFilter')?.checked || false;
+  const filteredTasks = showArchived ? tasks : tasks.filter(t => !t.archived);
+  return [...new Set(filteredTasks.map(t => t.app).filter(Boolean))].sort();
 }
 
 function visibleTasks() {
   const appF = document.getElementById('appFilter').value;
   const assF = document.getElementById('assigneeFilter').value;
   const searchVal = (document.getElementById('taskSearch')?.value || '').trim().toLowerCase();
+  const showArchived = document.getElementById('showArchivedFilter')?.checked || false;
   const me = (currentUser?.email || '').toLowerCase();
   return tasks.filter(t => {
+    if (!showArchived && t.archived) return false;
     if (appF !== '__all__' && t.app !== appF) return false;
     
     const parentAssignees = (t.assignees || []).map(e => String(e).toLowerCase());
@@ -3434,30 +3896,28 @@ function renderTask(t) {
   const supportEmails = parentAssignees.slice(1);
   
   const leadLabel = leadEmail 
-    ? `<span class="task-lead-badge" title="Lead: ${escapeHtml(leadEmail)}">👤 Lead: ${escapeHtml(getDisplayShort(leadEmail))}</span>` 
+    ? `<span class="task-lead-badge" title="Lead: ${escapeHtml(leadEmail)}" style="display:inline-flex; align-items:center; gap:3px;"><svg viewBox="0 0 24 24" width="10" height="10" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg> Lead: ${escapeHtml(getDisplayShort(leadEmail))}</span>` 
     : '';
   const supportLabel = supportEmails.length > 0
-    ? `<span class="task-support-badge" title="Support: ${escapeHtml(supportEmails.join(', '))}">👥 Support: ${escapeHtml(supportEmails.map(getDisplayShort).join(', '))}</span>` 
+    ? `<span class="task-support-badge" title="Support: ${escapeHtml(supportEmails.join(', '))}" style="display:inline-flex; align-items:center; gap:3px;"><svg viewBox="0 0 24 24" width="10" height="10" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg> Support: ${escapeHtml(supportEmails.map(getDisplayShort).join(', '))}</span>` 
     : '';
 
   const updates = Array.isArray(t.updates) ? t.updates : [];
   const updateBadge = updates.length
-    ? `<span class="update-count" title="${updates.length} update${updates.length === 1 ? '' : 's'}">💬 ${updates.length}</span>`
+    ? `<span class="update-count" title="${updates.length} update${updates.length === 1 ? '' : 's'}" style="display:inline-flex; align-items:center; gap:3px;"><svg viewBox="0 0 24 24" width="10" height="10" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg> ${updates.length}</span>`
     : '';
   const dateText = formatDateChip(t.startDate, t.endDate);
   const dateBadge = dateText
-    ? `<span class="date-chip ${dateChipClass(t.endDate, t.status)}" title="${escapeHtml((t.startDate || '') + (t.startDate && t.endDate ? ' to ' : '') + (t.endDate || ''))}">📅 ${escapeHtml(dateText)}</span>`
+    ? `<span class="date-chip ${dateChipClass(t.endDate, t.status)}" title="${escapeHtml((t.startDate || '') + (t.startDate && t.endDate ? ' to ' : '') + (t.endDate || ''))}" style="display:inline-flex; align-items:center; gap:3px;"><svg viewBox="0 0 24 24" width="10" height="10" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg> ${escapeHtml(dateText)}</span>`
     : '';
   const hasDetails = !!(t.details && t.details.trim());
   const detailsBadge = hasDetails
-    ? `<span class="details-indicator" title="Has details — expand to read">📝</span>`
+    ? `<span class="details-indicator" title="Has details — expand to read" style="display:inline-flex; align-items:center;"><svg viewBox="0 0 24 24" width="10" height="10" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color:var(--muted);"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg></span>`
     : '';
-  const isExpanded = expandedIds.has(t.id);
-  const expanded = isExpanded ? renderExpanded(t, updates) : '';
   const prog = progressOf(t);
   const progressBar = `<div class="task-progress" data-action="progress" title="${prog}% complete — click to update"><div class="task-progress-fill" style="width: ${prog}%"></div></div>`;
   return `
-    <li class="task priority-${p} ${t.status === 'complete' ? 'done' : ''} ${isExpanded ? 'expanded' : ''}" draggable="true" data-id="${t.id}">
+    <li class="task priority-${p} ${t.status === 'complete' ? 'done' : ''} ${t.archived ? 'archived' : ''}" draggable="true" data-id="${t.id}">
       <div class="task-title">${escapeHtml(t.title)}</div>
       <div class="task-meta">
         <span class="task-tags">
@@ -3470,15 +3930,13 @@ function renderTask(t) {
           ${updateBadge}
         </span>
         <span class="task-actions">
-          <button class="icon-btn expand-btn" data-action="expand" title="${isExpanded ? 'Collapse' : 'Expand'}">▾</button>
           <span class="hover-only editor-only">
-            <button class="icon-btn" data-action="edit" title="Edit">✎</button>
+            <button class="icon-btn" data-action="edit" title="Edit" style="display:inline-flex; align-items:center; justify-content:center;"><svg viewBox="0 0 24 24" width="10" height="10" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg></button>
             <button class="icon-btn danger" data-action="delete" title="Delete">×</button>
           </span>
         </span>
       </div>
       ${progressBar}
-      ${expanded}
     </li>`;
 }
 
@@ -3536,12 +3994,12 @@ function renderExpanded(t, updates) {
             <div style="display: flex; flex-direction: column; gap: 12px;">
               <div class="expanded-field">
                 <span style="font-size:11px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:0.3px; display:block; margin-bottom:4px;">Project</span>
-                <input type="text" class="expanded-project-input" data-task-id="${t.id}" value="${escapeHtml(t.app || '')}" placeholder="e.g. Custom Apparel, Ink Theory" autocomplete="off" list="appList" ${disabledAttr} style="width:100%; font-size:13px; padding:6px 8px; border-radius:4px; border:1px solid var(--border); background:var(--panel); color:var(--text);">
+                <input type="text" class="expanded-project-input" data-task-id="${t.id}" value="${escapeHtml(t.app || '')}" placeholder="e.g. Custom Apparel, Ink Theory" autocomplete="off" list="appList" ${disabledAttr} style="width:100%; font-size:13px; padding:6px 8px; border-radius:4px; border:1px solid var(--border); background:var(--panel-2); color:var(--text);">
               </div>
               <div style="display:flex; gap:16px;">
                 <div style="flex:1; display:flex; flex-direction:column; gap:4px;">
                   <span style="font-size:11px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:0.3px;">Lead</span>
-                  <select class="expanded-lead-select" style="width:100%; font-size:13px; padding:6px 8px; border-radius:4px; border:1px solid var(--border); background:var(--panel); color:var(--text);" ${disabledAttr}>
+                  <select class="expanded-lead-select" style="width:100%; font-size:13px; padding:6px 8px; border-radius:4px; border:1px solid var(--border); background:var(--panel-2); color:var(--text);" ${disabledAttr}>
                     <option value="">Unassigned</option>
                     ${team.map(email => `<option value="${escapeHtml(email)}" ${lead === email ? 'selected' : ''}>${escapeHtml(getDisplayShort(email))}</option>`).join('')}
                   </select>
@@ -3579,14 +4037,21 @@ function renderExpanded(t, updates) {
                   <div class="subtask-row" style="display:flex; align-items:center; gap:8px;">
                     <input type="checkbox" class="subtask-checkbox-inline" data-task-id="${t.id}" data-index="${idx}" ${s.completed ? 'checked' : ''} ${disabledAttr}>
                     <input type="text" class="subtask-text-input-inline ${s.completed ? 'completed' : ''}" data-task-id="${t.id}" data-index="${idx}" value="${escapeHtml(s.title)}" placeholder="Subtask name..." ${disabledAttr} style="flex:1; border:none; background:transparent; border-bottom:1px solid transparent; padding:2px; font-size:12px; color: ${s.completed ? 'var(--muted)' : 'var(--text)'};">
-                    <select class="subtask-assignee-select-inline" data-task-id="${t.id}" data-index="${idx}" ${disabledAttr} style="font-size:11px; padding:2px 4px; border-radius:4px; border:1px solid var(--border); background:var(--panel); color:var(--text); max-width:110px;">
+                    <select class="subtask-assignee-select-inline" data-task-id="${t.id}" data-index="${idx}" ${disabledAttr} style="font-size:11px; padding:2px 4px; border-radius:4px; border:1px solid var(--border); background:var(--panel-2); color:var(--text); max-width:110px;">
                       <option value="">Assign...</option>
                       ${team.map(email => `<option value="${escapeHtml(email)}" ${s.assignee === email ? 'selected' : ''}>${escapeHtml(getDisplayShort(email))}</option>`).join('')}
                     </select>
                     ${isEditor ? `<button type="button" class="delete-subtask-inline" data-task-id="${t.id}" data-index="${idx}" style="background:none; border:none; font-size:14px; color:var(--muted); cursor:pointer;">×</button>` : ''}
                   </div>
-                  <div style="padding-left: 24px; display:flex;">
+                  <div style="padding-left: 24px; display:flex; align-items:center; gap:8px;">
                     <input type="text" class="subtask-notes-input-inline" data-task-id="${t.id}" data-index="${idx}" placeholder="Add notes to this subtask..." value="${escapeHtml(s.notes || '')}" ${disabledAttr} style="flex:1; font-size:11px; padding:2px 4px; border:none; background:transparent; border-bottom:1px dashed var(--border); color:var(--text-muted);">
+                    <button type="button" class="subtask-date-btn" data-task-id="${t.id}" data-index="${idx}" ${disabledAttr} style="font-size: 10px; padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border); background: var(--panel-2); color: var(--muted); cursor: pointer; display: inline-flex; align-items: center; gap: 4px; height: 22px;">
+                      <svg viewBox="0 0 24 24" width="10" height="10" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                      ${s.startDate || s.endDate
+                        ? `${s.startDate ? displayDate(s.startDate) : '—'} – ${s.endDate ? displayDate(s.endDate) : '—'}`
+                        : 'Set dates'
+                      }
+                    </button>
                   </div>
                 </div>
               `).join('')}
@@ -3594,7 +4059,7 @@ function renderExpanded(t, updates) {
             </div>
             ${isEditor ? `
               <div style="display:flex; gap:8px;">
-                <input type="text" class="new-subtask-input-inline" data-task-id="${t.id}" placeholder="+ Add subtask" style="flex:1; font-size:12px; padding:6px 8px; border-radius:4px; border:1px solid var(--border); background:var(--panel); color:var(--text);" autocomplete="off">
+                <input type="text" class="new-subtask-input-inline" data-task-id="${t.id}" placeholder="+ Add subtask" style="flex:1; font-size:12px; padding:6px 8px; border-radius:4px; border:1px solid var(--border); background:var(--panel-2); color:var(--text);" autocomplete="off">
                 <button type="button" class="update-send add-subtask-btn-inline" data-task-id="${t.id}" style="padding:6px 12px; font-size:12px;">Add</button>
               </div>
             ` : ''}
@@ -3613,13 +4078,13 @@ function renderExpanded(t, updates) {
             <div style="display: flex; flex-direction: column; gap: 12px;">
               <div class="expanded-field">
                 <span style="font-size:11px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:0.3px; display:block; margin-bottom:4px;">Notes / Dependencies</span>
-                <textarea class="expanded-textarea" data-field="details" placeholder="Add notes, context, or requirements..." ${disabledAttr} style="width:100%; min-height:80px; font-size:13px; padding:8px; border-radius:4px; border:1px solid var(--border); background:var(--panel); color:var(--text); resize:vertical;">${escapeHtml(t.details || '')}</textarea>
+                <textarea class="expanded-textarea" data-field="details" placeholder="Add notes, context, or requirements..." ${disabledAttr} style="width:100%; min-height:80px; font-size:13px; padding:8px; border-radius:4px; border:1px solid var(--border); background:var(--panel-2); color:var(--text); resize:vertical;">${escapeHtml(t.details || '')}</textarea>
               </div>
               <div class="expanded-field">
                 <span style="font-size:11px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:0.3px; display:block; margin-bottom:4px;">Resource Link</span>
                 <div class="expanded-input-row" style="display:flex; gap:8px;">
-                  <input type="text" class="expanded-input url-input" data-field="link" value="${escapeHtml(t.link || '')}" placeholder="Paste URL (e.g. Figma, Doc)..." ${disabledAttr} style="flex:1; font-size:13px; padding:6px 8px; border-radius:4px; border:1px solid var(--border); background:var(--panel); color:var(--text);">
-                  ${t.link ? `<a class="cell-link-btn" href="${escapeHtml(t.link)}" target="_blank" title="Open Link" style="align-self:center; font-size:11px; font-weight:600; color:var(--accent); text-transform:uppercase; text-decoration:none; padding:4px 8px; border:1px solid var(--border); border-radius:4px; background:var(--panel);">Open</a>` : ''}
+                  <input type="text" class="expanded-input url-input" data-field="link" value="${escapeHtml(t.link || '')}" placeholder="Paste URL (e.g. Figma, Doc)..." ${disabledAttr} style="flex:1; font-size:13px; padding:6px 8px; border-radius:4px; border:1px solid var(--border); background:var(--panel-2); color:var(--text);">
+                  ${t.link ? `<a class="cell-link-btn" href="${escapeHtml(t.link)}" target="_blank" title="Open Link" style="align-self:center; font-size:11px; font-weight:600; color:var(--accent); text-transform:uppercase; text-decoration:none; padding:4px 8px; border:1px solid var(--border); border-radius:4px; background:var(--panel-2);">Open</a>` : ''}
                 </div>
               </div>
             </div>
@@ -3632,8 +4097,27 @@ function renderExpanded(t, updates) {
             </div>
             <div class="update-list" style="max-height: 180px; overflow-y: auto; margin-bottom: 12px; display:flex; flex-direction:column; gap:8px;">${listHtml}</div>
             <div class="update-input-row" style="display:flex; gap:8px;">
-              <input class="update-input" data-task-id="${t.id}" placeholder="Type message to post..." autocomplete="off" style="flex:1; font-size:13px; padding:6px 8px; border-radius:4px; border:1px solid var(--border); background:var(--panel); color:var(--text);">
+              <input class="update-input" data-task-id="${t.id}" placeholder="Type message to post..." autocomplete="off" style="flex:1; font-size:13px; padding:6px 8px; border-radius:4px; border:1px solid var(--border); background:var(--panel-2); color:var(--text);">
               <button class="update-send" data-action="send" data-task-id="${t.id}" style="padding:6px 12px; font-size:12px;">Post</button>
+            </div>
+          </div>
+          
+          <!-- Card 5: Activity Log -->
+          <div class="expanded-card">
+            <div class="expanded-card-header" style="margin-bottom: 8px;">
+              <span class="expanded-card-title">Activity Log</span>
+            </div>
+            <div class="expanded-activity-log" style="display:flex; flex-direction:column; gap:8px; max-height:150px; overflow-y:auto; font-size:11px;">
+              ${(t.activityLog || []).slice().reverse().map(log => `
+                <div class="activity-log-item" style="border-bottom: 1px solid var(--border); padding-bottom: 4px;">
+                  <div style="display:flex; justify-content:space-between; color:var(--muted); margin-bottom: 2px;">
+                    <span style="font-weight:600;">${escapeHtml(getDisplayShort(log.user))}</span>
+                    <span>${escapeHtml(timeAgo(log.timestamp))}</span>
+                  </div>
+                  <div style="color:var(--text);">${escapeHtml(log.action)}</div>
+                </div>
+              `).join('')}
+              ${(t.activityLog || []).length === 0 ? `<div style="font-style:italic; color:var(--muted);">No activity recorded yet.</div>` : ''}
             </div>
           </div>
           
@@ -3686,28 +4170,22 @@ function bindTaskEvents() {
     el.addEventListener('drop', onTaskDrop);
     attachDetailsHover(el, id);
 
-    bindSharedExpandedEvents(el, task, id);
-
     el.querySelectorAll('[data-action]').forEach(btn => {
       btn.addEventListener('click', e => {
         e.stopPropagation();
         const action = btn.dataset.action;
         if (action === 'edit') openModal(id);
         if (action === 'delete') deleteTaskById(id);
-        if (action === 'expand') toggleExpand(id);
-        if (action === 'send') submitUpdate(btn.dataset.taskId);
-        if (action === 'delete-update') deleteUpdate(btn.dataset.taskId, Number(btn.dataset.ts));
         if (action === 'progress') openProgressPopover(id, btn);
       });
     });
-    // Click anywhere on card to expand/collapse (except interactive fields or expanded panel)
+    // Click anywhere on card to open the edit details modal (except interactive controls)
     el.addEventListener('click', e => {
       const target = e.target;
-      if (target.closest('button, input, select, textarea, a, .task-expanded, [data-action]')) {
+      if (target.closest('button, input, select, textarea, a, [data-action], .task-progress')) {
         return;
       }
-      const id = el.dataset.id;
-      toggleExpand(id);
+      openModal(id);
     });
     // Enter-to-post in update input
     const input = el.querySelector('.update-input');
@@ -3942,14 +4420,21 @@ function renderModalSubtasks() {
       <div class="subtask-row" style="display:flex; align-items:center; gap:8px;">
         <input type="checkbox" class="subtask-checkbox" ${s.completed ? 'checked' : ''} data-index="${index}">
         <input type="text" class="subtask-text-input ${s.completed ? 'completed' : ''}" value="${escapeHtml(s.title)}" data-index="${index}" placeholder="Subtask name..." style="flex:1;">
-        <select class="subtask-assignee-select" data-index="${index}" style="font-size:11px; padding:2px 4px; border-radius:4px; border:1px solid var(--border); background:var(--panel); color:var(--text); max-width:110px;">
+        <select class="subtask-assignee-select" data-index="${index}" style="font-size:11px; padding:2px 4px; border-radius:4px; border:1px solid var(--border); background:var(--panel-2); color:var(--text); max-width:110px;">
           <option value="">Assign...</option>
           ${team.map(email => `<option value="${escapeHtml(email)}" ${s.assignee === email ? 'selected' : ''}>${escapeHtml(getDisplayShort(email))}</option>`).join('')}
         </select>
         <button type="button" class="delete-subtask-btn" data-index="${index}" title="Delete subtask">×</button>
       </div>
-      <div style="padding-left: 24px; display:flex;">
+      <div style="padding-left: 24px; display:flex; align-items:center; gap:8px;">
         <input type="text" class="subtask-notes-input-modal" data-index="${index}" placeholder="Add notes to this subtask..." value="${escapeHtml(s.notes || '')}" style="flex:1; font-size:11px; padding:2px 4px; border:none; background:transparent; border-bottom:1px dashed var(--border); color:var(--text-muted);">
+        <button type="button" class="subtask-date-btn" data-index="${index}" style="font-size: 10px; padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border); background: var(--panel-2); color: var(--muted); cursor: pointer; display: inline-flex; align-items: center; gap: 4px; height: 22px;">
+          <svg viewBox="0 0 24 24" width="10" height="10" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+          ${s.startDate || s.endDate
+            ? `${s.startDate ? displayDate(s.startDate) : '—'} – ${s.endDate ? displayDate(s.endDate) : '—'}`
+            : 'Set dates'
+          }
+        </button>
       </div>
     </div>
   `).join('');
@@ -4012,6 +4497,18 @@ function renderModalSubtasks() {
     });
   });
 
+  // Bind subtask date popover click in modal
+  container.querySelectorAll('.subtask-date-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const index = parseInt(btn.dataset.index);
+      const subtask = modalSubtasks[index];
+      if (subtask) {
+        openDateRangePopover(null, index, btn, subtask.startDate, subtask.endDate);
+      }
+    });
+  });
+
   // Bind delete subtask buttons
   container.querySelectorAll('.delete-subtask-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -4034,7 +4531,9 @@ function initSubtaskModalHandlers() {
       id: Math.random().toString(36).substring(2, 9),
       title: val,
       completed: false,
-      notes: ''
+      notes: '',
+      startDate: '',
+      endDate: ''
     });
     input.value = '';
     renderModalSubtasks();
@@ -4083,6 +4582,27 @@ function openModal(id) {
   modalSubtasks = t && Array.isArray(t.subtasks) ? JSON.parse(JSON.stringify(t.subtasks)) : [];
   renderModalSubtasks();
 
+  // Populate and render Activity Log inside the edit modal
+  const logField = document.getElementById('modalActivityLogField');
+  const logContainer = document.getElementById('modalActivityLogContainer');
+  if (logField && logContainer) {
+    if (t && Array.isArray(t.activityLog) && t.activityLog.length > 0) {
+      logField.style.display = 'block';
+      logContainer.innerHTML = t.activityLog.slice().reverse().map(log => `
+        <div class="activity-log-item" style="border-bottom: 1px solid var(--border); padding-bottom: 4px;">
+          <div style="display:flex; justify-content:space-between; color:var(--muted); margin-bottom: 2px;">
+            <span style="font-weight:600;">${escapeHtml(getDisplayShort(log.user))}</span>
+            <span>${escapeHtml(timeAgo(log.timestamp))}</span>
+          </div>
+          <div style="color:var(--text);">${escapeHtml(log.action)}</div>
+        </div>
+      `).join('');
+    } else {
+      logField.style.display = 'none';
+      logContainer.innerHTML = '';
+    }
+  }
+
   document.getElementById('modal').classList.add('open');
   setTimeout(() => document.getElementById('taskApp').focus(), 50);
 }
@@ -4120,6 +4640,25 @@ async function saveTask() {
   try {
     if (editingId) {
       const t = tasks.find(x => x.id === editingId);
+      const logParts = [];
+      if (t) {
+        if (t.title !== title) logParts.push(`deliverable to '${title}'`);
+        if ((t.app || '') !== appName) logParts.push(`project to '${appName || 'None'}'`);
+        if (t.status !== status) logParts.push(`status to '${status}'`);
+        if ((t.priority || 'medium') !== priority) logParts.push(`importance to '${priority}'`);
+        if ((t.startDate || '') !== startDate) logParts.push(`start date to '${startDate || 'None'}'`);
+        if ((t.endDate || '') !== endDate) logParts.push(`end date to '${endDate || 'None'}'`);
+        const oldAss = (t.assignees || []).join(',');
+        const newAss = assignees.join(',');
+        if (oldAss !== newAss) logParts.push(`assignees`);
+        const oldSubs = (t.subtasks || []).map(s => `${s.title}:${s.completed}`).join(',');
+        const newSubs = modalSubtasks.map(s => `${s.title}:${s.completed}`).join(',');
+        if (oldSubs !== newSubs) logParts.push(`subtasks`);
+      }
+      const logActionText = logParts.length > 0
+        ? `Updated ${logParts.join(', ')}`
+        : 'Saved task details';
+
       const statusChanged = t && t.status !== status;
       const update = { title, details, app: appName, priority, assignees, startDate, endDate, progress, subtasks: modalSubtasks };
       if (statusChanged) {
@@ -4127,14 +4666,19 @@ async function saveTask() {
         const colCount = tasks.filter(x => x.status === status && x.id !== editingId).length;
         update.order = colCount;
       }
-      await updateDoc(doc(db, 'tasks', editingId), update);
+      await updateTaskDoc(editingId, update, logActionText);
     } else {
       const colCount = tasks.filter(x => x.status === status).length;
       await addDoc(collection(db, 'tasks'), {
         title, details, app: appName, status, priority, assignees, startDate, endDate, progress, order: colCount,
         subtasks: modalSubtasks,
         createdAt: serverTimestamp(),
-        createdBy: currentUser.email
+        createdBy: currentUser.email,
+        activityLog: [{
+          user: currentUser?.email || 'Unknown User',
+          timestamp: new Date().toISOString(),
+          action: 'Created task'
+        }]
       });
     }
     closeModal();
@@ -4362,6 +4906,7 @@ document.addEventListener('keydown', e => {
 document.getElementById('taskSearch').addEventListener('input', () => maybeRender());
 document.getElementById('appFilter').addEventListener('change', () => maybeRender());
 document.getElementById('assigneeFilter').addEventListener('change', () => maybeRender());
+document.getElementById('showArchivedFilter').addEventListener('change', () => maybeRender());
 document.getElementById('drClearBtn').addEventListener('click', () => {
   modalStartDate = '';
   modalEndDate = '';
@@ -4495,7 +5040,7 @@ function closeProgressPopover() {
 async function saveProgress(taskId, raw) {
   const value = Math.max(0, Math.min(100, Math.round(Number(raw) / 5) * 5));
   try {
-    await updateDoc(doc(db, 'tasks', taskId), { progress: value });
+    await updateTaskDoc(taskId, { progress: value }, `Updated progress to ${value}%`);
   } catch (e) {
     toast('Could not update progress: ' + e.message);
   }
@@ -4586,6 +5131,199 @@ function closeSupportPopover() {
   supportPopoverTaskId = null;
 }
 
+// --- Reusable Date Range Picker Popover Logic ---
+let drPopoverTaskId = null;
+let drPopoverSubtaskIndex = null; // null if editing parent task
+let drPopoverStartDate = '';
+let drPopoverEndDate = '';
+let drPopoverMonth = new Date();
+let drPopoverMode = 'first';
+
+function openDateRangePopover(taskId, subtaskIndex, anchorEl, initialStartDate, initialEndDate) {
+  drPopoverTaskId = taskId;
+  drPopoverSubtaskIndex = subtaskIndex;
+  drPopoverStartDate = initialStartDate || '';
+  drPopoverEndDate = initialEndDate || '';
+  drPopoverMode = 'first';
+  
+  const titleEl = document.getElementById('drPopoverTitle');
+  if (titleEl) {
+    titleEl.textContent = subtaskIndex !== null ? 'Subtask Dates' : 'Task Dates';
+  }
+  
+  if (drPopoverStartDate) {
+    const [y, m] = drPopoverStartDate.split('-').map(Number);
+    drPopoverMonth = new Date(y, m - 1, 1);
+  } else {
+    drPopoverMonth = new Date();
+  }
+
+  renderDateRangePopoverCalendar();
+
+  const popover = document.getElementById('dateRangePopover');
+  popover.classList.add('open');
+
+  const rect = anchorEl.getBoundingClientRect();
+  const popoverRect = popover.getBoundingClientRect();
+  const winWidth = window.innerWidth;
+  const winHeight = window.innerHeight;
+
+  let left = rect.left + window.scrollX;
+  let top = rect.bottom + window.scrollY + 4;
+
+  if (left + popoverRect.width > winWidth - 10) {
+    left = winWidth - popoverRect.width - 10;
+  }
+  if (top + popoverRect.height > winHeight - 10) {
+    top = rect.top + window.scrollY - popoverRect.height - 4;
+  }
+
+  popover.style.left = left + 'px';
+  popover.style.top = top + 'px';
+}
+
+function closeDateRangePopover() {
+  const popover = document.getElementById('dateRangePopover');
+  if (popover) {
+    popover.classList.remove('open');
+  }
+  drPopoverTaskId = null;
+  drPopoverSubtaskIndex = null;
+}
+
+function renderDateRangePopoverCalendar() {
+  const cal = document.getElementById('drPopoverCalendar');
+  if (!cal) return;
+
+  const monthStart = new Date(drPopoverMonth.getFullYear(), drPopoverMonth.getMonth(), 1);
+  const monthLabel = monthStart.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+
+  const startOfGrid = new Date(monthStart);
+  startOfGrid.setDate(1 - monthStart.getDay());
+
+  const today = todayLocal();
+  const dows = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+  const cells = [];
+  
+  for (let i = 0; i < 42; i++) {
+    const d = new Date(startOfGrid);
+    d.setDate(d.getDate() + i);
+    const dStr = dateToStr(d);
+    const otherMonth = d.getMonth() !== monthStart.getMonth();
+    const isToday = isSameDay(d, today);
+    const inRange = drPopoverStartDate && drPopoverEndDate
+      && dStr >= drPopoverStartDate && dStr <= drPopoverEndDate;
+    const isStart = !!drPopoverStartDate && dStr === drPopoverStartDate;
+    const isEnd = !!drPopoverEndDate && dStr === drPopoverEndDate;
+    
+    const classes = ['dr-cell'];
+    if (otherMonth) classes.push('other-month');
+    if (isToday) classes.push('today');
+    if (inRange) classes.push('in-range');
+    if (isStart) classes.push('range-start');
+    if (isEnd) classes.push('range-end');
+    
+    cells.push(`<div class="${classes.join(' ')}" data-date="${dStr}">${d.getDate()}</div>`);
+  }
+
+  cal.innerHTML = `
+    <div class="dr-nav">
+      <button type="button" id="drPopoverPrev" title="Previous month">‹</button>
+      <div class="dr-month-label">${escapeHtml(monthLabel)}</div>
+      <button type="button" id="drPopoverNext" title="Next month">›</button>
+    </div>
+    <div class="dr-grid">
+      ${dows.map(d => `<div class="dr-dow">${d}</div>`).join('')}
+      ${cells.join('')}
+    </div>
+    <div class="dr-hint">${drPopoverMode === 'first'
+      ? 'Click a date to start the range'
+      : 'Click another date to set the end (or same day for single-day)'}</div>
+  `;
+
+  const startEl = document.getElementById('drPopoverStartDisplay');
+  const endEl = document.getElementById('drPopoverEndDisplay');
+  startEl.textContent = drPopoverStartDate ? displayDate(drPopoverStartDate) : '— pick date —';
+  startEl.classList.toggle('empty', !drPopoverStartDate);
+  endEl.textContent = drPopoverEndDate ? displayDate(drPopoverEndDate) : '— pick date —';
+  endEl.classList.toggle('empty', !drPopoverEndDate);
+
+  document.getElementById('drPopoverPrev').addEventListener('click', () => {
+    drPopoverMonth.setMonth(drPopoverMonth.getMonth() - 1);
+    renderDateRangePopoverCalendar();
+  });
+  document.getElementById('drPopoverNext').addEventListener('click', () => {
+    drPopoverMonth.setMonth(drPopoverMonth.getMonth() + 1);
+    renderDateRangePopoverCalendar();
+  });
+  cal.querySelectorAll('.dr-cell').forEach(cell => {
+    cell.addEventListener('click', () => onPickPopoverDate(cell.dataset.date));
+  });
+}
+
+async function onPickPopoverDate(dateStr) {
+  if (drPopoverMode === 'first') {
+    drPopoverStartDate = dateStr;
+    drPopoverEndDate = '';
+    drPopoverMode = 'second';
+    renderDateRangePopoverCalendar();
+  } else {
+    if (dateStr < drPopoverStartDate) {
+      drPopoverEndDate = drPopoverStartDate;
+      drPopoverStartDate = dateStr;
+    } else {
+      drPopoverEndDate = dateStr;
+    }
+    drPopoverMode = 'first';
+    renderDateRangePopoverCalendar();
+    await savePopoverDates(drPopoverTaskId, drPopoverSubtaskIndex, drPopoverStartDate, drPopoverEndDate);
+  }
+}
+
+async function clearPopoverDates() {
+  drPopoverStartDate = '';
+  drPopoverEndDate = '';
+  drPopoverMode = 'first';
+  renderDateRangePopoverCalendar();
+  await savePopoverDates(drPopoverTaskId, drPopoverSubtaskIndex, '', '');
+}
+
+async function savePopoverDates(taskId, subtaskIndex, startD, endD) {
+  if (!taskId && subtaskIndex !== null) {
+    if (modalSubtasks[subtaskIndex]) {
+      modalSubtasks[subtaskIndex].startDate = startD;
+      modalSubtasks[subtaskIndex].endDate = endD;
+      renderModalSubtasks();
+    }
+    return;
+  }
+  
+  if (taskId && subtaskIndex !== null) {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+    const subtasksCopy = JSON.parse(JSON.stringify(task.subtasks || []));
+    if (subtasksCopy[subtaskIndex]) {
+      subtasksCopy[subtaskIndex].startDate = startD;
+      subtasksCopy[subtaskIndex].endDate = endD;
+      try {
+        await updateTaskDoc(taskId, { subtasks: subtasksCopy }, `Updated dates for subtask '${subtasksCopy[subtaskIndex].title}' to ${startD || 'None'} – ${endD || 'None'}`);
+      } catch (err) {
+        toast('Failed to update subtask dates: ' + err.message);
+      }
+    }
+    return;
+  }
+
+  if (taskId && subtaskIndex === null) {
+    try {
+      await updateTaskDoc(taskId, { startDate: startD, endDate: endD }, `Changed dates to ${startD ? displayDate(startD) : 'None'} – ${endD ? displayDate(endD) : 'None'}`);
+    } catch (err) {
+      toast('Failed to update task dates: ' + err.message);
+    }
+    return;
+  }
+}
+
 async function toggleSupportAssignee(taskId, email, add) {
   const task = tasks.find(t => t.id === taskId);
   if (!task) return;
@@ -4606,13 +5344,15 @@ async function toggleSupportAssignee(taskId, email, add) {
   newAssignees.push(...supportEmails);
 
   try {
-    await updateDoc(doc(db, 'tasks', taskId), { assignees: newAssignees });
+    await updateTaskDoc(taskId, { assignees: newAssignees }, add ? `Added support assignee ${getDisplayShort(email)}` : `Removed support assignee ${getDisplayShort(email)}`);
   } catch (err) {
     toast('Failed to update support assignees: ' + err.message);
   }
 }
 
 // Close popovers when clicking outside them
+document.getElementById('drPopoverClearBtn').addEventListener('click', clearPopoverDates);
+
 document.addEventListener('mousedown', (e) => {
   const pp = document.getElementById('progressPopover');
   if (pp && pp.classList.contains('open') && !pp.contains(e.target) && !e.target.closest('[data-action="progress"]')) {
@@ -4622,12 +5362,17 @@ document.addEventListener('mousedown', (e) => {
   if (sp && sp.classList.contains('open') && !sp.contains(e.target) && !e.target.closest('[data-action="edit-support"]')) {
     closeSupportPopover();
   }
+  const sdp = document.getElementById('dateRangePopover');
+  if (sdp && sdp.classList.contains('open') && !sdp.contains(e.target) && !e.target.closest('.subtask-date-btn') && !e.target.closest('[data-action="edit-cadence"]')) {
+    closeDateRangePopover();
+  }
 });
 
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     closeProgressPopover();
     closeSupportPopover();
+    closeDateRangePopover();
   }
 });
 
@@ -4647,6 +5392,35 @@ document.getElementById('tlToday').addEventListener('click', () => {
   timelineStart = getMondayOf(new Date());
   renderTimeline();
 });
+document.getElementById('timelineDatePicker').addEventListener('change', (e) => {
+  const val = e.target.value;
+  if (val) {
+    const parts = val.split('-');
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1;
+    const day = parseInt(parts[2], 10);
+    const chosenDate = new Date(year, month, day);
+    timelineStart = getMondayOf(chosenDate);
+    renderTimeline();
+  }
+});
+let scrollAccumulator = 0;
+document.querySelector('.t-scroll').addEventListener('wheel', (e) => {
+  if (e.shiftKey) {
+    const scrollAmount = e.deltaX !== 0 ? e.deltaX : e.deltaY;
+    if (scrollAmount !== 0) {
+      e.preventDefault();
+      scrollAccumulator += scrollAmount;
+      const threshold = 100; // pixels of scroll delta per 1 day shift
+      if (Math.abs(scrollAccumulator) >= threshold) {
+        const daysToShift = Math.trunc(scrollAccumulator / threshold);
+        timelineStart.setDate(timelineStart.getDate() + daysToShift);
+        scrollAccumulator = scrollAccumulator % threshold;
+        renderTimeline();
+      }
+    }
+  }
+}, { passive: false });
 </script>
 </body>
 </html>
