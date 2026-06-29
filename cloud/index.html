@@ -1958,8 +1958,7 @@
       <div class="modal-col-left">
         <div class="field">
           <label for="taskApp">Project</label>
-          <input type="text" id="taskApp" placeholder="e.g. Custom Apparel, Ink Theory, Clockwork" autocomplete="off" list="appList">
-          <datalist id="appList"></datalist>
+          <select id="taskApp" style="cursor: pointer;"></select>
         </div>
         <div class="field">
           <label for="taskTitle">Deliverable</label>
@@ -3475,18 +3474,25 @@ function renderListItem(t, team) {
   const expProjectInput = item.querySelector('.expanded-project-input');
   if (expProjectInput) {
     expProjectInput.addEventListener('change', async () => {
-      const val = expProjectInput.value.trim();
+      let val = expProjectInput.value;
+      if (val === '__new__') {
+        const name = prompt('Enter new project name:');
+        if (name && name.trim()) {
+          val = name.trim();
+          const opt = document.createElement('option');
+          opt.value = val;
+          opt.textContent = val;
+          expProjectInput.insertBefore(opt, expProjectInput.lastChild);
+          expProjectInput.value = val;
+        } else {
+          expProjectInput.value = task.app || '';
+          return;
+        }
+      }
       try {
         await updateTaskDoc(id, { app: val }, val ? `Moved task to project '${val}'` : 'Removed project from task');
       } catch (err) {
         toast('Failed to update project: ' + err.message);
-      }
-    });
-    expProjectInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') expProjectInput.blur();
-      if (e.key === 'Escape') {
-        expProjectInput.value = task.app || '';
-        expProjectInput.blur();
       }
     });
   }
@@ -4503,6 +4509,18 @@ function renderExpanded(t, updates) {
   const isEditor = role === 'admin' || (role === 'editor' && canEditTask(t));
   const disabledAttr = isEditor ? '' : 'disabled';
 
+  const apps = getApps();
+  const currentProj = t.app || '';
+  const allProjOptions = [...apps];
+  if (currentProj && !allProjOptions.includes(currentProj)) {
+    allProjOptions.push(currentProj);
+  }
+  allProjOptions.sort();
+
+  const projectSelectOptionsHtml = '<option value="">(No project)</option>' +
+    allProjOptions.map(a => `<option value="${escapeHtml(a)}" ${currentProj === a ? 'selected' : ''}>${escapeHtml(a)}</option>`).join('') +
+    (isEditor ? '<option value="__new__">+ New Project...</option>' : '');
+
   return `
     <div class="task-expanded" data-task-id="${t.id}">
       <div class="expanded-split">
@@ -4518,7 +4536,9 @@ function renderExpanded(t, updates) {
             <div style="display: flex; flex-direction: column; gap: 12px;">
               <div class="expanded-field">
                 <span style="font-size:11px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:0.3px; display:block; margin-bottom:4px;">Project</span>
-                <input type="text" class="expanded-project-input" data-task-id="${t.id}" value="${escapeHtml(t.app || '')}" placeholder="e.g. Custom Apparel, Ink Theory" autocomplete="off" list="appList" ${disabledAttr} style="width:100%; font-size:13px; padding:6px 8px; border-radius:4px; border:1px solid var(--border); background:var(--panel-2); color:var(--text);">
+                <select class="expanded-project-input" data-task-id="${t.id}" ${disabledAttr} style="width:100%; font-size:13px; padding:6px 8px; border-radius:4px; border:1px solid var(--border); background:var(--panel-2); color:var(--text); cursor: pointer;">
+                  ${projectSelectOptionsHtml}
+                </select>
               </div>
               <div style="display:flex; gap:16px;">
                 <div style="flex:1; display:flex; flex-direction:column; gap:4px;">
@@ -5195,7 +5215,22 @@ function openModal(id) {
   document.getElementById('modalTitle').textContent = t ? (isEditable ? 'Edit task' : 'View task') : 'New task';
   document.getElementById('taskTitle').value = t ? t.title : '';
   document.getElementById('taskDetails').value = t ? (t.details || '') : '';
-  document.getElementById('taskApp').value = t ? (t.app || '') : '';
+  const taskAppSelect = document.getElementById('taskApp');
+  if (taskAppSelect) {
+    const apps = getApps();
+    const currentProj = t ? (t.app || '') : '';
+    const allProjOptions = [...apps];
+    if (currentProj && !allProjOptions.includes(currentProj)) {
+      allProjOptions.push(currentProj);
+    }
+    allProjOptions.sort();
+    
+    taskAppSelect.innerHTML = '<option value="">(No project)</option>' +
+      allProjOptions.map(a => `<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`).join('') +
+      (isEditable ? '<option value="__new__">+ New Project...</option>' : '');
+    taskAppSelect.value = currentProj;
+    taskAppSelect.dataset.oldVal = currentProj;
+  }
   document.getElementById('taskStatus').value = t ? t.status : 'backlog';
   document.getElementById('taskPriority').value = t ? (t.priority || 'medium') : 'medium';
 
@@ -5575,6 +5610,25 @@ document.getElementById('addBtn').addEventListener('click', async () => {
 document.getElementById('saveBtn').addEventListener('click', saveTask);
 initSubtaskModalHandlers();
 initAssignToParentHandlers();
+document.getElementById('taskApp').addEventListener('change', (e) => {
+  const select = e.target;
+  if (select.value === '__new__') {
+    const name = prompt('Enter new project name:');
+    if (name && name.trim()) {
+      const trimmed = name.trim();
+      const opt = document.createElement('option');
+      opt.value = trimmed;
+      opt.textContent = trimmed;
+      select.insertBefore(opt, select.lastChild);
+      select.value = trimmed;
+      select.dataset.oldVal = trimmed;
+    } else {
+      select.value = select.dataset.oldVal || '';
+    }
+  } else {
+    select.dataset.oldVal = select.value;
+  }
+});
 document.getElementById('cancelBtn').addEventListener('click', closeModal);
 document.getElementById('modal').addEventListener('click', e => { if (e.target.id === 'modal') closeModal(); });
 document.getElementById('teamModal').addEventListener('click', e => {
