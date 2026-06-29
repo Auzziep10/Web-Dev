@@ -4319,8 +4319,6 @@ function subscribe() {
       // Map legacy status strings to the new 5-status schema
       if (t.status === 'todo') {
         t.status = 'backlog';
-      } else if (t.status === 'active') {
-        t.status = 'ready';
       } else if (t.status === 'progress') {
         t.status = 'active';
       } else if (t.status === 'done') {
