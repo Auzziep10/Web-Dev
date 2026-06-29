@@ -2028,9 +2028,14 @@
           <div class="daterange-cal" id="drCalendar"></div>
         </div>
         <div class="field">
-          <label>Assignees</label>
-          <div class="assignee-picker" id="assigneePicker"></div>
-          <small class="hint">Click a teammate to toggle. Multiple people can own the same task.</small>
+          <label for="taskLead">Lead</label>
+          <select id="taskLead" style="width: 100%; cursor: pointer;">
+            <option value="">Unassigned</option>
+          </select>
+        </div>
+        <div class="field">
+          <label style="margin-bottom: 6px; display: block;">Support</label>
+          <div id="taskSupportContainer" style="display:flex; flex-wrap:wrap; gap:6px; align-items:center; min-height: 32px;"></div>
         </div>
         <div class="field" id="assignToDeliverableField" style="margin-top: 16px; display: none;">
           <button type="button" id="assignToDeliverableBtn" class="ghost" style="width: 100%; text-align: center; border: 1px dashed var(--border); padding: 8px; border-radius: 6px; font-weight: 500; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer;">
@@ -4808,29 +4813,57 @@ function escapeHtml(s) {
   })[c]);
 }
 
-function renderAssigneePicker(selectedEmails) {
-  const picker = document.getElementById('assigneePicker');
-  const team = getTeam();
-  const sel = new Set((selectedEmails || []).map(e => String(e).toLowerCase()));
-  if (team.length === 0) {
-    picker.innerHTML = '<span class="assignee-pill empty">No team members yet — add them via the Team button.</span>';
-    return;
-  }
-  picker.innerHTML = team.map(email => {
-    const isSel = sel.has(email);
-    return `<span class="assignee-pill ${isSel ? 'selected' : ''}" data-email="${escapeHtml(email)}">
-      <span class="avatar" style="background:${colorFor(email)}">${escapeHtml(getDisplayInitials(email))}</span>
-      <span>${escapeHtml(getDisplayShort(email))}</span>
-    </span>`;
-  }).join('');
-  picker.querySelectorAll('.assignee-pill').forEach(el => {
-    el.addEventListener('click', () => el.classList.toggle('selected'));
-  });
-}
+let modalSupportEmails = [];
 
-function readAssigneePicker() {
-  return [...document.querySelectorAll('#assigneePicker .assignee-pill.selected')]
-    .map(el => el.dataset.email.toLowerCase());
+function renderModalSupport(emails, isEditable) {
+  modalSupportEmails = [...emails];
+  const container = document.getElementById('taskSupportContainer');
+  if (!container) return;
+
+  const team = getTeam();
+  const leadSelect = document.getElementById('taskLead');
+  const currentLead = leadSelect ? leadSelect.value : '';
+
+  const remainingCandidates = team.filter(email =>
+    email.toLowerCase() !== currentLead.toLowerCase() &&
+    !modalSupportEmails.some(se => se.toLowerCase() === email.toLowerCase())
+  );
+
+  const pillsHtml = modalSupportEmails.map(email => `
+    <span class="support-pill" style="display:inline-flex; align-items:center; gap:4px; font-size:12px; font-weight:500; background:var(--border); border-radius:12px; padding:4px 10px;">
+      ${escapeHtml(getDisplayShort(email))}
+      ${isEditable ? `<button type="button" class="remove-support-btn" data-email="${escapeHtml(email)}" style="border:none; background:transparent; color:var(--muted); font-size:14px; cursor:pointer; padding:0; line-height:1;">×</button>` : ''}
+    </span>
+  `).join('');
+
+  const addDropdownHtml = (isEditable && remainingCandidates.length > 0) ? `
+    <select class="add-support-select" style="font-size:12px; padding:2px 8px; border-radius:4px; border:1px solid var(--border); background:var(--panel-2); color:var(--text); cursor:pointer; max-width: 140px;">
+      <option value="">+ Add Support</option>
+      ${remainingCandidates.map(email => `<option value="${escapeHtml(email)}">${escapeHtml(getDisplayShort(email))}</option>`).join('')}
+    </select>
+  ` : '';
+
+  container.innerHTML = pillsHtml + addDropdownHtml;
+
+  container.querySelectorAll('.remove-support-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const emailToRemove = btn.dataset.email;
+      const updated = modalSupportEmails.filter(x => x.toLowerCase() !== emailToRemove.toLowerCase());
+      renderModalSupport(updated, isEditable);
+    });
+  });
+
+  const addSelect = container.querySelector('.add-support-select');
+  if (addSelect) {
+    addSelect.addEventListener('change', () => {
+      const emailToAdd = addSelect.value;
+      if (emailToAdd) {
+        modalSupportEmails.push(emailToAdd);
+        renderModalSupport(modalSupportEmails, isEditable);
+      }
+    });
+  }
 }
 
 function bindTaskEvents() {
@@ -5382,7 +5415,20 @@ function openModal(id) {
   if (cal) cal.style.display = isEditable ? 'block' : 'none';
 
   renderCalendar();
-  renderAssigneePicker(t ? (t.assignees || []) : [], isEditable);
+  const parentAssignees = t ? (Array.isArray(t.assignees) ? t.assignees : []) : [];
+  const leadEmail = parentAssignees[0] || '';
+  const supportEmails = parentAssignees.slice(1);
+
+  const leadSelect = document.getElementById('taskLead');
+  if (leadSelect) {
+    const team = getTeam();
+    leadSelect.innerHTML = '<option value="">Unassigned</option>' +
+      team.map(email => `<option value="${escapeHtml(email)}">${escapeHtml(getDisplayShort(email))}</option>`).join('');
+    leadSelect.value = leadEmail;
+    leadSelect.disabled = !isEditable;
+  }
+  
+  renderModalSupport(supportEmails, isEditable);
   
   // Show convert-to-subtask section only when editing an existing task with edit permission
   const assignToField = document.getElementById('assignToDeliverableField');
@@ -5431,7 +5477,8 @@ async function saveTask() {
   const priority = document.getElementById('taskPriority').value;
   const startDate = modalStartDate || '';
   const endDate = modalEndDate || '';
-  const assignees = readAssigneePicker();
+  const leadVal = document.getElementById('taskLead').value;
+  const assignees = leadVal ? [leadVal, ...modalSupportEmails] : [...modalSupportEmails];
   if (role === 'editor' && !editingId) {
     const myEmail = (currentUser?.email || '').toLowerCase();
     if (!assignees.map(e => e.toLowerCase()).includes(myEmail)) {
@@ -5738,6 +5785,13 @@ document.getElementById('taskApp').addEventListener('change', (e) => {
   } else {
     select.dataset.oldVal = select.value;
   }
+});
+document.getElementById('taskLead').addEventListener('change', (e) => {
+  const newLead = e.target.value;
+  const updatedSupport = modalSupportEmails.filter(x => x.toLowerCase() !== newLead.toLowerCase());
+  const t = editingId ? tasks.find(x => x.id === editingId) : null;
+  const isEditable = !t || canEditTask(t);
+  renderModalSupport(updatedSupport, isEditable);
 });
 document.getElementById('cancelBtn').addEventListener('click', closeModal);
 document.getElementById('modal').addEventListener('click', e => { if (e.target.id === 'modal') closeModal(); });
