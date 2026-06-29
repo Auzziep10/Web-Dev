@@ -4020,7 +4020,7 @@ function bindListEvents() {
     if (cadenceLabel) {
       cadenceLabel.addEventListener('click', (e) => {
         e.stopPropagation();
-        if (role !== 'editor') return;
+        if (!isEditor) return;
         openDateRangePopover(id, null, cadenceLabel, task.startDate, task.endDate);
       });
     }
@@ -5730,9 +5730,10 @@ document.querySelectorAll('#progressPopover .pp-presets button').forEach(btn => 
 let supportPopoverTaskId = null;
 
 function openSupportPopover(taskId, anchorEl) {
-  if (role !== 'editor') return;
   const task = tasks.find(t => t.id === taskId);
   if (!task) return;
+  const isEditor = role === 'admin' || (role === 'editor' && canEditTask(task));
+  if (!isEditor) return;
   supportPopoverTaskId = taskId;
 
   const popover = document.getElementById('supportPopover');
