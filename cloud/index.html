@@ -4500,6 +4500,13 @@ function subscribe() {
       } else if (t.status === 'done') {
         t.status = (t.progress === 100) ? 'complete' : 'review';
       }
+      if (Array.isArray(t.subtasks)) {
+        t.subtasks.forEach((s, idx) => {
+          if (!s.id) {
+            s.id = 'sub-' + idx + '-' + (s.title || '').replace(/[^a-z0-9]/gi, '').toLowerCase();
+          }
+        });
+      }
       return t;
     });
     maybeRender();
