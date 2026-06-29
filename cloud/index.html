@@ -836,6 +836,120 @@
     padding: 40px 20px; text-align: center;
     color: var(--muted); font-style: italic; font-size: 13px;
   }
+  /* Tackboard view */
+  .tackboard-view {
+    display: flex;
+    gap: 20px;
+    overflow-x: auto;
+    flex: 1;
+    padding: 20px 24px;
+    align-items: flex-start;
+    min-height: 0;
+  }
+  .tb-column {
+    flex: 0 0 300px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 120px);
+    box-shadow: var(--shadow);
+  }
+  .tb-col-header {
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text);
+  }
+  .tb-col-header .avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: #fff;
+    text-transform: uppercase;
+  }
+  .tb-col-header .count {
+    margin-left: auto;
+    font-size: 11px;
+    background: var(--panel-2);
+    color: var(--muted);
+    padding: 2px 8px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+  }
+  .tb-col-body {
+    padding: 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1;
+  }
+  .tb-task-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .tb-task-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, transform 0.15s;
+  }
+  .tb-task-item:hover {
+    background: var(--panel);
+    border-color: var(--primary);
+    transform: translateY(-1px);
+  }
+  .tb-bullet {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .tb-bullet.high { background-color: var(--danger); }
+  .tb-bullet.medium { background-color: var(--warning); }
+  .tb-bullet.low { background-color: var(--success); }
+  .tb-task-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    flex-grow: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .tb-task-project {
+    font-size: 10px;
+    background: rgba(124, 156, 255, 0.15);
+    color: var(--primary);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 500;
+    max-width: 80px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
   /* List view (Spreadsheet style) */
   /* List view (Grouped Asana style) */
   .list-view {
@@ -1718,6 +1832,13 @@
       </svg>
       <span class="vt-label">Timeline</span>
     </button>
+    <button class="view-toggle" data-view="tackboard" aria-label="Tackboard view">
+      <svg class="vt-icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="transform: scale(0.9); margin-top: 1px;">
+        <path d="M12 2a5 5 0 0 0-5 5v3L3 14v2h18v-2l-4-4V7a5 5 0 0 0-5-5z"/>
+        <line x1="12" y1="16" x2="12" y2="22"/>
+      </svg>
+      <span class="vt-label">Tackboard</span>
+    </button>
   </div>
 
   <div class="timeline-nav" id="timelineNav" style="display:none;">
@@ -1792,6 +1913,7 @@
 </section>
 
 <section class="list-view" id="listView" style="display:none;"></section>
+<section class="tackboard-view" id="tackboardView" style="display:none;"></section>
 
 <!-- Task modal -->
 <div class="modal-backdrop" id="modal">
@@ -2000,9 +2122,10 @@ const PRIORITY_LABEL = { critical: 'Critical', high: 'High', medium: 'Medium', l
 const AVATAR_PALETTE = ['#e05a5a', '#e89a3d', '#d4a017', '#5b8def', '#7c9cff', '#2faa6b', '#34a0a4', '#9b59b6', '#c77dff'];
 
 function getTeam() {
+  const admins = (access.admins || []).map(e => String(e).toLowerCase());
   const editors = (access.editors || []).map(e => String(e).toLowerCase());
   const viewers = (access.viewers || []).map(e => String(e).toLowerCase());
-  return [...new Set([...editors, ...viewers])].sort();
+  return [...new Set([...admins, ...editors, ...viewers])].sort();
 }
 function emailShort(email) { return String(email || '').split('@')[0]; }
 function getDisplayName(email) {
@@ -2458,6 +2581,7 @@ function maybeRender() {
   if (!isUIBusy()) {
     if (currentView === 'timeline') renderTimeline();
     else if (currentView === 'list') renderList();
+    else if (currentView === 'tackboard') renderTackboard();
     else render();
     return;
   }
@@ -2470,12 +2594,14 @@ function setView(view) {
   document.querySelector('main').style.display = view === 'board' ? '' : 'none';
   document.getElementById('timelineView').style.display = view === 'timeline' ? 'flex' : 'none';
   document.getElementById('listView').style.display = view === 'list' ? 'block' : 'none';
+  document.getElementById('tackboardView').style.display = view === 'tackboard' ? 'flex' : 'none';
   document.getElementById('timelineNav').style.display = view === 'timeline' ? 'inline-flex' : 'none';
   document.querySelectorAll('.view-toggle').forEach(b => {
     b.classList.toggle('active', b.dataset.view === view);
   });
   if (view === 'timeline') renderTimeline();
   else if (view === 'list') renderList();
+  else if (view === 'tackboard') renderTackboard();
   else render();
 }
 
@@ -2774,6 +2900,102 @@ async function onTimelinePointerUp(e) {
     toast('Could not update dates: ' + err.message);
     renderTimeline();
   }
+}
+
+function renderTackboard() {
+  const container = document.getElementById('tackboardView');
+  if (!container) return;
+
+  const team = getTeam();
+  const vTasks = visibleTasks();
+  const activeTasks = vTasks.filter(t => t.status !== 'complete' && !t.archived);
+
+  // Group active tasks by person (including both parent and subtask assignees)
+  const membersWithTasks = team.map(email => {
+    const emailLower = email.toLowerCase();
+    const tasksForMember = activeTasks.filter(t => {
+      const parentAssignees = (t.assignees || []).map(e => String(e).toLowerCase());
+      const subtaskAssignees = (t.subtasks || [])
+        .map(s => String(s.assignee || '').toLowerCase())
+        .filter(Boolean);
+      const allAssignees = [...new Set([...parentAssignees, ...subtaskAssignees])];
+      return allAssignees.includes(emailLower);
+    });
+    return { email, tasks: tasksForMember };
+  });
+
+  // Group unassigned active tasks
+  const unassignedTasks = activeTasks.filter(t => {
+    const parentAssignees = (t.assignees || []).map(e => String(e).toLowerCase());
+    const subtaskAssignees = (t.subtasks || [])
+      .map(s => String(s.assignee || '').toLowerCase())
+      .filter(Boolean);
+    return parentAssignees.length === 0 && subtaskAssignees.length === 0;
+  });
+
+  let html = '';
+
+  // Render team member columns
+  membersWithTasks.forEach(member => {
+    const displayName = getDisplayName(member.email);
+    
+    const taskItemsHtml = member.tasks.length === 0
+      ? `<div style="font-size: 12px; color: var(--muted); font-style: italic; text-align: center; padding: 20px 0;">No active tasks</div>`
+      : `<ul class="tb-task-list">` + member.tasks.map(t => `
+          <li class="tb-task-item" data-id="${t.id}" title="${escapeHtml(t.title || 'Untitled')}">
+            <span class="tb-bullet ${t.priority || 'medium'}"></span>
+            <span class="tb-task-title">${escapeHtml(t.title || 'Untitled')}</span>
+            ${t.app ? `<span class="tb-task-project">${escapeHtml(t.app)}</span>` : ''}
+          </li>
+        `).join('') + `</ul>`;
+
+    html += `
+      <div class="tb-column">
+        <div class="tb-col-header">
+          ${avatarHtml(member.email)}
+          <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;">${escapeHtml(displayName)}</span>
+          <span class="count">${member.tasks.length}</span>
+        </div>
+        <div class="tb-col-body">
+          ${taskItemsHtml}
+        </div>
+      </div>
+    `;
+  });
+
+  // Render unassigned column if there are unassigned active tasks
+  if (unassignedTasks.length > 0) {
+    const taskItemsHtml = `<ul class="tb-task-list">` + unassignedTasks.map(t => `
+        <li class="tb-task-item" data-id="${t.id}" title="${escapeHtml(t.title || 'Untitled')}">
+          <span class="tb-bullet ${t.priority || 'medium'}"></span>
+          <span class="tb-task-title">${escapeHtml(t.title || 'Untitled')}</span>
+          ${t.app ? `<span class="tb-task-project">${escapeHtml(t.app)}</span>` : ''}
+        </li>
+      `).join('') + `</ul>`;
+
+    html += `
+      <div class="tb-column">
+        <div class="tb-col-header">
+          <span class="avatar" style="background: var(--muted);" title="Unassigned">?</span>
+          <span>Unassigned</span>
+          <span class="count">${unassignedTasks.length}</span>
+        </div>
+        <div class="tb-col-body">
+          ${taskItemsHtml}
+        </div>
+      </div>
+    `;
+  }
+
+  container.innerHTML = html;
+
+  // Add click listener to task items to open the dialog
+  container.querySelectorAll('.tb-task-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const id = item.dataset.id;
+      openModal(id);
+    });
+  });
 }
 
 function renderList() {
