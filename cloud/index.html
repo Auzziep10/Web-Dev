@@ -2613,8 +2613,40 @@ function isUIBusy() {
   return false;
 }
 
+function populateGlobalFilters() {
+  // App filter
+  const filter = document.getElementById('appFilter');
+  if (filter) {
+    const currentVal = filter.value || '__all__';
+    const apps = getApps();
+    filter.innerHTML = '<option value="__all__">All projects</option>' +
+      apps.map(a => `<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`).join('');
+    filter.value = apps.includes(currentVal) || currentVal === '__all__' ? currentVal : '__all__';
+    const appList = document.getElementById('appList');
+    if (appList) {
+      appList.innerHTML = apps.map(a => `<option value="${escapeHtml(a)}">`).join('');
+    }
+  }
+
+  // Assignee filter — repopulate with current team members
+  const assFilter = document.getElementById('assigneeFilter');
+  if (assFilter) {
+    const assCurrent = assFilter.value || '__all__';
+    const team = getTeam();
+    const me = (currentUser?.email || '').toLowerCase();
+    assFilter.innerHTML =
+      '<option value="__all__">Anyone</option>' +
+      (team.includes(me) ? '<option value="__me__">Me</option>' : '') +
+      '<option value="__none__">Unassigned</option>' +
+      team.map(e => `<option value="${escapeHtml(e)}">${escapeHtml(getDisplayShort(e))}</option>`).join('');
+    const validValues = new Set(['__all__', '__me__', '__none__', ...team]);
+    assFilter.value = validValues.has(assCurrent) ? assCurrent : '__all__';
+  }
+}
+
 function maybeRender() {
   if (!isUIBusy()) {
+    populateGlobalFilters();
     if (currentView === 'timeline') renderTimeline();
     else if (currentView === 'list') renderList();
     else if (currentView === 'tackboard') renderTackboard();
@@ -4191,28 +4223,7 @@ function visibleTasks() {
 }
 
 function render() {
-  // App filter
-  const filter = document.getElementById('appFilter');
-  const currentVal = filter.value || '__all__';
-  const apps = getApps();
-  filter.innerHTML = '<option value="__all__">All projects</option>' +
-    apps.map(a => `<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`).join('');
-  filter.value = apps.includes(currentVal) || currentVal === '__all__' ? currentVal : '__all__';
-  document.getElementById('appList').innerHTML =
-    apps.map(a => `<option value="${escapeHtml(a)}">`).join('');
-
-  // Assignee filter — repopulate with current team members
-  const assFilter = document.getElementById('assigneeFilter');
-  const assCurrent = assFilter.value || '__all__';
-  const team = getTeam();
-  const me = (currentUser?.email || '').toLowerCase();
-  assFilter.innerHTML =
-    '<option value="__all__">Anyone</option>' +
-    (team.includes(me) ? '<option value="__me__">Me</option>' : '') +
-    '<option value="__none__">Unassigned</option>' +
-    team.map(e => `<option value="${escapeHtml(e)}">${escapeHtml(getDisplayShort(e))}</option>`).join('');
-  const validValues = new Set(['__all__', '__me__', '__none__', ...team]);
-  assFilter.value = validValues.has(assCurrent) ? assCurrent : '__all__';
+  populateGlobalFilters();
 
   const items = visibleTasks();
   for (const status of STATUSES) {
