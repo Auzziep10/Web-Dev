@@ -2017,6 +2017,21 @@
           <div class="assignee-picker" id="assigneePicker"></div>
           <small class="hint">Click a teammate to toggle. Multiple people can own the same task.</small>
         </div>
+        <div class="field" id="assignToDeliverableField" style="margin-top: 16px; display: none;">
+          <button type="button" id="assignToDeliverableBtn" class="ghost" style="width: 100%; text-align: center; border: 1px dashed var(--border); padding: 8px; border-radius: 6px; font-weight: 500; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer;">
+            ⛓️ Convert to Subtask of...
+          </button>
+          <div id="assignToParentContainer" style="display: none; margin-top: 8px; border: 1px solid var(--border); border-radius: 6px; padding: 10px; background: var(--panel-2);">
+            <label style="font-size: 11px; font-weight: 600; color: var(--muted); margin-bottom: 4px; display: block;">Select Target Deliverable</label>
+            <select id="parentTaskSelect" style="width: 100%; margin-bottom: 8px; font-size: 12px; padding: 4px 6px; border: 1px solid var(--border); border-radius: 4px; background: var(--panel); color: var(--text);">
+              <option value="">-- Choose a parent task --</option>
+            </select>
+            <div style="display: flex; gap: 8px; justify-content: flex-end;">
+              <button type="button" id="parentTaskCancelBtn" class="ghost" style="font-size: 11px; padding: 4px 8px; height: auto;">Cancel</button>
+              <button type="button" id="parentTaskConfirmBtn" class="primary" style="font-size: 11px; padding: 4px 8px; height: auto;">Confirm</button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
     <!-- Activity Log at the bottom of modal body -->
@@ -4911,6 +4926,101 @@ function initSubtaskModalHandlers() {
   });
 }
 
+function initAssignToParentHandlers() {
+  const convertBtn = document.getElementById('assignToDeliverableBtn');
+  const container = document.getElementById('assignToParentContainer');
+  const cancelBtn = document.getElementById('parentTaskCancelBtn');
+  const confirmBtn = document.getElementById('parentTaskConfirmBtn');
+  const select = document.getElementById('parentTaskSelect');
+  
+  if (!convertBtn || !container || !cancelBtn || !confirmBtn || !select) return;
+  
+  convertBtn.addEventListener('click', () => {
+    const otherTasks = tasks.filter(x => x.id !== editingId)
+      .sort((a, b) => {
+        const projA = a.app || '';
+        const projB = b.app || '';
+        if (projA !== projB) return projA.localeCompare(projB);
+        return a.title.localeCompare(b.title);
+      });
+    select.innerHTML = '<option value="">-- Choose a parent task --</option>' +
+      otherTasks.map(x => {
+        const projText = x.app ? `[${x.app}] ` : '';
+        return `<option value="${x.id}">${escapeHtml(projText + x.title)}</option>`;
+      }).join('');
+    container.style.display = 'block';
+  });
+  
+  cancelBtn.addEventListener('click', () => {
+    container.style.display = 'none';
+  });
+  
+  confirmBtn.addEventListener('click', async () => {
+    const parentId = select.value;
+    if (!parentId) {
+      toast('Please select a parent task');
+      return;
+    }
+    const parentTask = tasks.find(x => x.id === parentId);
+    const currentTask = tasks.find(x => x.id === editingId);
+    if (!parentTask || !currentTask) {
+      toast('Error finding tasks');
+      return;
+    }
+    
+    if (!confirm(`Are you sure you want to convert '${currentTask.title}' into a subtask of '${parentTask.title}'? This task will be removed as a standalone deliverable.`)) {
+      return;
+    }
+    
+    try {
+      const parentSubtasks = Array.isArray(parentTask.subtasks) ? [...parentTask.subtasks] : [];
+      const newSub = {
+        id: currentTask.id,
+        title: currentTask.title,
+        completed: currentTask.status === 'complete',
+        notes: currentTask.details || '',
+        startDate: currentTask.startDate || '',
+        endDate: currentTask.endDate || '',
+        assignee: (currentTask.assignees && currentTask.assignees[0]) || ''
+      };
+      parentSubtasks.push(newSub);
+      
+      // Calculate parent's new progress
+      let parentProgress = parentTask.progress || 0;
+      if (parentSubtasks.length > 0) {
+        const completedCount = parentSubtasks.filter(s => s.completed).length;
+        parentProgress = Math.round((completedCount / parentSubtasks.length) * 100);
+      }
+      
+      const batch = writeBatch(db);
+      
+      // Update parent
+      const parentRef = doc(db, 'tasks', parentId);
+      const parentLog = Array.isArray(parentTask.activityLog) ? [...parentTask.activityLog] : [];
+      parentLog.push({
+        user: currentUser?.email || 'Unknown User',
+        timestamp: new Date().toISOString(),
+        action: `Converted task '${currentTask.title}' into a subtask of this task`
+      });
+      batch.update(parentRef, {
+        subtasks: parentSubtasks,
+        progress: parentProgress,
+        activityLog: parentLog
+      });
+      
+      // Delete current
+      const currentRef = doc(db, 'tasks', editingId);
+      batch.delete(currentRef);
+      
+      await batch.commit();
+      closeModal();
+      toast(`Converted successfully to subtask of '${parentTask.title}'`);
+    } catch (err) {
+      toast('Conversion failed: ' + err.message);
+    }
+  });
+}
+
 // --- Modal (create / edit) ---
 function openModal(id) {
   if (!role) return;
@@ -4965,6 +5075,14 @@ function openModal(id) {
   renderCalendar();
   renderAssigneePicker(t ? (t.assignees || []) : [], isEditable);
   
+  // Show convert-to-subtask section only when editing an existing task with edit permission
+  const assignToField = document.getElementById('assignToDeliverableField');
+  if (assignToField) {
+    assignToField.style.display = (t && isEditable) ? 'block' : 'none';
+  }
+  const parentContainer = document.getElementById('assignToParentContainer');
+  if (parentContainer) parentContainer.style.display = 'none';
+
   // Load and render subtasks
   modalSubtasks = t && Array.isArray(t.subtasks) ? JSON.parse(JSON.stringify(t.subtasks)) : [];
   renderModalSubtasks();
@@ -5292,6 +5410,7 @@ document.getElementById('addBtn').addEventListener('click', async () => {
 });
 document.getElementById('saveBtn').addEventListener('click', saveTask);
 initSubtaskModalHandlers();
+initAssignToParentHandlers();
 document.getElementById('cancelBtn').addEventListener('click', closeModal);
 document.getElementById('modal').addEventListener('click', e => { if (e.target.id === 'modal') closeModal(); });
 document.getElementById('teamModal').addEventListener('click', e => {
