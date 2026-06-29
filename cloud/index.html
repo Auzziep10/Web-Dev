@@ -571,6 +571,7 @@
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(-4px); }
 
   body.view-mode .editor-only { display: none !important; }
+  body.not-admin .admin-only { display: none !important; }
   body.view-mode .task { cursor: default; }
   body.view-mode .task:hover { border-color: var(--border); }
 
@@ -1736,7 +1737,7 @@
   </div>
 
   <button id="addBtn" class="primary editor-only">+ New task</button>
-  <button id="teamBtn" class="ghost editor-only" title="Manage who can see/edit">Team</button>
+  <button id="teamBtn" class="ghost admin-only" title="Manage who can see/edit">Team</button>
   <span id="userChip" class="user-chip"></span>
   <button id="themeToggleBtn" class="ghost" title="Toggle Light/Dark Mode" aria-label="Toggle Light/Dark Mode"></button>
   <button id="signOutBtn" class="ghost">Sign out</button>
@@ -1886,8 +1887,9 @@
     <div style="background: rgba(124,156,255,0.05); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 16px; display: flex; flex-direction: column; gap: 8px;">
       <span style="font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px;">Add Team Member</span>
       <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-        <input type="email" id="newMemberEmail" placeholder="colleague@example.com" style="flex: 2; min-width: 200px; font-size: 13px; padding: 6px 8px; border: 1px solid var(--border); border-radius: 4px; background: var(--panel); color: var(--text);">
-        <select id="newMemberRole" style="flex: 1; min-width: 100px; font-size: 13px; padding: 6px 8px; border: 1px solid var(--border); border-radius: 4px; background: var(--panel); color: var(--text);">
+        <input type="email" id="newMemberEmail" placeholder="colleague@example.com" style="flex: 2; min-width: 200px; font-size: 13px; padding: 6px 8px; border: 1px solid var(--border); border-radius: 4px; background: var(--panel-2); color: var(--text);">
+        <select id="newMemberRole" style="flex: 1; min-width: 100px; font-size: 13px; padding: 6px 8px; border: 1px solid var(--border); border-radius: 4px; background: var(--panel-2); color: var(--text);">
+          <option value="admin">Admin</option>
           <option value="editor">Editor</option>
           <option value="viewer">Viewer</option>
         </select>
@@ -2239,12 +2241,26 @@ async function updateTaskDoc(taskId, fieldsToUpdate, logActionText) {
   await updateDoc(doc(db, 'tasks', taskId), {
     ...fieldsToUpdate,
     activityLog
-  });
+}
+
+function canEditTask(task) {
+  if (role === 'admin') return true;
+  if (role === 'editor') {
+    if (!task) return true;
+    const me = (currentUser?.email || '').toLowerCase();
+    const parentAssignees = (task.assignees || []).map(e => String(e).toLowerCase());
+    const subtaskAssignees = (task.subtasks || [])
+      .map(s => String(s.assignee || '').toLowerCase())
+      .filter(Boolean);
+    const allAssignees = [...new Set([...parentAssignees, ...subtaskAssignees])];
+    return allAssignees.includes(me) || String(task.createdBy || '').toLowerCase() === me;
+  }
+  return false;
 }
 
 let currentUser = null;
-let role = null; // 'editor' | 'viewer' | null
-let access = { editors: [], viewers: [] };
+let role = null; // 'admin' | 'editor' | 'viewer' | null
+let access = { admins: [], editors: [], viewers: [] };
 let tasks = [];
 let editingId = null;
 let modalSubtasks = [];
@@ -2345,9 +2361,11 @@ onAuthStateChanged(auth, async (user) => {
     }
     access = accessSnap.data();
     const email = (user.email || '').toLowerCase();
+    const admins = (access.admins || []).map(e => String(e).toLowerCase());
     const editors = (access.editors || []).map(e => String(e).toLowerCase());
     const viewers = (access.viewers || []).map(e => String(e).toLowerCase());
-    if (editors.includes(email)) role = 'editor';
+    if (admins.includes(email)) role = 'admin';
+    else if (editors.includes(email)) role = 'editor';
     else if (viewers.includes(email)) role = 'viewer';
     else {
       showGate('Access denied', `${user.email} isn't on the team list. Ask an editor to add you.`, '');
@@ -2388,9 +2406,11 @@ function setupUI() {
   };
 
   const isViewer = role === 'viewer';
+  const isAdmin = role === 'admin';
   document.body.classList.toggle('view-mode', isViewer);
+  document.body.classList.toggle('not-admin', !isAdmin);
   const badge = document.getElementById('modeBadge');
-  badge.textContent = isViewer ? 'View only' : 'Editor';
+  badge.textContent = role === 'admin' ? 'Admin' : (role === 'editor' ? 'Editor' : 'View only');
   badge.classList.toggle('view', isViewer);
 
   // Apply persisted view choice (board/timeline)
@@ -2828,7 +2848,7 @@ function renderList() {
   });
 
   const team = getTeam();
-  const isEditor = role === 'editor';
+  const isEditor = role === 'admin' || role === 'editor';
 
   const renderSortIndicator = (field) => {
     if (listSortField !== field) return '';
@@ -2931,7 +2951,7 @@ function renderListItem(t, team) {
 
   const isExpanded = expandedIds.has(t.id);
   const expanded = isExpanded ? renderExpanded(t, updates) : '';
-  const isEditor = role === 'editor';
+  const isEditor = role === 'admin' || (role === 'editor' && canEditTask(t));
   const disabledAttr = isEditor ? '' : 'disabled';
   
   const prog = progressOf(t);
@@ -3008,7 +3028,7 @@ function renderListItem(t, team) {
     </div>
   `;
 }function bindSharedExpandedEvents(item, task, id) {
-  const isEditor = role === 'editor';
+  const isEditor = role === 'admin' || (role === 'editor' && canEditTask(task));
 
   // 1. Lead Change select
   const expLeadSelect = item.querySelector('.expanded-lead-select');
@@ -3707,7 +3727,9 @@ function renderTimelineRowHtml({
         ? `data-parent-id="${parentTaskId}" data-subtask-index="${subtaskIndex}"`
         : `data-id="${id}"`;
 
-      const isEditor = role === 'editor';
+      const taskId = isSubtask ? parentTaskId : id;
+      const task = tasks.find(x => x.id === taskId);
+      const isEditor = role === 'admin' || (role === 'editor' && canEditTask(task));
       const handlesHtml = (!isSubtask && isEditor)
         ? `<span class="t-bar-handle left" data-handle="left"></span>
            <span class="t-bar-label">${escapeHtml(title)}</span>
@@ -3812,6 +3834,7 @@ function visibleTasks() {
   const searchVal = (document.getElementById('taskSearch')?.value || '').trim().toLowerCase();
   const showArchived = document.getElementById('showArchivedFilter')?.checked || false;
   const me = (currentUser?.email || '').toLowerCase();
+  const isEditor = role === 'editor';
   return tasks.filter(t => {
     if (!showArchived && t.archived) return false;
     if (appF !== '__all__' && t.app !== appF) return false;
@@ -3821,6 +3844,10 @@ function visibleTasks() {
       .map(s => String(s.assignee || '').toLowerCase())
       .filter(Boolean);
     const allAssignees = [...new Set([...parentAssignees, ...subtaskAssignees])];
+
+    if (isEditor && !allAssignees.includes(me) && String(t.createdBy || '').toLowerCase() !== me) {
+      return false;
+    }
 
     if (assF !== '__all__') {
       let matchAss = false;
@@ -3976,7 +4003,7 @@ function renderExpanded(t, updates) {
       `;
       }).join('');
 
-  const isEditor = role === 'editor';
+  const isEditor = role === 'admin' || (role === 'editor' && canEditTask(t));
   const disabledAttr = isEditor ? '' : 'disabled';
 
   return `
@@ -4618,6 +4645,12 @@ async function saveTask() {
   const startDate = modalStartDate || '';
   const endDate = modalEndDate || '';
   const assignees = readAssigneePicker();
+  if (role === 'editor' && !editingId) {
+    const myEmail = (currentUser?.email || '').toLowerCase();
+    if (!assignees.map(e => e.toLowerCase()).includes(myEmail)) {
+      assignees.unshift(myEmail);
+    }
+  }
   // Progress is edited via the popover, not this dialog.
   // Preserve the existing value here; force 100 if status is Done.
   const existingTask = editingId ? tasks.find(x => x.id === editingId) : null;
@@ -4713,6 +4746,7 @@ function renderTeamMembers() {
       <input type="text" class="team-member-first" placeholder="First Name" data-index="${idx}" value="${escapeHtml(m.firstName || '')}" style="font-size: 12px; padding: 4px 6px; border: 1px solid var(--border); border-radius: 4px; background: var(--panel-2); color: var(--text);">
       <input type="text" class="team-member-last" placeholder="Last Name" data-index="${idx}" value="${escapeHtml(m.lastName || '')}" style="font-size: 12px; padding: 4px 6px; border: 1px solid var(--border); border-radius: 4px; background: var(--panel-2); color: var(--text);">
       <select class="team-member-role" data-index="${idx}" style="font-size: 12px; padding: 4px 6px; border: 1px solid var(--border); border-radius: 4px; background: var(--panel-2); color: var(--text);">
+        <option value="admin" ${m.role === 'admin' ? 'selected' : ''}>Admin</option>
         <option value="editor" ${m.role === 'editor' ? 'selected' : ''}>Editor</option>
         <option value="viewer" ${m.role === 'viewer' ? 'selected' : ''}>Viewer</option>
       </select>
@@ -4750,8 +4784,14 @@ function renderTeamMembers() {
 
 document.getElementById('teamBtn').addEventListener('click', () => {
   tempTeam = [];
+  const admins = access.admins || [];
   const editors = access.editors || [];
   const viewers = access.viewers || [];
+  admins.forEach(e => {
+    const email = e.toLowerCase();
+    const p = profiles[email] || {};
+    tempTeam.push({ email, role: 'admin', firstName: p.firstName || '', lastName: p.lastName || '' });
+  });
   editors.forEach(e => {
     const email = e.toLowerCase();
     const p = profiles[email] || {};
@@ -4785,17 +4825,18 @@ document.getElementById('teamCancel').addEventListener('click', () => {
 });
 
 document.getElementById('teamSave').addEventListener('click', async () => {
+  const admins = tempTeam.filter(m => m.role === 'admin').map(m => m.email);
   const editors = tempTeam.filter(m => m.role === 'editor').map(m => m.email);
   const viewers = tempTeam.filter(m => m.role === 'viewer').map(m => m.email);
   
   const myEmail = (currentUser?.email || '').toLowerCase();
-  if (!editors.includes(myEmail)) {
-    if (!confirm('Your email is not in the editors list — you will lose write access. Continue?')) return;
+  if (!admins.includes(myEmail) && !editors.includes(myEmail)) {
+    if (!confirm('Your email is not in the admins or editors list — you will lose write access. Continue?')) return;
   }
   
   try {
     // Save access doc
-    await setDoc(doc(db, 'config', 'access'), { editors, viewers }, { merge: true });
+    await setDoc(doc(db, 'config', 'access'), { admins, editors, viewers }, { merge: true });
     
     // Save profiles in a batch
     const batch = writeBatch(db);
@@ -4845,23 +4886,32 @@ function toast(msg) {
 
 // --- Wire up ---
 document.getElementById('addBtn').addEventListener('click', async () => {
-  if (role !== 'editor') return;
+  if (role !== 'admin' && role !== 'editor') return;
   if (currentView === 'list') {
     try {
       const colCount = tasks.filter(x => x.status === 'backlog').length;
       const defaultApp = document.getElementById('appFilter').value === '__all__' ? '' : document.getElementById('appFilter').value;
+      const assignees = [];
+      if (role === 'editor') {
+        assignees.push(currentUser.email.toLowerCase());
+      }
       const docRef = await addDoc(collection(db, 'tasks'), {
         title: '',
         app: defaultApp,
         status: 'backlog',
         priority: 'medium',
-        assignees: [],
+        assignees: assignees,
         startDate: '',
         endDate: '',
         progress: 0,
         order: colCount,
         createdAt: serverTimestamp(),
-        createdBy: currentUser.email
+        createdBy: currentUser.email,
+        activityLog: [{
+          user: currentUser?.email || 'Unknown User',
+          timestamp: new Date().toISOString(),
+          action: 'Created task'
+        }]
       });
       // Wait for snapshot to render the new row, then focus its title input
       setTimeout(() => {

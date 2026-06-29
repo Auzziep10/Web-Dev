@@ -23,20 +23,30 @@ service cloud.firestore {
     function emailIn(field) {
       return accessDoc()[field] is list && userEmail() in accessDoc()[field];
     }
-    function isEditor() { return isSignedIn() && emailIn('editors'); }
-    function isViewer() { return isSignedIn() && (emailIn('editors') || emailIn('viewers')); }
+    function isAdmin() { return isSignedIn() && emailIn('admins'); }
+    function isEditor() { return isSignedIn() && (emailIn('admins') || emailIn('editors')); }
+    function isViewer() { return isSignedIn() && (emailIn('admins') || emailIn('editors') || emailIn('viewers')); }
 
     match /config/access {
       allow read: if isSignedIn();
-      allow write: if isEditor();
+      allow write: if isAdmin();
     }
 
     match /tasks/{taskId} {
       allow read: if isViewer();
-      allow create, delete: if isEditor();
-      // Editors can update any field.
-      // Viewers can update *only* the `updates` field (so they can post to the thread).
-      allow update: if isEditor() || (
+      allow create: if isEditor();
+      allow delete: if isAdmin() || (
+        isEditor() && (
+          ('assignees' in resource.data && userEmail() in resource.data.assignees) ||
+          ('createdBy' in resource.data && userEmail() == resource.data.createdBy.lower())
+        )
+      );
+      allow update: if isAdmin() || (
+        isEditor() && (
+          ('assignees' in resource.data && userEmail() in resource.data.assignees) ||
+          ('createdBy' in resource.data && userEmail() == resource.data.createdBy.lower())
+        )
+      ) || (
         isViewer() &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['updates'])
       );
