@@ -3134,7 +3134,7 @@ function renderTackboard() {
           const metaTextHtml = metaParts.join(' • ');
 
           return `
-            <li class="tb-task-item" data-id="${item.taskId}">
+            <li class="tb-task-item" data-id="${item.taskId}" data-subtask-id="${item.type === 'subtask' ? escapeHtml(item.subtaskId) : ''}">
               <span class="tb-bullet ${item.priority || 'medium'}" style="margin-top: 5px;"></span>
               <div style="display: flex; flex-direction: column; gap: 3px; flex-grow: 1; overflow: hidden;">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
@@ -3178,7 +3178,7 @@ function renderTackboard() {
       const metaTextHtml = metaParts.join(' • ');
 
       return `
-        <li class="tb-task-item" data-id="${item.taskId}">
+        <li class="tb-task-item" data-id="${item.taskId}" data-subtask-id="${item.type === 'subtask' ? escapeHtml(item.subtaskId) : ''}">
           <span class="tb-bullet ${item.priority || 'medium'}" style="margin-top: 5px;"></span>
           <div style="display: flex; flex-direction: column; gap: 3px; flex-grow: 1; overflow: hidden;">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
@@ -3220,14 +3220,22 @@ function renderTackboard() {
       e.preventDefault();
       e.stopPropagation();
       const id = item.dataset.id;
+      const subtaskId = item.dataset.subtaskId || null;
       const task = tasks.find(x => x.id === id);
       if (!task || !canEditTask(task)) return;
-      showTackboardContextMenu(id, e.clientX, e.clientY);
+      showTackboardContextMenu(id, subtaskId, e.clientX, e.clientY);
     });
   });
 }
 
-function showTackboardContextMenu(taskId, x, y) {
+function showTackboardContextMenu(taskId, subtaskId, x, y) {
+  // If only 3 arguments are passed, shift them (for backwards compatibility if any other caller exists)
+  if (typeof y === 'undefined') {
+    y = x;
+    x = subtaskId;
+    subtaskId = null;
+  }
+
   const menu = document.getElementById('tbContextMenu');
   if (!menu) return;
 
@@ -3238,40 +3246,73 @@ function showTackboardContextMenu(taskId, x, y) {
   const task = tasks.find(t => t.id === taskId);
   if (!task) return;
 
-  const statuses = [
-    { value: 'backlog', label: 'Backlog', color: '#e05a5a' },
-    { value: 'ready', label: 'Ready to Start', color: '#e89a3d' },
-    { value: 'active', label: 'Active', color: '#5b8def' },
-    { value: 'review', label: 'Review', color: '#9b59b6' },
-    { value: 'complete', label: 'Complete', color: '#2faa6b' }
-  ];
+  if (subtaskId) {
+    const sub = (task.subtasks || []).find(s => s.id === subtaskId);
+    if (!sub) return;
 
-  menu.innerHTML = statuses.map(s => {
-    const isCurrent = task.status === s.value;
-    return `
-      <div class="tb-context-menu-item" data-status="${s.value}" style="${isCurrent ? 'font-weight: 700; color: var(--accent);' : ''}">
-        <span class="status-dot" style="background-color: ${s.color};"></span>
-        <span>${s.label}</span>
-        ${isCurrent ? '<span style="margin-left:auto; font-size:10px;">✓</span>' : ''}
+    const label = sub.completed ? 'Mark Incomplete' : 'Mark Complete';
+    menu.innerHTML = `
+      <div class="tb-context-menu-item" data-action="toggle-complete">
+        <span class="status-dot" style="background-color: ${sub.completed ? '#e05a5a' : '#2faa6b'};"></span>
+        <span>${label}</span>
       </div>
     `;
-  }).join('');
 
-  // Bind clicks on menu items
-  menu.querySelectorAll('.tb-context-menu-item').forEach(item => {
-    item.addEventListener('click', async () => {
-      const newStatus = item.dataset.status;
-      if (task.status === newStatus) return;
-
-      try {
-        await updateTaskDoc(taskId, { status: newStatus }, `Changed status to ${newStatus}`);
-        toast(`Task status updated to ${newStatus}`);
-      } catch (err) {
-        toast(`Failed to update status: ` + err.message);
+    menu.querySelector('.tb-context-menu-item').addEventListener('click', async () => {
+      const subtasksCopy = JSON.parse(JSON.stringify(task.subtasks || []));
+      const targetSub = subtasksCopy.find(s => s.id === subtaskId);
+      if (targetSub) {
+        targetSub.completed = !sub.completed;
+        const completedCount = subtasksCopy.filter(s => s.completed).length;
+        const progress = subtasksCopy.length > 0 ? Math.round((completedCount / subtasksCopy.length) * 100) : 0;
+        try {
+          await updateTaskDoc(taskId, {
+            subtasks: subtasksCopy,
+            progress: progress
+          }, targetSub.completed ? `Completed subtask '${targetSub.title}'` : `Uncompleted subtask '${targetSub.title}'`);
+          toast(`Subtask updated`);
+        } catch (err) {
+          toast('Failed to update subtask: ' + err.message);
+        }
       }
       hideTackboardContextMenu();
     });
-  });
+  } else {
+    const statuses = [
+      { value: 'backlog', label: 'Backlog', color: '#e05a5a' },
+      { value: 'ready', label: 'Ready to Start', color: '#e89a3d' },
+      { value: 'active', label: 'Active', color: '#5b8def' },
+      { value: 'review', label: 'Review', color: '#9b59b6' },
+      { value: 'complete', label: 'Complete', color: '#2faa6b' }
+    ];
+
+    menu.innerHTML = statuses.map(s => {
+      const isCurrent = task.status === s.value;
+      return `
+        <div class="tb-context-menu-item" data-status="${s.value}" style="${isCurrent ? 'font-weight: 700; color: var(--accent);' : ''}">
+          <span class="status-dot" style="background-color: ${s.color};"></span>
+          <span>${s.label}</span>
+          ${isCurrent ? '<span style="margin-left:auto; font-size:10px;">✓</span>' : ''}
+        </div>
+      `;
+    }).join('');
+
+    menu.querySelectorAll('.tb-context-menu-item').forEach(item => {
+      item.addEventListener('click', async () => {
+        const newStatus = item.dataset.status;
+        if (task.status === newStatus) return;
+
+        const progress = newStatus === 'complete' ? 100 : (task.progress === 100 ? 0 : (task.progress || 0));
+        try {
+          await updateTaskDoc(taskId, { status: newStatus, progress }, `Changed status to ${newStatus}`);
+          toast(`Task status updated to ${newStatus}`);
+        } catch (err) {
+          toast(`Failed to update status: ` + err.message);
+        }
+        hideTackboardContextMenu();
+      });
+    });
+  }
 }
 
 function hideTackboardContextMenu() {
