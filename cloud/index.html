@@ -3670,6 +3670,96 @@ function renderListItem(t, team) {
         addInlineAction();
       }
     });
+  // 12. Inline task to subtask conversion
+  const inlineConvertBtn = item.querySelector('.lp-inline-convert-btn');
+  const inlineConvertContainer = item.querySelector('.lp-inline-convert-container');
+  const inlineConvertCancel = item.querySelector('.lp-inline-convert-cancel');
+  const inlineConvertConfirm = item.querySelector('.lp-inline-convert-confirm');
+  const inlineConvertSelect = item.querySelector('.lp-inline-convert-select');
+
+  if (inlineConvertBtn && inlineConvertContainer && inlineConvertCancel && inlineConvertConfirm && inlineConvertSelect) {
+    inlineConvertBtn.addEventListener('click', () => {
+      const otherTasks = tasks.filter(x => x.id !== id)
+        .sort((a, b) => {
+          const projA = a.app || '';
+          const projB = b.app || '';
+          if (projA !== projB) return projA.localeCompare(projB);
+          return a.title.localeCompare(b.title);
+        });
+      inlineConvertSelect.innerHTML = '<option value="">-- Choose a parent task --</option>' +
+        otherTasks.map(x => {
+          const projText = x.app ? `[${x.app}] ` : '';
+          return `<option value="${x.id}">${escapeHtml(projText + x.title)}</option>`;
+        }).join('');
+      inlineConvertContainer.style.display = 'block';
+    });
+
+    inlineConvertCancel.addEventListener('click', () => {
+      inlineConvertContainer.style.display = 'none';
+    });
+
+    inlineConvertConfirm.addEventListener('click', async () => {
+      const parentId = inlineConvertSelect.value;
+      if (!parentId) {
+        toast('Please select a parent task');
+        return;
+      }
+      const parentTask = tasks.find(x => x.id === parentId);
+      if (!parentTask || !task) {
+        toast('Error finding tasks');
+        return;
+      }
+
+      if (!confirm(`Are you sure you want to convert '${task.title}' into a subtask of '${parentTask.title}'? This task will be removed as a standalone deliverable.`)) {
+        return;
+      }
+
+      try {
+        const parentSubtasks = Array.isArray(parentTask.subtasks) ? [...parentTask.subtasks] : [];
+        const newSub = {
+          id: task.id,
+          title: task.title,
+          completed: task.status === 'complete',
+          notes: task.details || '',
+          startDate: task.startDate || '',
+          endDate: task.endDate || '',
+          assignee: (task.assignees && task.assignees[0]) || ''
+        };
+        parentSubtasks.push(newSub);
+
+        // Calculate parent's new progress
+        let parentProgress = parentTask.progress || 0;
+        if (parentSubtasks.length > 0) {
+          const completedCount = parentSubtasks.filter(s => s.completed).length;
+          parentProgress = Math.round((completedCount / parentSubtasks.length) * 100);
+        }
+
+        const batch = writeBatch(db);
+
+        // Update parent
+        const parentRef = doc(db, 'tasks', parentId);
+        const parentLog = Array.isArray(parentTask.activityLog) ? [...parentTask.activityLog] : [];
+        parentLog.push({
+          user: currentUser?.email || 'Unknown User',
+          timestamp: new Date().toISOString(),
+          action: `Converted task '${task.title}' into a subtask of this task`
+        });
+        batch.update(parentRef, {
+          subtasks: parentSubtasks,
+          progress: parentProgress,
+          activityLog: parentLog
+        });
+
+        // Delete current
+        const currentRef = doc(db, 'tasks', id);
+        batch.delete(currentRef);
+
+        await batch.commit();
+        toast(`Converted successfully to subtask of '${parentTask.title}'`);
+      } catch (err) {
+        toast('Conversion failed: ' + err.message);
+      }
+    });
   }
 }
 
@@ -4419,6 +4509,24 @@ function renderExpanded(t, updates) {
                   </div>
                 </div>
               </div>
+              <!-- Convert to Subtask Option -->
+              ${isEditor ? `
+                <div style="margin-top: 12px; border-top: 1px dashed var(--border); padding-top: 12px;">
+                  <button type="button" class="ghost lp-inline-convert-btn" data-task-id="${t.id}" style="width: 100%; text-align: center; border: 1px dashed var(--border); padding: 8px; border-radius: 6px; font-weight: 500; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer;">
+                    ⛓️ Convert to Subtask of...
+                  </button>
+                  <div class="lp-inline-convert-container" data-task-id="${t.id}" style="display: none; margin-top: 8px; border: 1px solid var(--border); border-radius: 6px; padding: 10px; background: var(--panel);">
+                    <label style="font-size: 11px; font-weight: 600; color: var(--muted); margin-bottom: 4px; display: block;">Select Target Deliverable</label>
+                    <select class="lp-inline-convert-select" data-task-id="${t.id}" style="width: 100%; margin-bottom: 8px; font-size: 12px; padding: 4px 6px; border: 1px solid var(--border); border-radius: 4px; background: var(--panel-2); color: var(--text);">
+                      <option value="">-- Choose a parent task --</option>
+                    </select>
+                    <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                      <button type="button" class="ghost lp-inline-convert-cancel" data-task-id="${t.id}" style="font-size: 11px; padding: 4px 8px; height: auto;">Cancel</button>
+                      <button type="button" class="primary lp-inline-convert-confirm" data-task-id="${t.id}" style="font-size: 11px; padding: 4px 8px; height: auto;">Confirm</button>
+                    </div>
+                  </div>
+                </div>
+              ` : ''}
             </div>
           </div>
           
