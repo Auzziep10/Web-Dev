@@ -4074,6 +4074,12 @@ function bindListEvents() {
           deleteUpdate(id, Number(btn.dataset.ts));
         });
       }
+      if (action === 'delete') {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          deleteTaskById(id);
+        });
+      }
     });
 
     const commentInput = item.querySelector('.update-input');
