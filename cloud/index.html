@@ -3713,10 +3713,6 @@ function renderListItem(t, team) {
         return;
       }
 
-      if (!confirm(`Are you sure you want to convert '${task.title}' into a subtask of '${parentTask.title}'? This task will be removed as a standalone deliverable.`)) {
-        return;
-      }
-
       try {
         const parentSubtasks = Array.isArray(parentTask.subtasks) ? [...parentTask.subtasks] : [];
         const newSub = {
@@ -5149,10 +5145,6 @@ function initAssignToParentHandlers() {
     const currentTask = tasks.find(x => x.id === editingId);
     if (!parentTask || !currentTask) {
       toast('Error finding tasks');
-      return;
-    }
-    
-    if (!confirm(`Are you sure you want to convert '${currentTask.title}' into a subtask of '${parentTask.title}'? This task will be removed as a standalone deliverable.`)) {
       return;
     }
     
