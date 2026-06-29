@@ -3764,12 +3764,45 @@ function bindListEvents() {
 
   // Handle click on "+ Add task to this project" button
   container.querySelectorAll('.lp-add-task-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
+      if (role !== 'admin' && role !== 'editor') return;
       const projName = btn.dataset.project;
-      openModal();
-      const taskAppInput = document.getElementById('taskApp');
-      if (taskAppInput) {
-        taskAppInput.value = projName;
+      try {
+        const colCount = tasks.filter(x => x.status === 'backlog').length;
+        const assignees = [];
+        if (role === 'editor') {
+          assignees.push(currentUser.email.toLowerCase());
+        }
+        const docRef = await addDoc(collection(db, 'tasks'), {
+          title: '',
+          app: projName,
+          status: 'backlog',
+          priority: 'medium',
+          assignees: assignees,
+          startDate: '',
+          endDate: '',
+          progress: 0,
+          order: colCount,
+          createdAt: serverTimestamp(),
+          createdBy: currentUser.email,
+          activityLog: [{
+            user: currentUser?.email || 'Unknown User',
+            timestamp: new Date().toISOString(),
+            action: 'Created task'
+          }]
+        });
+        // Wait for snapshot to render the new row, then focus its title input
+        setTimeout(() => {
+          const item = document.querySelector(`.list-item[data-id="${docRef.id}"]`);
+          if (item) {
+            const titleInput = item.querySelector('.lr-title-input');
+            if (titleInput) {
+              titleInput.focus();
+            }
+          }
+        }, 250);
+      } catch (e) {
+        toast('Failed to create task: ' + e.message);
       }
     });
   });
