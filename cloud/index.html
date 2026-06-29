@@ -4508,7 +4508,7 @@ async function deleteUpdate(taskId, timestamp) {
 
 // --- Drag & drop ---
 function onDragStart(e) {
-  if (role !== 'editor') { e.preventDefault(); return; }
+  if (role !== 'admin' && role !== 'editor') { e.preventDefault(); return; }
   const targetEl = e.target.nodeType === Node.TEXT_NODE ? e.target.parentElement : e.target;
   // If dragging in list view, check if we clicked on the drag handle
   if (e.currentTarget.classList.contains('list-item')) {
