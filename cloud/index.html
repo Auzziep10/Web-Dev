@@ -2908,7 +2908,7 @@ function renderTackboard() {
 
   const team = getTeam();
   const vTasks = visibleTasks();
-  const activeTasks = vTasks.filter(t => t.status !== 'complete' && !t.archived);
+  const activeTasks = vTasks.filter(t => t.status === 'active' && !t.archived);
 
   // Group active tasks by person (including both parent and subtask assignees)
   const membersWithTasks = team.map(email => {
