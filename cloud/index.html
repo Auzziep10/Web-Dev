@@ -3062,7 +3062,7 @@ function renderTackboard() {
       // 2. Subtasks assigned to this member
       if (Array.isArray(t.subtasks)) {
         t.subtasks.forEach(sub => {
-          if (String(sub.assignee || '').toLowerCase() === emailLower) {
+          if (!sub.completed && String(sub.assignee || '').toLowerCase() === emailLower) {
             items.push({
               type: 'subtask',
               taskId: t.id,
@@ -3088,6 +3088,7 @@ function renderTackboard() {
   activeTasks.forEach(t => {
     const parentAssignees = Array.isArray(t.assignees) ? t.assignees : [];
     const subtaskAssignees = (t.subtasks || [])
+      .filter(s => !s.completed)
       .map(s => String(s.assignee || '').toLowerCase())
       .filter(Boolean);
       
