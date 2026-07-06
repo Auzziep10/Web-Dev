@@ -4857,7 +4857,7 @@ function renderExpanded(t, updates) {
                 <div class="activity-log-item" style="border-bottom: 1px solid var(--border); padding-bottom: 4px;">
                   <div style="display:flex; justify-content:space-between; color:var(--muted); margin-bottom: 2px;">
                     <span style="font-weight:600;">${escapeHtml(getDisplayShort(log.user))}</span>
-                    <span>${escapeHtml(timeAgo(log.timestamp))}</span>
+                    <span title="${escapeHtml(timeAgo(log.timestamp))}">${escapeHtml(fullTime(log.timestamp))}</span>
                   </div>
                   <div style="color:var(--text);">${escapeHtml(log.action)}</div>
                 </div>
@@ -5516,7 +5516,7 @@ function openModal(id) {
         <div class="activity-log-item" style="border-bottom: 1px solid var(--border); padding-bottom: 4px;">
           <div style="display:flex; justify-content:space-between; color:var(--muted); margin-bottom: 2px;">
             <span style="font-weight:600;">${escapeHtml(getDisplayShort(log.user))}</span>
-            <span>${escapeHtml(timeAgo(log.timestamp))}</span>
+            <span title="${escapeHtml(timeAgo(log.timestamp))}">${escapeHtml(fullTime(log.timestamp))}</span>
           </div>
           <div style="color:var(--text);">${escapeHtml(log.action)}</div>
         </div>
