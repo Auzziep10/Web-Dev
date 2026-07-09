@@ -2461,20 +2461,6 @@ function onPickDate(dateStr) {
   renderCalendar();
 }
 
-function timeAgo(date) {
-  if (!date) return '';
-  const now = new Date();
-  const seconds = Math.floor((now - new Date(date)) / 1000);
-  if (seconds < 0 || seconds < 60) return 'Just now';
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 30) return `${days}d ago`;
-  return new Date(date).toLocaleDateString();
-}
-
 function renderNotifications() {
   const notifBadge = document.getElementById('notifBadge');
   const notifList = document.getElementById('notifList');
@@ -2494,7 +2480,7 @@ function renderNotifications() {
 
   notifList.innerHTML = notifications.map(n => {
     const userDisplay = getDisplayName(n.fromEmail);
-    const timeText = timeAgo(n.createdAtDate);
+    const timeText = timeAgo(n.createdAt);
     const unreadClass = n.read ? '' : 'unread';
     
     let text = '';
@@ -4778,15 +4764,8 @@ function subscribe() {
       where('toEmail', '==', currentUser.email.toLowerCase())
     );
     unsubNotifs = onSnapshot(q, (snap) => {
-      notifications = snap.docs.map(d => {
-        const data = d.data();
-        return {
-          id: d.id,
-          ...data,
-          createdAtDate: data.createdAt ? data.createdAt.toDate() : new Date()
-        };
-      });
-      notifications.sort((a, b) => b.createdAtDate - a.createdAtDate);
+      notifications = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      notifications.sort((a, b) => (tsToMillis(b.createdAt) || Date.now()) - (tsToMillis(a.createdAt) || Date.now()));
       renderNotifications();
     }, (err) => console.error('Notifications sync error:', err));
   }
