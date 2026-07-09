@@ -56,5 +56,12 @@ service cloud.firestore {
       allow read: if isViewer();
       allow write: if isEditor() || (isSignedIn() && userEmail().lower() == email.lower());
     }
+
+    match /notifications/{notificationId} {
+      allow read: if isSignedIn() && (userEmail() == resource.data.toEmail.lower() || isAdmin());
+      allow create: if isEditor();
+      allow update: if isSignedIn() && (userEmail() == resource.data.toEmail.lower() || isAdmin()) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+      allow delete: if isSignedIn() && (userEmail() == resource.data.toEmail.lower() || isAdmin());
+    }
   }
 }

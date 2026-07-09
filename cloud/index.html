@@ -571,6 +571,28 @@
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(-4px); }
 
   body.view-mode .editor-only { display: none !important; }
+
+  /* Notifications styling */
+  .notif-wrapper { position: relative; }
+  .notif-btn { display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--border); padding: 0; background: var(--panel-2); color: var(--text); cursor: pointer; transition: border-color 0.15s, background 0.15s; }
+  .notif-btn:hover { border-color: var(--accent); background: var(--panel); }
+  .notif-btn.active { border-color: var(--accent); }
+  .notif-badge { position: absolute; top: -1px; right: -1px; width: 8px; height: 8px; border-radius: 50%; background: var(--danger); border: 2px solid var(--panel); }
+  .notif-dropdown { display: none; position: absolute; top: calc(100% + 6px); right: 0; background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; width: 320px; box-shadow: var(--shadow); z-index: 1000; flex-direction: column; overflow: hidden; }
+  .notif-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border-bottom: 1px solid var(--border); background: var(--panel); }
+  .notif-header span { font-weight: 600; font-size: 13px; }
+  .notif-header button { font-size: 11px; padding: 2px 6px; color: var(--accent); background: transparent; border: none; cursor: pointer; }
+  .notif-header button:hover { text-decoration: underline; }
+  .notif-list { max-height: 280px; overflow-y: auto; display: flex; flex-direction: column; }
+  .notif-item { padding: 10px 12px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 4px; cursor: pointer; transition: background 0.15s; background: var(--panel-2); }
+  .notif-item:hover { background: var(--panel); }
+  .notif-item.unread { background: rgba(124, 156, 255, 0.05); }
+  .notif-item.unread:hover { background: rgba(124, 156, 255, 0.1); }
+  .notif-item:last-child { border-bottom: none; }
+  .notif-text { font-size: 12px; line-height: 1.4; color: var(--text); text-align: left; }
+  .notif-text strong { font-weight: 600; }
+  .notif-time { font-size: 10px; color: var(--muted); align-self: flex-start; }
+  .notif-empty { padding: 24px 12px; text-align: center; color: var(--muted); font-size: 12px; }
   body.not-admin .admin-only { display: none !important; }
   body.view-mode .task { cursor: default; }
   body.view-mode .task:hover { border-color: var(--border); }
@@ -1917,6 +1939,24 @@
 
   <button id="addBtn" class="primary editor-only">+ New task</button>
   <button id="teamBtn" class="ghost admin-only" title="Manage who can see/edit">Team</button>
+  <div class="notif-wrapper">
+    <button id="notifBtn" class="notif-btn" title="Notifications" aria-label="Notifications">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+      </svg>
+      <span id="notifBadge" class="notif-badge" style="display: none;"></span>
+    </button>
+    <div id="notifDropdown" class="notif-dropdown">
+      <div class="notif-header">
+        <span>Notifications</span>
+        <button id="markAllReadBtn">Mark all read</button>
+      </div>
+      <div id="notifList" class="notif-list">
+        <div class="notif-empty">No notifications</div>
+      </div>
+    </div>
+  </div>
   <span id="userChip" class="user-chip"></span>
   <button id="themeToggleBtn" class="ghost" title="Toggle Light/Dark Mode" aria-label="Toggle Light/Dark Mode"></button>
   <button id="signOutBtn" class="ghost">Sign out</button>
@@ -2190,7 +2230,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
 import {
   getFirestore, collection, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc,
-  onSnapshot, query, serverTimestamp, writeBatch, deleteField
+  onSnapshot, query, serverTimestamp, writeBatch, deleteField, where, limit
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 import { firebaseConfig } from "./firebase-config.js";
 
@@ -2421,6 +2461,204 @@ function onPickDate(dateStr) {
   renderCalendar();
 }
 
+function timeAgo(date) {
+  if (!date) return '';
+  const now = new Date();
+  const seconds = Math.floor((now - new Date(date)) / 1000);
+  if (seconds < 0 || seconds < 60) return 'Just now';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days}d ago`;
+  return new Date(date).toLocaleDateString();
+}
+
+function renderNotifications() {
+  const notifBadge = document.getElementById('notifBadge');
+  const notifList = document.getElementById('notifList');
+  if (!notifBadge || !notifList) return;
+
+  const unreadCount = notifications.filter(n => !n.read).length;
+  if (unreadCount > 0) {
+    notifBadge.style.display = 'block';
+  } else {
+    notifBadge.style.display = 'none';
+  }
+
+  if (notifications.length === 0) {
+    notifList.innerHTML = '<div class="notif-empty">No notifications</div>';
+    return;
+  }
+
+  notifList.innerHTML = notifications.map(n => {
+    const userDisplay = getDisplayName(n.fromEmail);
+    const timeText = timeAgo(n.createdAtDate);
+    const unreadClass = n.read ? '' : 'unread';
+    
+    let text = '';
+    if (n.subtaskTitle) {
+      text = `<strong>${escapeHtml(userDisplay)}</strong> assigned you to subtask <strong>${escapeHtml(n.subtaskTitle)}</strong> of <strong>${escapeHtml(n.taskTitle)}</strong>`;
+    } else {
+      text = `<strong>${escapeHtml(userDisplay)}</strong> assigned you to task <strong>${escapeHtml(n.taskTitle)}</strong>`;
+    }
+
+    return `
+      <div class="notif-item ${unreadClass}" data-id="${n.id}" data-task-id="${n.taskId}">
+        <span class="notif-text">${text}</span>
+        <span class="notif-time">${timeText}</span>
+      </div>
+    `;
+  }).join('');
+}
+
+let notificationUiInitialized = false;
+function setupNotificationUI() {
+  if (notificationUiInitialized) return;
+  notificationUiInitialized = true;
+
+  const notifBtn = document.getElementById('notifBtn');
+  const notifDropdown = document.getElementById('notifDropdown');
+  const notifList = document.getElementById('notifList');
+  const markAllReadBtn = document.getElementById('markAllReadBtn');
+
+  if (notifBtn && notifDropdown) {
+    notifBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isShowing = notifDropdown.style.display === 'flex';
+      notifDropdown.style.display = isShowing ? 'none' : 'flex';
+      if (!isShowing) {
+        notifBtn.classList.add('active');
+      } else {
+        notifBtn.classList.remove('active');
+      }
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!notifDropdown.contains(e.target) && e.target !== notifBtn && !notifBtn.contains(e.target)) {
+        notifDropdown.style.display = 'none';
+        notifBtn.classList.remove('active');
+      }
+    });
+  }
+
+  if (notifList) {
+    notifList.addEventListener('click', async (e) => {
+      const item = e.target.closest('.notif-item');
+      if (!item) return;
+      const notifId = item.dataset.id;
+      const taskId = item.dataset.taskId;
+
+      if (notifDropdown) {
+        notifDropdown.style.display = 'none';
+        if (notifBtn) notifBtn.classList.remove('active');
+      }
+
+      try {
+        await updateDoc(doc(db, 'notifications', notifId), { read: true });
+      } catch (err) {
+        console.error('Failed to mark notification as read:', err);
+      }
+
+      if (taskId) {
+        openModal(taskId);
+      }
+    });
+  }
+
+  if (markAllReadBtn) {
+    markAllReadBtn.addEventListener('click', async () => {
+      const unreadNotifs = notifications.filter(n => !n.read);
+      if (unreadNotifs.length === 0) return;
+
+      const batch = writeBatch(db);
+      unreadNotifs.forEach(n => {
+        batch.update(doc(db, 'notifications', n.id), { read: true });
+      });
+      try {
+        await batch.commit();
+        toast('All notifications marked as read');
+      } catch (err) {
+        toast('Failed to mark all as read: ' + err.message);
+      }
+    });
+  }
+}
+
+async function createAssignmentNotification(toEmail, task, subtaskTitle = null) {
+  const me = currentUser?.email || 'Unknown';
+  if (toEmail.toLowerCase() === me.toLowerCase()) return; // Don't notify self
+
+  try {
+    await addDoc(collection(db, 'notifications'), {
+      toEmail: toEmail.toLowerCase(),
+      fromEmail: me.toLowerCase(),
+      taskId: task.id,
+      taskTitle: task.title || 'Untitled Task',
+      subtaskTitle: subtaskTitle,
+      read: false,
+      createdAt: serverTimestamp()
+    });
+  } catch (e) {
+    console.error('Failed to create notification:', e);
+  }
+}
+
+async function handleCreationNotifications(taskId, taskData) {
+  const task = { id: taskId, ...taskData };
+  const assignees = Array.isArray(task.assignees) ? task.assignees : [];
+  for (const email of assignees) {
+    await createAssignmentNotification(email, task);
+  }
+  const subtasks = Array.isArray(task.subtasks) ? task.subtasks : [];
+  for (const sub of subtasks) {
+    if (sub.assignee) {
+      await createAssignmentNotification(sub.assignee, task, sub.title);
+    }
+  }
+}
+
+async function handleUpdateNotifications(oldTask, fieldsToUpdate) {
+  const taskTitle = fieldsToUpdate.title !== undefined ? fieldsToUpdate.title : oldTask.title;
+  const currentTaskState = { id: oldTask.id, title: taskTitle };
+
+  // 1. Check main assignees changes
+  if (fieldsToUpdate.assignees !== undefined) {
+    const oldAssignees = (oldTask.assignees || []).map(e => e.toLowerCase());
+    const newAssignees = (fieldsToUpdate.assignees || []).map(e => e.toLowerCase());
+    for (const email of newAssignees) {
+      if (!oldAssignees.includes(email)) {
+        await createAssignmentNotification(email, currentTaskState);
+      }
+    }
+  }
+
+  // 2. Check subtasks assignee changes
+  if (fieldsToUpdate.subtasks !== undefined) {
+    const oldSubtasks = oldTask.subtasks || [];
+    const newSubtasks = fieldsToUpdate.subtasks || [];
+
+    for (const newSub of newSubtasks) {
+      if (newSub.assignee) {
+        const email = newSub.assignee.toLowerCase();
+        const matchingOldSub = oldSubtasks.find(oldSub => 
+          (newSub.id && oldSub.id && newSub.id === oldSub.id) || 
+          (newSub.title && oldSub.title && newSub.title.trim().toLowerCase() === oldSub.title.trim().toLowerCase())
+        );
+
+        const wasAlreadyAssigned = matchingOldSub && 
+          matchingOldSub.assignee && 
+          matchingOldSub.assignee.toLowerCase() === email;
+
+        if (!wasAlreadyAssigned) {
+          await createAssignmentNotification(email, currentTaskState, newSub.title);
+        }
+      }
+    }
+  }
+}
+
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
@@ -2447,6 +2685,7 @@ async function updateTaskDoc(taskId, fieldsToUpdate, logActionText) {
     ...fieldsToUpdate,
     activityLog
   });
+  handleUpdateNotifications(task, fieldsToUpdate);
 }
 
 function canEditTask(task) {
@@ -2474,6 +2713,8 @@ let dragId = null;
 let unsubTasks = null;
 let unsubAccess = null;
 let unsubProfiles = null;
+let notifications = [];
+let unsubNotifs = null;
 let profiles = {};
 let expandedIds = new Set(); // task IDs that are currently expanded
 let modalStartDate = ''; // YYYY-MM-DD, controlled by the inline picker
@@ -2621,12 +2862,14 @@ function setupUI() {
 
   // Apply persisted view choice (board/timeline)
   setView(currentView);
+  setupNotificationUI();
 }
 
 function cleanupSubs() {
   if (unsubTasks) { unsubTasks(); unsubTasks = null; }
   if (unsubAccess) { unsubAccess(); unsubAccess = null; }
   if (unsubProfiles) { unsubProfiles(); unsubProfiles = null; }
+  if (unsubNotifs) { unsubNotifs(); unsubNotifs = null; }
 }
 
 // True when the UI is in a state where re-rendering would yank something
@@ -3957,7 +4200,7 @@ function bindListEvents() {
         if (role === 'editor') {
           assignees.push(currentUser.email.toLowerCase());
         }
-        const docRef = await addDoc(collection(db, 'tasks'), {
+        const taskData = {
           title: '',
           app: projName,
           status: 'backlog',
@@ -3974,7 +4217,9 @@ function bindListEvents() {
             timestamp: new Date().toISOString(),
             action: 'Created task'
           }]
-        });
+        };
+        const docRef = await addDoc(collection(db, 'tasks'), taskData);
+        handleCreationNotifications(docRef.id, taskData);
         // Wait for snapshot to render the new row, then focus its title input
         setTimeout(() => {
           const item = document.querySelector(`.list-item[data-id="${docRef.id}"]`);
@@ -4525,6 +4770,26 @@ function subscribe() {
     });
     maybeRender();
   }, (err) => console.log('Profiles sync error: ' + err.message));
+
+  // Notifications
+  if (currentUser) {
+    const q = query(
+      collection(db, 'notifications'),
+      where('toEmail', '==', currentUser.email.toLowerCase())
+    );
+    unsubNotifs = onSnapshot(q, (snap) => {
+      notifications = snap.docs.map(d => {
+        const data = d.data();
+        return {
+          id: d.id,
+          ...data,
+          createdAtDate: data.createdAt ? data.createdAt.toDate() : new Date()
+        };
+      });
+      notifications.sort((a, b) => b.createdAtDate - a.createdAtDate);
+      renderNotifications();
+    }, (err) => console.error('Notifications sync error:', err));
+  }
 }
 
 // --- Rendering ---
@@ -5600,7 +5865,7 @@ async function saveTask() {
       await updateTaskDoc(editingId, update, logActionText);
     } else {
       const colCount = tasks.filter(x => x.status === status).length;
-      await addDoc(collection(db, 'tasks'), {
+      const taskData = {
         title, details, app: appName, status, priority, assignees, startDate, endDate, progress, order: colCount,
         subtasks: modalSubtasks,
         createdAt: serverTimestamp(),
@@ -5610,7 +5875,9 @@ async function saveTask() {
           timestamp: new Date().toISOString(),
           action: 'Created task'
         }]
-      });
+      };
+      const docRef = await addDoc(collection(db, 'tasks'), taskData);
+      handleCreationNotifications(docRef.id, taskData);
     }
     closeModal();
   } catch (e) {
@@ -5793,7 +6060,7 @@ document.getElementById('addBtn').addEventListener('click', async () => {
       if (role === 'editor') {
         assignees.push(currentUser.email.toLowerCase());
       }
-      const docRef = await addDoc(collection(db, 'tasks'), {
+      const taskData = {
         title: '',
         app: defaultApp,
         status: 'backlog',
@@ -5810,7 +6077,9 @@ document.getElementById('addBtn').addEventListener('click', async () => {
           timestamp: new Date().toISOString(),
           action: 'Created task'
         }]
-      });
+      };
+      const docRef = await addDoc(collection(db, 'tasks'), taskData);
+      handleCreationNotifications(docRef.id, taskData);
       // Wait for snapshot to render the new row, then focus its title input
       setTimeout(() => {
         const item = document.querySelector(`.list-item[data-id="${docRef.id}"]`);
